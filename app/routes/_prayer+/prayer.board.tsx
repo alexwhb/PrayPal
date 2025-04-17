@@ -1,19 +1,25 @@
+import { getFormProps, getInputProps, useForm } from '@conform-to/react'
+import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import {
 	ArrowUpDown,
 	CalendarDays,
-	CheckCircle2,
 	ChevronDown,
 	HandIcon as PrayingHands,
 	PlusIcon,
+	CheckCircle2
 } from 'lucide-react'
-import { type ChangeEvent, useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { data, Form, Link, useLoaderData, useSearchParams } from 'react-router'
+import { z } from 'zod'
+import DeleteDialog from '#app/components/delete-dialog.tsx'
+import { TextareaField } from '#app/components/forms.tsx'
 import {
 	Avatar,
 	AvatarFallback,
 	AvatarImage,
 } from '#app/components/ui/avatar.tsx'
 
+import { Badge } from '#app/components/ui/badge.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import {
 	Card,
@@ -28,26 +34,22 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from '#app/components/ui/dialog.tsx'
-import { Badge } from '#app/components/ui/badge.tsx'
-import { Label } from '#app/components/ui/label.tsx'
-import { Textarea } from '#app/components/ui/textarea.tsx'
-import { requireUserId } from '#app/utils/auth.server.ts'
-import { prisma } from '#app/utils/db.server.ts'
-import { type Route } from './+types/prayer'
-import { getUserImgSrc } from '#app/utils/misc.tsx'
-import { cn } from '#app/lib/utils.ts'
 import {
 	Tooltip,
-	TooltipContent, TooltipProvider,
+	TooltipContent,
+	TooltipProvider,
 	TooltipTrigger,
 } from '#app/components/ui/tooltip.tsx'
-import ActionArgs = Route.ActionArgs
+import { cn } from '#app/lib/utils.ts'
+import { requireUserId } from '#app/utils/auth.server.ts'
+import { prisma } from '#app/utils/db.server.ts'
+import { getUserImgSrc } from '#app/utils/misc.tsx'
+import { type Route } from './+types/prayer'
 
 const PAGE_SIZE = 30
 
-export async function loader({ params, request }: Route.LoaderArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
 	const url = new URL(request.url)
 
@@ -122,13 +124,13 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	}
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: Route.ActionArgs) {
 	const userId = await requireUserId(request)
 	const formData = await request.formData()
 	const prayerId = formData.get('prayerId')
-	const intent = formData.get('intent')
+	const action = formData.get('_action')
 
-	if (intent === 'togglePraying') {
+	if (action === 'togglePraying') {
 		// First fetch the current request
 		const request = await prisma.request.findUnique({
 			where: { id: prayerId as string },
@@ -161,6 +163,22 @@ export async function action({ request }: ActionArgs) {
 		})
 
 		return data({ success: true })
+	} else if (action === 'delete') {
+		// Handle delete prayer action
+		await prisma.request.delete({ where: { id: prayerId as string } })
+		return data({ success: true })
+	} else if (action === 'markAsAnswered') {
+		// TODO update this.
+
+		await prisma.request.update({
+			where: { id: prayerId as string },
+			data: {
+				fulfilled: true,
+				response: {
+					message: formData.get('testimony') as string,
+				},
+			},
+		})
 	}
 }
 
@@ -367,28 +385,205 @@ interface PrayerItemProps {
 }
 
 function PrayerItem({ prayer, onAnswered, isCurrentUser }: PrayerItemProps) {
+	return isCurrentUser ? (
+		<UserPrayerItem prayer={prayer} onAnswered={onAnswered} />
+	) : (
+		<OtherPrayerItem prayer={prayer} />
+	)
+}
+
+function UserPrayerItem({
+	prayer,
+	actionData,
+}: {
+	prayer: Prayer
+	actionData: any
+}) {
 	const [isDialogOpen, setIsDialogOpen] = useState(false)
-	const [answeredMessage, setAnsweredMessage] = useState('')
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
-	const formatDate = (date: Date) => {
-		return new Date(date).toLocaleDateString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			year: 'numeric',
-		})
-	}
+	return (
+		<Card className={prayer.answered ? 'opacity-75' : ''}>
+			<CardHeader className="pb-2">
+				<div className="flex items-start justify-between">
+					<div className="flex items-center gap-3">
+						<Link to={`/users/${prayer.user.username}`} prefetch="intent">
+							<Avatar>
+								<AvatarImage
+									src={getUserImgSrc(prayer.user.image?.id)}
+									alt={prayer.user.username}
+								/>
+								<AvatarFallback>
+									{prayer.user.username.charAt(0)}
+								</AvatarFallback>
+							</Avatar>
+						</Link>
+						<div>
+							<h3 className="font-medium">{prayer.user.username}</h3>
+							<div className="flex items-center text-sm text-muted-foreground">
+								<CalendarDays className="mr-1 h-3 w-3" />
+								{formatDate(prayer.createdAt)}
+							</div>
+						</div>
+					</div>
+					<Badge variant={prayer.answered ? 'outline' : 'secondary'}>
+						{prayer.category.name}
+					</Badge>
+				</div>
+			</CardHeader>
+			<CardContent>
+				<p className="text-sm">{prayer.description}</p>
 
-	const handleMarkAsAnswered = (e: React.FormEvent) => {
-		e.preventDefault()
-		onAnswered(prayer.id, answeredMessage)
-		setIsDialogOpen(false)
-		setAnsweredMessage('')
-	}
+				{prayer.answered && prayer.answeredMessage && (
+					<div className="mt-4 rounded-md border border-green-100 bg-green-50 p-3">
+						<p className="mb-1 text-sm font-medium text-green-800">
+							Prayer Answered:
+						</p>
+						<p className="text-sm text-green-800">{prayer.answeredMessage}</p>
+					</div>
+				)}
+			</CardContent>
+			<CardFooter className="flex flex-col gap-2">
+				<div className="flex w-full items-center justify-between">
+					<div className="flex items-center gap-4">
+						<div className="flex items-center">
+							<PrayingHands className="mr-1 h-4 w-4" />
+							<span className="text-sm text-muted-foreground">
+								{prayer.prayerCount}{' '}
+								{prayer.prayerCount === 1 ? 'Prayer' : 'Prayers'}
+							</span>
+						</div>
+						{prayer.answered && !prayer.answeredMessage && (
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span className="text-sm font-medium text-green-800">
+											<CheckCircle2 />
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										Prayer marked as answered
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						)}
+					</div>
 
-	const handleMarkAsUnanswered = () => {
-		onAnswered(prayer.id)
-	}
+					<div className="flex items-center gap-4">
+						{!prayer.answered && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setIsDialogOpen(true)}
+							>
+								Mark as Answered
+							</Button>
+						)}
 
+						<DeleteDialog
+							open={isDeleteDialogOpen}
+							onOpenChange={setIsDeleteDialogOpen}
+							additionalFormData={{ prayerId: prayer.id }}
+						/>
+
+						<MarkAsAnsweredDialog
+							actionData={actionData}
+							open={isDialogOpen}
+							onOpenChange={setIsDialogOpen}
+							prayerId={ prayer.id }
+						/>
+					</div>
+				</div>
+			</CardFooter>
+		</Card>
+	)
+}
+
+export const AnsweredPrayerSchema = z.object({
+	testimony: z.string().max(500),
+})
+
+function MarkAsAnsweredDialog({
+	actionData,
+	open = false,
+	onOpenChange,
+	prayerId
+}: {
+	actionData: any
+	open: boolean
+	onOpenChange: (open: boolean) => void
+	prayerId: string
+}) {
+	const defaultValues = useMemo(
+		() => ({
+			id: 'new-prayer',
+			testimony: '',
+		}),
+		[],
+	)
+
+	const [form, fields] = useForm({
+		id: 'prayer-response',
+		constraint: getZodConstraint(AnsweredPrayerSchema),
+		onValidate({ formData }) {
+			return parseWithZod(formData, { schema: AnsweredPrayerSchema })
+		},
+		lastResult: actionData?.result,
+		defaultValue: defaultValues,
+		shouldRevalidate: 'onBlur',
+	})
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Share Your Testimony</DialogTitle>
+					<DialogDescription>
+						Share how this prayer was answered to encourage others in the
+						community. Note: this is entirely optional.
+						Feel free to leave this blank.
+					</DialogDescription>
+				</DialogHeader>
+				<Form method="post" {...getFormProps(form)} onSubmit={() => onOpenChange(false)}>
+					<input type="hidden" name="_action" value="markAsAnswered" />
+					<input type="hidden" name="prayerId" value={prayerId} />
+					<div className="grid gap-4 py-4">
+						<div className="grid gap-2">
+							<TextareaField
+								labelProps={{
+									htmlFor: 'testimony',
+									children: 'How was your prayer answered?',
+								}}
+								textareaProps={{
+									...getInputProps(fields.testimony, { type: 'text' }),
+									maxLength: 500, // Set maximum characters allowed
+								}}
+								errors={fields?.testimony?.errors}
+								className="relative"
+							>
+								<div className="absolute bottom-4 right-4 text-xs text-muted-foreground">
+									{fields.testimony.value?.length ?? 0} / 500
+								</div>
+							</TextareaField>
+						</div>
+					</div>
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+						>
+							Cancel
+						</Button>
+						<Button type="submit">Share Testimony</Button>
+					</DialogFooter>
+				</Form>
+			</DialogContent>
+		</Dialog>
+	)
+}
+
+function OtherPrayerItem({ prayer }: { prayer: Prayer }) {
 	return (
 		<Card className={prayer.answered ? 'opacity-75' : ''}>
 			<CardHeader className="pb-2">
@@ -430,90 +625,51 @@ function PrayerItem({ prayer, onAnswered, isCurrentUser }: PrayerItemProps) {
 					</div>
 				)}
 			</CardContent>
-			<CardFooter className="flex justify-between pt-2">
+			<CardFooter>
 				<div className="flex items-center gap-4">
 					<Form method="post">
 						<input type="hidden" name="prayerId" value={prayer.id} />
-						<input type="hidden" name="intent" value="togglePraying" />
-						<Button
-							type="submit"
-							disabled={prayer?.answered === true || isCurrentUser}
-							variant={prayer.hasPrayed ? 'secondary' : 'ghost'}
-							size="sm"
-							className={cn(
-								'text-muted-foreground',
-								prayer.hasPrayed && 'bg-primary/10 text-primary',
-							)}
-						>
-							<div className="flex items-center">
-								<PrayingHands className="mr-1 h-4 w-4" />
-								<span className="text-sm">
-									{prayer.prayerCount}{' '}
-									{prayer.prayerCount === 1 ? 'Prayer' : 'Prayers'}
-								</span>
-							</div>
-						</Button>
+						<input type="hidden" name="_action" value="togglePraying" />
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										type="submit"
+										disabled={prayer.answered === true}
+										variant={prayer.hasPrayed ? 'secondary' : 'ghost'}
+										size="sm"
+										className={cn(
+											'text-muted-foreground',
+											prayer.hasPrayed && 'bg-primary/10 text-primary',
+										)}
+									>
+										<div className="flex items-center">
+											<PrayingHands className="mr-1 h-4 w-4" />
+											<span className="text-sm">
+												{prayer.prayerCount}{' '}
+												{prayer.prayerCount === 1 ? 'Prayer' : 'Prayers'}
+											</span>
+										</div>
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{prayer.hasPrayed
+										? 'Click to remove your prayer'
+										: 'Click to pray'}
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
 					</Form>
 				</div>
-				{prayer.answered && (
-					<div className="flex items-center text-green-600">
-						<CheckCircle2 className="mr-1 h-4 w-4" />
-						<span className="text-sm">Prayer Answered</span>
-					</div>
-				)}
-				{isCurrentUser &&
-					(prayer.answered ? (
-						<Button variant="ghost" size="sm" onClick={handleMarkAsUnanswered}>
-							Mark as Unanswered
-						</Button>
-					) : (
-						// todo move this into it's own component
-						<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-							<DialogTrigger asChild>
-								<Button variant="ghost" size="sm">
-									Mark as Answered
-								</Button>
-							</DialogTrigger>
-							<DialogContent>
-								<DialogHeader>
-									<DialogTitle>Share Your Testimony</DialogTitle>
-									<DialogDescription>
-										Share how this prayer was answered to encourage others in
-										the community.
-									</DialogDescription>
-								</DialogHeader>
-								<form onSubmit={handleMarkAsAnswered}>
-									<div className="grid gap-4 py-4">
-										<div className="grid gap-2">
-											<Label htmlFor="testimony">
-												How was your prayer answered?
-											</Label>
-											<Textarea
-												id="testimony"
-												placeholder="Share how God answered your prayer..."
-												value={answeredMessage}
-												onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-													setAnsweredMessage(e.target.value)
-												}
-												className="min-h-[100px]"
-											/>
-										</div>
-									</div>
-									<DialogFooter>
-										<Button
-											type="button"
-											variant="outline"
-											onClick={() => setIsDialogOpen(false)}
-										>
-											Cancel
-										</Button>
-										<Button type="submit">Share Testimony</Button>
-									</DialogFooter>
-								</form>
-							</DialogContent>
-						</Dialog>
-					))}
 			</CardFooter>
 		</Card>
 	)
+}
+
+function formatDate(date: Date) {
+	return new Date(date).toLocaleDateString('en-US', {
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric',
+	})
 }

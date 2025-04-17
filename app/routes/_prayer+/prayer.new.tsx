@@ -1,7 +1,7 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { useMemo, useState } from 'react'
-import { data, Link, type LoaderFunctionArgs, useLoaderData } from 'react-router'
+import { data, Form, Link, type LoaderFunctionArgs, redirect, useLoaderData } from 'react-router'
 import { z } from 'zod'
 import { TextareaField } from '#app/components/forms.tsx'
 import { Button } from '#app/components/ui/button'
@@ -20,9 +20,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#app/components/ui/select'
-import { prisma } from '#app/utils/db.server.ts'
-import { Route } from './+types/prayer/new'
 import { requireUserId } from '#app/utils/auth.server.ts'
+import { prisma } from '#app/utils/db.server.ts'
+import { type Route } from './+types/prayer/new'
 
 export async function loader({ params }: LoaderFunctionArgs) {
 	
@@ -62,7 +62,7 @@ export async function action({ request }: LoaderFunctionArgs) {
 		},
 	})
 
-	return data({ success: true })
+	return redirect('../board')
 }
 
 export const PrayerSchema = z.object({
@@ -97,7 +97,7 @@ export default function NewPrayerForm({loaderData: { categories }, actionData}: 
 			<CardHeader>
 				<CardTitle>Share a Prayer Request</CardTitle>
 			</CardHeader>
-			<form
+			<Form
 				method="post"
 				{...getFormProps(form)}
 			>
@@ -152,7 +152,7 @@ export default function NewPrayerForm({loaderData: { categories }, actionData}: 
 						</Button>
 					</div>
 				</CardFooter>
-			</form>
+			</Form>
 		</Card>
 	)
 }
