@@ -55,11 +55,11 @@ export default function UserPrayerItem({
 				<p className="text-sm">{prayer.description}</p>
 
 				{prayer.answered && prayer.answeredMessage && (
-					<div className="mt-4 rounded-md border border-green-100 bg-green-50 p-3">
-						<p className="mb-1 text-sm font-medium text-green-800">
+					<div className="mt-4 rounded-md border border-green-100 bg-green-50  dark:border-green-100/20 dark:bg-green-200/10  p-3">
+						<p className="mb-1 text-sm font-medium text-green-800 dark:text-green-200">
 							Prayer Answered:
 						</p>
-						<p className="text-sm text-green-800">{prayer.answeredMessage}</p>
+						<p className="text-sm dark:text-green-200 text-green-800">{prayer.answeredMessage}</p>
 					</div>
 				)}
 			</CardContent>
@@ -73,11 +73,11 @@ export default function UserPrayerItem({
 								{prayer.prayerCount === 1 ? 'Prayer' : 'Prayers'}
 							</span>
 						</div>
-						{prayer.answered && !prayer.answeredMessage && (
+						{prayer.answered && (
 							<TooltipProvider>
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<span className="text-sm font-medium text-green-800">
+										<span className="text-sm font-medium text-green-600">
 											<CheckCircle2 />
 										</span>
 									</TooltipTrigger>
