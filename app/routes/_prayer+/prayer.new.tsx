@@ -1,4 +1,9 @@
-import { useState } from 'react'
+import { getFormProps, getInputProps, useForm } from '@conform-to/react'
+import { getZodConstraint, parseWithZod } from '@conform-to/zod'
+import { useMemo, useState } from 'react'
+import { data, Link, type LoaderFunctionArgs, useLoaderData } from 'react-router'
+import { z } from 'zod'
+import { TextareaField } from '#app/components/forms.tsx'
 import { Button } from '#app/components/ui/button'
 import {
 	Card,
@@ -15,91 +20,123 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#app/components/ui/select'
-import { Textarea } from '#app/components/ui/textarea'
-import { Link } from 'react-router'
-//
-//
-// export async function loader({ params }: LoaderFunctionArgs) {
-// 	// const user = await prisma.user.findFirst({
-// 	// 	select: {
-// 	// 		id: true,
-// 	// 		name: true,
-// 	// 		username: true,
-// 	// 		createdAt: true,
-// 	// 		image: { select: { id: true } },
-// 	// 	},
-// 	// 	where: {
-// 	// 		username: params.username,
-// 	// 	},
-// 	// })
-// 	//
-// 	// invariantResponse(user, 'User not found', { status: 404 })
-// 	//
-// 	// return { user, userJoinedDisplay: user.createdAt.toLocaleDateString() }
-// }
-//
-// export async function action({ request }: Route.ActionArgs) {
-// 	const formData = await request.formData()
-//
-// }
-//
+import { prisma } from '#app/utils/db.server.ts'
+import { Route } from './+types/prayer/new'
+import { requireUserId } from '#app/utils/auth.server.ts'
 
-export default function NewPrayerForm() {
-	const [formData, setFormData] = useState({
-		category: '',
-		description: '',
+export async function loader({ params }: LoaderFunctionArgs) {
+	
+	const categories = await prisma.category.findMany({
+		where: { type: 'PRAYER', active: true },
+		select: { id: true, name: true },
 	})
-	//
-	const handleSubmit = (e) => {
-		e.preventDefault()
-		if (formData.category && formData.description) {
-			// onSubmit(formData)
-		}
+	
+	return data({ categories })
+}
+
+export async function action({ request }: LoaderFunctionArgs) {
+	const userId = await requireUserId(request)
+	const formData = await request.formData()
+	const submission = parseWithZod(formData, {
+		schema: PrayerSchema,
+	})
+
+	if (submission.status !== 'success') {
+		return data(
+			{ result: submission.reply() },
+			{ status: submission.status === 'error' ? 400 : 200 },
+		)
 	}
-	//
-	const handleChange = (field, value) => {
-		setFormData({ ...formData, [field]: value })
-	}
+
+	const {description, category} = submission.value
+
+	await prisma.request.create({
+		data: {
+			type: 'PRAYER',
+			categoryId: category,
+			description: description,
+			fulfilled: false,
+			status: 'ACTIVE',
+			flagged: false,
+			userId: userId,
+		},
+	})
+
+	return data({ success: true })
+}
+
+export const PrayerSchema = z.object({
+	description: z.string().min(1, 'Description is required.').max(400),
+	category: z.string().min(1, 'Category is required.'),
+})
+
+export default function NewPrayerForm({loaderData: { categories }, actionData}:  Route.ComponentProps) {
+
+	const defaultValues = useMemo(
+		() => ({
+			id: 'new-prayer',
+			description: '',
+			category: '',
+		}),
+		[],
+	)
+
+	const [form, fields] = useForm({
+		id: 'episode-editor',
+		constraint: getZodConstraint(PrayerSchema),
+		onValidate({ formData }) {
+			return parseWithZod(formData, { schema: PrayerSchema })
+		},
+		lastResult: actionData?.result,
+		defaultValue: defaultValues,
+		shouldRevalidate: 'onBlur',
+	})
 
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle>Share a Prayer Request</CardTitle>
 			</CardHeader>
-			<form onSubmit={handleSubmit}>
+			<form
+				method="post"
+				{...getFormProps(form)}
+			>
 				<CardContent className="space-y-4">
 					<div className="space-y-2">
 						<Label htmlFor="category">Category</Label>
 						<Select
-							onValueChange={(value) => handleChange('category', value)}
+							{...getInputProps(fields.category, { type: 'text' })} // Bind the field to the form state
 							required
 						>
 							<SelectTrigger id="category">
 								<SelectValue placeholder="Select a category" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="Health">Health</SelectItem>
-								<SelectItem value="Family">Family</SelectItem>
-								<SelectItem value="Work">Work</SelectItem>
-								<SelectItem value="Guidance">Guidance</SelectItem>
-								<SelectItem value="Relationships">Relationships</SelectItem>
-								<SelectItem value="Financial">Financial</SelectItem>
-								<SelectItem value="Spiritual">Spiritual</SelectItem>
-								<SelectItem value="Other">Other</SelectItem>
+								{categories.map((category: { id: string; name: string }) => (
+									<SelectItem
+										key={category.id}
+										value={category.id}
+									>
+										{category.name}
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
 					</div>
-					<div className="space-y-2">
-						<Label htmlFor="description">Prayer Request</Label>
-						<Textarea
-							id="description"
-							placeholder="Share your prayer request..."
-							value={formData.description}
-							onChange={(e) => handleChange('description', e.target.value)}
-							required
-							className="min-h-[100px]"
-						/>
-					</div>
+
+					<TextareaField
+						labelProps={{ htmlFor: 'description', children: 'Prayer Request' }}
+						textareaProps={{
+							...getInputProps(fields.description, { type: 'text' }),
+							maxLength: 400, // Set maximum characters allowed
+						}}
+						errors={fields?.description?.errors}
+						className="relative"
+					>
+						<div className="absolute bottom-4 right-4 text-xs text-muted-foreground">
+							{fields.description.value?.length ?? 0} / 400
+						</div>
+					</TextareaField>
 				</CardContent>
 				<CardFooter>
 					<div className="flex gap-4">
@@ -109,7 +146,7 @@ export default function NewPrayerForm() {
 
 						<Button
 							type="submit"
-							disabled={!formData.category || !formData.description}
+							disabled={!form.value?.category || !form.value?.description}
 						>
 							Share Prayer Request
 						</Button>

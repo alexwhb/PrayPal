@@ -1,10 +1,10 @@
-import { Category } from '@prisma/client'
 import {
-	Badge,
+	ArrowUpDown,
 	CalendarDays,
 	CheckCircle2,
 	ChevronDown,
 	HandIcon as PrayingHands,
+	PlusIcon,
 } from 'lucide-react'
 import { type ChangeEvent, useCallback, useState } from 'react'
 import { data, Form, Link, useLoaderData, useSearchParams } from 'react-router'
@@ -13,6 +13,7 @@ import {
 	AvatarFallback,
 	AvatarImage,
 } from '#app/components/ui/avatar.tsx'
+
 import { Button } from '#app/components/ui/button.tsx'
 import {
 	Card,
@@ -29,15 +30,20 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from '#app/components/ui/dialog.tsx'
-
+import { Badge } from '#app/components/ui/badge.tsx'
 import { Label } from '#app/components/ui/label.tsx'
 import { Textarea } from '#app/components/ui/textarea.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { type Route } from './+types/prayer'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
-import ActionArgs = Route.ActionArgs
 import { cn } from '#app/lib/utils.ts'
+import {
+	Tooltip,
+	TooltipContent, TooltipProvider,
+	TooltipTrigger,
+} from '#app/components/ui/tooltip.tsx'
+import ActionArgs = Route.ActionArgs
 
 const PAGE_SIZE = 30
 
@@ -80,7 +86,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 			skip: (page - 1) * PAGE_SIZE,
 			take: PAGE_SIZE,
 		}),
-		prisma.request.count({ where })
+		prisma.request.count({ where }),
 	])
 
 	const hasNextPage = totalPrayers > page * PAGE_SIZE
@@ -91,7 +97,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	})
 
 	filters = [{ name: 'All' }, ...filters]
-	
+
 	const prayers = prayerData.map((data) => ({
 		answered: data.fulfilled,
 		answeredMessage:
@@ -99,17 +105,22 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 			typeof data.response === 'object' &&
 			'message' in data.response
 				? data.response.message
-				: '' as string | null, 
+				: ('' as string | null),
 		prayerCount: data.response?.prayerCount ?? 0,
 		hasPrayed: data.response?.prayedBy?.includes(userId) ?? false,
 		lastUpdatedAt: data.response?.lastUpdatedAt ?? null,
 		...data,
 	}))
-	
-	// Return "All" as activeFilter when it's null
-	return { prayers, filters, activeFilter: activeFilter || 'All', userId, hasNextPage }
-}
 
+	// Return "All" as activeFilter when it's null
+	return {
+		prayers,
+		filters,
+		activeFilter: activeFilter || 'All',
+		userId,
+		hasNextPage,
+	}
+}
 
 export async function action({ request }: ActionArgs) {
 	const userId = await requireUserId(request)
@@ -121,7 +132,7 @@ export async function action({ request }: ActionArgs) {
 		// First fetch the current request
 		const request = await prisma.request.findUnique({
 			where: { id: prayerId as string },
-			select: { response: true }
+			select: { response: true },
 		})
 
 		// Initialize or get current values
@@ -145,14 +156,13 @@ export async function action({ request }: ActionArgs) {
 					prayerCount: hasPrayed ? currentCount - 1 : currentCount + 1,
 					prayedBy: Array.from(prayedBy),
 					lastUpdatedAt: new Date().toISOString(),
-				}
-			}
+				},
+			},
 		})
 
 		return data({ success: true })
 	}
 }
-
 
 export default function PrayerBoardPage() {
 	const loaderData = useLoaderData<typeof loader>()
@@ -175,12 +185,12 @@ export default function PrayerBoardPage() {
 	)
 
 	// Generate URLs for different actions
-	const getSortUrl = useCallback(
-		(newSort: 'asc' | 'desc') => {
-			return generateUrl({ sort: newSort, page: 1 })
-		},
-		[generateUrl],
-	)
+	const getSortUrl = useCallback(() => {
+		// we toggle our sort.
+		const currentSort = searchParams.get('sort') === 'asc' ? 'asc' : 'desc'
+		const newSort = currentSort === 'asc' ? 'desc' : 'asc'
+		return generateUrl({ sort: newSort, page: 1 })
+	}, [generateUrl, searchParams])
 
 	const getFilterUrl = useCallback(
 		(newFilter: string) => {
@@ -189,13 +199,10 @@ export default function PrayerBoardPage() {
 		[generateUrl],
 	)
 
-	const getNextPageUrl = useCallback(
-		() => {
-			const currentPage = parseInt(searchParams.get('page') || '1', 10)
-			return generateUrl({ page: currentPage + 1 })
-		},
-		[generateUrl, searchParams],
-	)
+	const getNextPageUrl = useCallback(() => {
+		const currentPage = parseInt(searchParams.get('page') || '1', 10)
+		return generateUrl({ page: currentPage + 1 })
+	}, [generateUrl, searchParams])
 
 	return (
 		<main className="container mx-auto px-4 py-8">
@@ -221,32 +228,23 @@ export default function PrayerBoardPage() {
 type PrayerBoardProps = {
 	loaderData: Awaited<ReturnType<typeof loader>>
 	getFilterUrl: (filter: string) => string
-	getSortUrl: (sort: 'asc' | 'desc') => string
+	getSortUrl: () => string
 	getNextPageUrl: () => string
 }
 
-function PrayerBoard({ loaderData, getFilterUrl, getSortUrl, getNextPageUrl }: PrayerBoardProps) {
-	const { prayers, filters, activeFilter, userId: currentUserId, hasNextPage } = loaderData
-
-	// const [showForm, setShowForm] = useState(false)
-	// const [activeFilter, setActiveFilter] = useState('All')
-
-	// const addPrayer = (newPrayer) => {
-	// 	setPrayers([
-	// 		{
-	// 			id: (prayers.length + 1).toString(),
-	// 			userId: "currentUser", // In a real app, this would be the actual user ID
-	// 			userName: "You", // In a real app, this would be the actual username
-	// 			userImage: "/placeholder.svg?height=40&width=40",
-	// 			postedDate: new Date(),
-	// 			answered: false,
-	// 			answeredMessage: "",
-	// 			...newPrayer,
-	// 		},
-	// 		...prayers,
-	// 	])
-	// 	setShowForm(false)
-	// }
+function PrayerBoard({
+	loaderData,
+	getFilterUrl,
+	getSortUrl,
+	getNextPageUrl,
+}: PrayerBoardProps) {
+	const {
+		prayers,
+		filters,
+		activeFilter,
+		userId: currentUserId,
+		hasNextPage,
+	} = loaderData
 
 	const toggleAnswered = (id, answeredMessage = '') => {
 		// setPrayers(
@@ -271,10 +269,25 @@ function PrayerBoard({ loaderData, getFilterUrl, getSortUrl, getNextPageUrl }: P
 					activeFilter={activeFilter}
 					getFilterUrl={getFilterUrl}
 				/>
-				<Link to="/prayer/new">
-					<Button>Share Prayer Request</Button>
-				</Link>
 
+				<Link to={getSortUrl()}>
+					<Button>
+						<ArrowUpDown />
+						Sort
+					</Button>
+				</Link>
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Link to="/prayer/new">
+								<Button>
+									<PlusIcon />
+								</Button>
+							</Link>
+						</TooltipTrigger>
+						<TooltipContent>Share a prayer request</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
 			</div>
 
 			<div className="grid gap-4">
@@ -296,7 +309,7 @@ function PrayerBoard({ loaderData, getFilterUrl, getSortUrl, getNextPageUrl }: P
 				)}
 			</div>
 			{hasNextPage && (
-				<div className="flex justify-center mt-2">
+				<div className="mt-2 flex justify-center">
 					<Link
 						to={getNextPageUrl()}
 						prefetch="intent"
@@ -380,16 +393,17 @@ function PrayerItem({ prayer, onAnswered, isCurrentUser }: PrayerItemProps) {
 		<Card className={prayer.answered ? 'opacity-75' : ''}>
 			<CardHeader className="pb-2">
 				<div className="flex items-start justify-between">
-
 					<div className="flex items-center gap-3">
 						<Link to={`/users/${prayer.user.username}`} prefetch="intent">
-						<Avatar>
-							<AvatarImage
-								src={getUserImgSrc(prayer.user.image?.id)}
-								alt={prayer.user.username}
-							/>
-							<AvatarFallback>{prayer.user.username.charAt(0)}</AvatarFallback>
-						</Avatar>
+							<Avatar>
+								<AvatarImage
+									src={getUserImgSrc(prayer.user.image?.id)}
+									alt={prayer.user.username}
+								/>
+								<AvatarFallback>
+									{prayer.user.username.charAt(0)}
+								</AvatarFallback>
+							</Avatar>
 						</Link>
 						<div>
 							<h3 className="font-medium">{prayer.user.username}</h3>
@@ -421,34 +435,30 @@ function PrayerItem({ prayer, onAnswered, isCurrentUser }: PrayerItemProps) {
 					<Form method="post">
 						<input type="hidden" name="prayerId" value={prayer.id} />
 						<input type="hidden" name="intent" value="togglePraying" />
-						<Button 
+						<Button
 							type="submit"
-							disabled={prayer?.answered === true}
-							variant={prayer.hasPrayed ? "secondary" : "ghost"}
+							disabled={prayer?.answered === true || isCurrentUser}
+							variant={prayer.hasPrayed ? 'secondary' : 'ghost'}
 							size="sm"
 							className={cn(
-								"text-muted-foreground",
-								prayer.hasPrayed && "bg-primary/10 text-primary"
+								'text-muted-foreground',
+								prayer.hasPrayed && 'bg-primary/10 text-primary',
 							)}
 						>
 							<div className="flex items-center">
 								<PrayingHands className="mr-1 h-4 w-4" />
 								<span className="text-sm">
-									{prayer.prayerCount} {prayer.prayerCount === 1 ? 'Prayer' : 'Prayers'}
+									{prayer.prayerCount}{' '}
+									{prayer.prayerCount === 1 ? 'Prayer' : 'Prayers'}
 								</span>
 							</div>
 						</Button>
 					</Form>
 				</div>
-				{prayer.answered ? (
+				{prayer.answered && (
 					<div className="flex items-center text-green-600">
 						<CheckCircle2 className="mr-1 h-4 w-4" />
 						<span className="text-sm">Prayer Answered</span>
-					</div>
-				) : (
-					<div className="flex items-center text-muted-foreground">
-						<PrayingHands className="mr-1 h-4 w-4" />
-						<span className="text-sm">Praying</span>
 					</div>
 				)}
 				{isCurrentUser &&

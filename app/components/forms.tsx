@@ -123,11 +123,13 @@ export function TextareaField({
 	textareaProps,
 	errors,
 	className,
+	children, // Add children prop
 }: {
 	labelProps: React.LabelHTMLAttributes<HTMLLabelElement>
 	textareaProps: React.TextareaHTMLAttributes<HTMLTextAreaElement>
 	errors?: ListOfErrors
 	className?: string
+	children?: React.ReactNode // Add children type
 }) {
 	const fallbackId = useId()
 	const id = textareaProps.id ?? textareaProps.name ?? fallbackId
@@ -135,12 +137,15 @@ export function TextareaField({
 	return (
 		<div className={className}>
 			<Label htmlFor={id} {...labelProps} />
-			<Textarea
-				id={id}
-				aria-invalid={errorId ? true : undefined}
-				aria-describedby={errorId}
-				{...textareaProps}
-			/>
+			<div className="relative"> {/* Add wrapper for positioning */}
+				<Textarea
+					id={id}
+					aria-invalid={errorId ? true : undefined}
+					aria-describedby={errorId}
+					{...textareaProps}
+				/>
+				{children} {/* Render children */}
+			</div>
 			<div className="min-h-[12px] px-4 pb-3 pt-1">
 				{errorId ? <ErrorList id={errorId} errors={errors} /> : null}
 			</div>
