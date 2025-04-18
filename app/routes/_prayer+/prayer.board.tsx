@@ -140,7 +140,10 @@ export async function action({ request }: Route.ActionArgs) {
 	}
 }
 
-export default function PrayerBoardPage({actionData, loaderData}: Route.ComponentProps) {
+export default function PrayerBoardPage({
+	actionData,
+	loaderData,
+}: Route.ComponentProps) {
 	const [searchParams] = useSearchParams()
 
 	// Helper to generate URLs with updated search params
@@ -180,15 +183,12 @@ export default function PrayerBoardPage({actionData, loaderData}: Route.Componen
 	}, [generateUrl, searchParams])
 
 	return (
-		<main className="container mx-auto px-4 py-8">
-
-			<PrayerBoard
-				loaderData={loaderData}
-				actionData={actionData}
-				getFilterUrl={getFilterUrl}
-				getSortUrl={getSortUrl}
-				getNextPageUrl={getNextPageUrl}
-			/>
-		</main>
+		<PrayerBoard
+			loaderData={loaderData}
+			actionData={actionData}
+			getFilterUrl={getFilterUrl}
+			getSortUrl={getSortUrl}
+			getNextPageUrl={getNextPageUrl}
+		/>
 	)
 }

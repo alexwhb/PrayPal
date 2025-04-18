@@ -1,9 +1,9 @@
 import { useCallback } from 'react'
 import { data, useSearchParams } from 'react-router'
-import PrayerBoard from '#app/components/prayer/prayer-board.tsx'
+import NeedsBoard from '#app/components/needs/needs-board.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
-import { type Route } from './+types/prayer.board.ts'
+import { type Route } from './+types/needs.board.ts'
 
 const PAGE_SIZE = 30
 
@@ -30,7 +30,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		}
 	}
 
-	const [prayerData, totalPrayers] = await prisma.$transaction([
+	const [needs, totalPrayers] = await prisma.$transaction([
 		prisma.request.findMany({
 			where,
 			select: {
@@ -58,23 +58,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 	filters = [{ name: 'All' }, ...filters]
 
-	const prayers = prayerData.map((data) => ({
-		answered: data.fulfilled,
-		answeredMessage:
-			data.response &&
-			typeof data.response === 'object' &&
-			'message' in data.response
-				? data.response.message
-				: ('' as string | null),
-		prayerCount: data.response?.prayerCount ?? 0,
-		hasPrayed: data.response?.prayedBy?.includes(userId) ?? false,
-		lastUpdatedAt: data.response?.lastUpdatedAt ?? null,
-		...data,
-	}))
-
 	// Return "All" as activeFilter when it's null
 	return {
-		prayers,
+		needs,
 		filters,
 		activeFilter: activeFilter || 'All',
 		userId,
@@ -88,55 +74,10 @@ export async function action({ request }: Route.ActionArgs) {
 	const prayerId = formData.get('prayerId')
 	const action = formData.get('_action')
 
-	if (action === 'togglePraying') {
-		// First fetch the current request
-		const request = await prisma.request.findUnique({
-			where: { id: prayerId as string },
-			select: { response: true },
-		})
-
-		// Initialize or get current values
-		const currentResponse = request?.response ?? {}
-		const prayedBy = new Set(currentResponse.prayedBy ?? [])
-		const currentCount = currentResponse.prayerCount ?? 0
-
-		// Toggle user's prayer status
-		const hasPrayed = prayedBy.has(userId)
-		if (hasPrayed) {
-			prayedBy.delete(userId)
-		} else {
-			prayedBy.add(userId)
-		}
-
-		// Update the request with new values
-		await prisma.request.update({
-			where: { id: prayerId as string },
-			data: {
-				response: {
-					prayerCount: hasPrayed ? currentCount - 1 : currentCount + 1,
-					prayedBy: Array.from(prayedBy),
-					lastUpdatedAt: new Date().toISOString(),
-				},
-			},
-		})
-
-		return data({ success: true })
-	} else if (action === 'delete') {
+	if (action === 'delete') {
 		// Handle delete prayer action
 		await prisma.request.delete({ where: { id: prayerId as string } })
 		return data({ success: true })
-	} else if (action === 'markAsAnswered') {
-		// TODO update this.
-
-		await prisma.request.update({
-			where: { id: prayerId as string },
-			data: {
-				fulfilled: true,
-				response: {
-					message: formData.get('testimony') as string,
-				},
-			},
-		})
 	}
 }
 
@@ -183,7 +124,7 @@ export default function PrayerBoardPage({
 	}, [generateUrl, searchParams])
 
 	return (
-		<PrayerBoard
+		<NeedsBoard
 			loaderData={loaderData}
 			actionData={actionData}
 			getFilterUrl={getFilterUrl}
