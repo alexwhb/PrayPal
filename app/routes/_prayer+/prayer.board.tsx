@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
-import { data, Form, Link, useLoaderData, useSearchParams } from 'react-router'
+import { useCallback } from 'react'
+import { data, useSearchParams } from 'react-router'
 import PrayerBoard from '#app/components/prayer/prayer-board.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
@@ -181,15 +181,7 @@ export default function PrayerBoardPage({actionData, loaderData}: Route.Componen
 
 	return (
 		<main className="container mx-auto px-4 py-8">
-			<h1 className="mb-8 text-center text-3xl font-bold">
-				Community Prayer Board
-			</h1>
-			<p className="mx-auto mb-8 max-w-2xl text-center text-muted-foreground">
-				Share prayer requests with the community. Together in faith, we support
-				one another.
-			</p>
 
-			<h2 className="mb-4 text-xl font-semibold">Prayer Requests</h2>
 			<PrayerBoard
 				loaderData={loaderData}
 				actionData={actionData}
