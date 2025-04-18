@@ -21,6 +21,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const where = {
 		type: 'NEED',
 		status: 'ACTIVE',
+		fulfilled: false  // Only include unfulfilled needs, wo we don't have a bunch of noise on the board.
 	} as any
 
 	// Only add category filter if activeFilter is not null and not "All"
