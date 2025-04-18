@@ -1,19 +1,25 @@
-
 import { ArrowUpDown, PlusIcon } from 'lucide-react'
 import { Link } from 'react-router'
 import Filters from '#app/components/board/filters.tsx'
 import { Button } from '#app/components/ui/button.tsx'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '#app/components/ui/tooltip.tsx'
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from '#app/components/ui/tooltip.tsx'
 
 export default function BoardHeader({
-											 filters,
-											 activeFilter,
-											 getFilterUrl,
-											 getSortUrl,
-										 }: {
+	filters,
+	activeFilter,
+	getFilterUrl,
+	getSortUrl,
+	newActionToolTipString,
+}: {
 	filters: Array<{ name: string }>
 	activeFilter: string
 	getFilterUrl: (filter: string) => string
+	newActionToolTipString: string
 	getSortUrl: () => string
 }) {
 	return (
@@ -32,13 +38,13 @@ export default function BoardHeader({
 			<TooltipProvider>
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<Link to="/prayer/new">
+						<Link to="../new">
 							<Button>
 								<PlusIcon />
 							</Button>
 						</Link>
 					</TooltipTrigger>
-					<TooltipContent>Share a prayer request</TooltipContent>
+					<TooltipContent>{newActionToolTipString}</TooltipContent>
 				</Tooltip>
 			</TooltipProvider>
 		</div>

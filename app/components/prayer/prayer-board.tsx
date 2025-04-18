@@ -33,6 +33,7 @@ export default function PrayerBoard({
 				activeFilter={activeFilter}
 				getFilterUrl={getFilterUrl}
 				getSortUrl={getSortUrl}
+				newActionToolTipString="New Prayer Request"
 			/>
 
 			<div className="grid gap-4">

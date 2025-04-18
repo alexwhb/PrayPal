@@ -81,7 +81,7 @@ export async function action({ request }: Route.ActionArgs) {
 	}
 }
 
-export default function PrayerBoardPage({
+export default function NeedsBoardPage({
 	actionData,
 	loaderData,
 }: Route.ComponentProps) {

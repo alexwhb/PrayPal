@@ -149,7 +149,7 @@ export default function NewNeedForm({
 							type="submit"
 							disabled={!form.value?.category || !form.value?.description}
 						>
-							Share Prayer Request
+							Post Need
 						</Button>
 					</div>
 				</CardFooter>

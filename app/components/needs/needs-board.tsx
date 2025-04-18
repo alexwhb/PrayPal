@@ -36,6 +36,7 @@ export default function NeedsBoard({
 				activeFilter={activeFilter}
 				getFilterUrl={getFilterUrl}
 				getSortUrl={getSortUrl}
+				newActionToolTipString="Post a Need"
 			/>
 
 			<div className="grid gap-4">
