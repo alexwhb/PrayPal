@@ -16,7 +16,6 @@ async function seed() {
 
 	const totalUsers = 5
 	console.time(`👤 Created ${totalUsers} users...`)
-	// const noteImages = await getNoteImages()
 	const userImages = await getUserImages()
 
 	await prisma.role.createMany({
@@ -76,9 +75,10 @@ async function seed() {
 	})
 
 	// Update user creation to include requests
+	const userIds = []
 	for (let index = 0; index < totalUsers; index++) {
 		const userData = createUser()
-		await prisma.user.create({
+		const user = await prisma.user.create({
 			data: {
 				...userData,
 				password: { create: createPassword(userData.username) },
@@ -93,7 +93,7 @@ async function seed() {
 							}).map(() => {
 								const fulfilled = faker.datatype.boolean()
 								return {
-									type: 'PRAYER' as const, // Explicitlpriy type as RequestType
+									type: 'PRAYER' as const, // Explicitly type as RequestType
 									categoryId: faker.helpers.arrayElement(prayerCategoryRecords)
 										.id,
 									description: faker.lorem.paragraph(),
@@ -106,7 +106,7 @@ async function seed() {
 									response: fulfilled
 										? {
 												message: faker.lorem.sentence(),
-												prayerCount: faker.number.int({ min: 0, max: 100 }),
+												prayerCount: faker.number.int({ min: 0, max: 3 }),
 											}
 										: null,
 								}
@@ -114,7 +114,7 @@ async function seed() {
 
 							// Create some need requests
 							...Array.from({
-								length: faker.number.int({ min: 10, max: 100 }),
+								length: faker.number.int({ min: 0, max: 3 }),
 							}).map(() => ({
 								type: 'NEED' as const, // Explicitly type as RequestType
 								categoryId: faker.helpers.arrayElement(needCategoryRecords).id,
@@ -138,6 +138,7 @@ async function seed() {
 				},
 			},
 		})
+		userIds.push(user.id) // Store user IDs for later use
 	}
 	console.timeEnd(`👤 Created ${totalUsers} users...`)
 
@@ -178,7 +179,7 @@ async function seed() {
 
 	const githubUser = await insertGitHubUser(MOCK_CODE_GITHUB)
 
-	await prisma.user.create({
+	const kody = await prisma.user.create({
 		select: { id: true },
 		data: {
 			email: 'kody@kcd.dev',
@@ -193,6 +194,33 @@ async function seed() {
 		},
 	})
 	console.timeEnd(`🐨 Created admin user "kody"`)
+
+	// Seed one-on-one messages for the default user (Kody)
+	console.time(`✉️ Creating two-sided messages for Kody...`)
+	const messageCount = 10 // Number of messages to create
+	for (let i = 0; i < messageCount; i++) {
+		const recipientId =
+			userIds[faker.number.int({ min: 0, max: totalUsers - 1 })] // Randomly select a recipient from the created users
+
+		// Create a message from Kody to the recipient
+		await prisma.message.create({
+			data: {
+				senderId: kody.id,
+				recipientId: recipientId,
+				content: faker.lorem.sentence(),
+			},
+		})
+
+		// Create a reply from the recipient back to Kody
+		await prisma.message.create({
+			data: {
+				senderId: recipientId,
+				recipientId: kody.id,
+				content: faker.lorem.sentence(),
+			},
+		})
+	}
+	console.timeEnd(`✉️ Created two-sided messages for Kody...`)
 
 	console.timeEnd(`🌱 Database has been seeded`)
 }
