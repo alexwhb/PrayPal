@@ -4,7 +4,6 @@ import { NeedItem } from '#app/components/needs/need-item.tsx'
 import { type Need } from '#app/components/needs/type.ts'
 import { type loader } from '#app/routes/_needs+/needs.board.tsx'
 
-
 type NeedsBoardProps = {
 	loaderData: Awaited<ReturnType<typeof loader>>
 	getFilterUrl: (filter: string) => string
@@ -14,12 +13,12 @@ type NeedsBoardProps = {
 }
 
 export default function NeedsBoard({
-																			loaderData,
-																			getFilterUrl,
-																			getSortUrl,
-																			getNextPageUrl,
-																			actionData,
-																		}: NeedsBoardProps) {
+	loaderData,
+	getFilterUrl,
+	getSortUrl,
+	getNextPageUrl,
+	actionData,
+}: NeedsBoardProps) {
 	const {
 		needs,
 		filters,
@@ -27,7 +26,6 @@ export default function NeedsBoard({
 		userId: currentUserId,
 		hasNextPage,
 	} = loaderData
-
 
 	return (
 		<div className="space-y-6">
