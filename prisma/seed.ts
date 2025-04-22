@@ -93,43 +93,31 @@ async function seed() {
 							}).map(() => {
 								const fulfilled = faker.datatype.boolean()
 								return {
-									type: 'PRAYER' as const, // Explicitly type as RequestType
-									categoryId: faker.helpers.arrayElement(prayerCategoryRecords)
-										.id,
+									type: 'PRAYER' as const,
+									categoryId: faker.helpers.arrayElement(prayerCategoryRecords).id,
 									description: faker.lorem.paragraph(),
 									fulfilled: fulfilled,
-									status: faker.helpers.arrayElement([
-										'ACTIVE',
-										'PENDING',
-									] as const),
+									status: faker.helpers.arrayElement(['ACTIVE', 'PENDING'] as const),
 									flagged: faker.datatype.boolean(),
 									response: fulfilled
 										? {
-												message: faker.lorem.sentence(),
-												prayerCount: faker.number.int({ min: 0, max: 3 }),
-											}
+											message: faker.lorem.sentence(),
+											prayerCount: faker.number.int({ min: 0, max: 3 }),
+										}
 										: null,
 								}
 							}),
-
 							// Create some need requests
 							...Array.from({
 								length: faker.number.int({ min: 0, max: 3 }),
 							}).map(() => ({
-								type: 'NEED' as const, // Explicitly type as RequestType
+								type: 'NEED' as const,
 								categoryId: faker.helpers.arrayElement(needCategoryRecords).id,
 								description: faker.lorem.paragraph(),
 								fulfilled: faker.datatype.boolean(),
-								fulfilledAt: faker.datatype.boolean()
-									? faker.date.past()
-									: null,
-								fulfilledBy: faker.datatype.boolean()
-									? faker.string.uuid()
-									: null,
-								status: faker.helpers.arrayElement([
-									'ACTIVE',
-									'PENDING',
-								] as const),
+								fulfilledAt: faker.datatype.boolean() ? faker.date.past() : null,
+								fulfilledBy: faker.datatype.boolean() ? faker.string.uuid() : null,
+								status: faker.helpers.arrayElement(['ACTIVE', 'PENDING'] as const),
 								flagged: faker.datatype.boolean(),
 								response: null,
 							})),
@@ -143,7 +131,6 @@ async function seed() {
 	console.timeEnd(`👤 Created ${totalUsers} users...`)
 
 	console.time(`🐨 Created admin user "kody"`)
-
 	const kodyImages = await promiseHash({
 		kodyUser: img({ filepath: './tests/fixtures/images/user/kody.png' }),
 		cuteKoala: img({
@@ -193,34 +180,153 @@ async function seed() {
 			roles: { connect: [{ name: 'admin' }, { name: 'user' }] },
 		},
 	})
+
+	const other = await prisma.user.create({
+		select: { id: true },
+		data: {
+			email: 'test@kcd.dev',
+			username: 'mody',
+			name: 'Mody',
+			image: { create: kodyImages.cuteKoala },
+			password: { create: createPassword('testlovesyou') },
+			// connections: {
+			// 	create: { providerName: 'github', providerId: githubUser.profile.id },
+			// },
+			roles: { connect: [{ name: 'moderator' }, { name: 'user' }] },
+		},
+	})
+	userIds.push(kody.id) // Add Kody to the user list
+	userIds.push(other.id) // Add Kody to the user list
+
 	console.timeEnd(`🐨 Created admin user "kody"`)
+
+	// Create groups
+	console.time(`🏘️ Created groups...`)
+	await prisma.group.createMany({
+		data: [
+			{ name: 'Family' },
+			{ name: 'Friends' },
+		],
+	})
+	const familyGroup = await prisma.group.findFirst({ where: { name: 'Family' } })
+	const friendsGroup = await prisma.group.findFirst({ where: { name: 'Friends' } })
+	console.timeEnd(`🏘️ Created groups...`)
+
+	// Create group memberships
+	console.time(`🤝 Created group memberships...`)
+	for (const userId of userIds) {
+		await prisma.groupMembership.createMany({
+			data: [
+				{ userId, groupId: familyGroup.id, joinedAt: new Date() },
+				{ userId, groupId: friendsGroup.id, joinedAt: new Date() },
+			],
+		})
+	}
+	console.timeEnd(`🤝 Created group memberships...`)
+
+	// Create group conversations
+	console.time(`💬 Created group conversations...`)
+	const familyConversation = await prisma.conversation.create({
+		data: {
+			groupId: familyGroup.id,
+			participants: {
+				connect: userIds.map((id) => ({ id })),
+			},
+		},
+	})
+	const friendsConversation = await prisma.conversation.create({
+		data: {
+			groupId: friendsGroup.id,
+			participants: {
+				connect: userIds.map((id) => ({ id })),
+			},
+		},
+	})
+	console.timeEnd(`💬 Created group conversations...`)
 
 	// Seed one-on-one messages for the default user (Kody)
 	console.time(`✉️ Creating two-sided messages for Kody...`)
 	const messageCount = 10 // Number of messages to create
 	for (let i = 0; i < messageCount; i++) {
-		const recipientId =
-			userIds[faker.number.int({ min: 0, max: totalUsers - 1 })] // Randomly select a recipient from the created users
+		const recipientId = userIds[faker.number.int({ min: 0, max: userIds.length - 1 })] // Randomly select a recipient
+
+		// Find or create a conversation between Kody and the recipient
+		let conversation = await prisma.conversation.findFirst({
+			where: {
+				participants: { every: { id: { in: [kody.id, recipientId] } } },
+				groupId: null, // Ensure it's not a group conversation
+			},
+		})
+
+		if (!conversation) {
+			conversation = await prisma.conversation.create({
+				data: {
+					participants: {
+						connect: [{ id: kody.id }, { id: recipientId }],
+					},
+				},
+			})
+		}
 
 		// Create a message from Kody to the recipient
-		await prisma.message.create({
+		const messageFromKody = await prisma.message.create({
 			data: {
 				senderId: kody.id,
 				recipientId: recipientId,
 				content: faker.lorem.sentence(),
+				conversationId: conversation.id,
 			},
 		})
 
+		// Update the conversation's lastMessageId
+		await prisma.conversation.update({
+			where: { id: conversation.id },
+			data: { lastMessageId: messageFromKody.id },
+		})
+
 		// Create a reply from the recipient back to Kody
-		await prisma.message.create({
+		const messageFromRecipient = await prisma.message.create({
 			data: {
 				senderId: recipientId,
 				recipientId: kody.id,
 				content: faker.lorem.sentence(),
+				conversationId: conversation.id,
 			},
+		})
+
+		// Update the conversation's lastMessageId again
+		await prisma.conversation.update({
+			where: { id: conversation.id },
+			data: { lastMessageId: messageFromRecipient.id },
 		})
 	}
 	console.timeEnd(`✉️ Created two-sided messages for Kody...`)
+
+	// Seed group messages
+	console.time(`✉️ Creating group messages...`)
+	const groupMessageCount = 5 // Number of group messages per group
+	for (const groupConversation of [familyConversation, friendsConversation]) {
+		for (let i = 0; i < groupMessageCount; i++) {
+			const senderId = userIds[faker.number.int({ min: 0, max: userIds.length - 1 })] // Randomly select a sender
+
+			// Create a message in the group conversation
+			const message = await prisma.message.create({
+				data: {
+					senderId: senderId,
+					groupId: groupConversation.groupId,
+					content: faker.lorem.sentence(),
+					conversationId: groupConversation.id,
+				},
+			})
+
+			// Update the conversation's lastMessageId
+			await prisma.conversation.update({
+				where: { id: groupConversation.id },
+				data: { lastMessageId: message.id },
+			})
+		}
+	}
+	console.timeEnd(`✉️ Created group messages...`)
 
 	console.timeEnd(`🌱 Database has been seeded`)
 }

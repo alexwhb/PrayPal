@@ -27,8 +27,12 @@ model User {
   requests    Request[]
 
   messagesSent     Message[]         @relation("Sender")
-  messagesReceived Message[]         @relation("RecipientUser") // Updated to match the new relation name
-  groups           GroupMembership[]
+  messagesReceived Message[]         @relation("RecipientUser")
+  conversations    Conversation[]    @relation("ConversationParticipants") // Added this
+  groupMemberships GroupMembership[]
+  Conversation     Conversation?     @relation(fields: [conversationId], references: [id])
+  conversationId   String?
+  MessageSeen      MessageSeen[]
 }
 
 model UserImage {
@@ -186,29 +190,54 @@ enum ContentStatus {
   REMOVED
 }
 
+model Conversation {
+  id            String    @id @default(cuid())
+  participants  User[]    @relation("ConversationParticipants")
+  lastMessageId String?   @unique
+  lastMessage   Message?  @relation("ConversationLastMessage", fields: [lastMessageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  messages      Message[] @relation("MessageConversation")
+  groupId       String?
+  group         Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  User          User[]
+
+  @@index([lastMessageId])
+  @@index([groupId])
+}
+
 model Message {
-  id          String   @id @default(cuid())
-  sender      User     @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  senderId    String
-  recipient   User?    @relation("RecipientUser", fields: [recipientId], references: [id], onDelete: Cascade, onUpdate: Cascade) // Optional for group messages
-  recipientId String? // Optional for group messages
-  groupId     String? // Optional for group messages
-  group       Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade) // Relation to Group
-  content     String
-  seen        Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                      String        @id @default(cuid())
+  sender                  User          @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  senderId                String
+  recipient               User?         @relation("RecipientUser", fields: [recipientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  recipientId             String?
+  groupId                 String?
+  group                   Group?        @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  content                 String
+  seen                    Boolean       @default(false)
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  conversation            Conversation? @relation("MessageConversation", fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  conversationId          String?
+  lastMessageConversation Conversation? @relation("ConversationLastMessage")
+  messageSeen             MessageSeen[]
 
   @@index([senderId])
   @@index([recipientId])
-  @@index([groupId]) // Index for groupId to improve query performance
+  @@index([groupId])
+  @@index([conversationId])
+  @@index([createdAt])
 }
 
-model Group {
-  id       String            @id @default(cuid())
-  name     String
-  members  GroupMembership[]
-  messages Message[]
+model MessageSeen {
+  messageId String
+  userId    String
+  seenAt    DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@id([messageId, userId])
 }
 
 model GroupMembership {
@@ -221,4 +250,14 @@ model GroupMembership {
   @@id([userId, groupId])
   @@index([groupId])
   @@index([userId])
+}
+
+model Group {
+  id            String            @id @default(cuid())
+  name          String
+  members       GroupMembership[]
+  messages      Message[]
+  conversations Conversation[]
+
+  @@index([name])
 }
