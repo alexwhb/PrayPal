@@ -40,6 +40,9 @@ import { type Theme, getTheme } from './utils/theme.server.ts'
 import { makeTimings, time } from './utils/timing.server.ts'
 import { getToast } from './utils/toast.server.ts'
 import { useOptionalUser } from './utils/user.ts'
+import { useEffect, useState } from 'react'
+import { connect, SocketContext } from '#app/utils/socket'
+import { Socket } from 'socket.io-client'
 
 export const links: Route.LinksFunction = () => {
 	return [
@@ -192,7 +195,37 @@ function App() {
 	const matches = useMatches()
 	const isOnSearchPage = matches.find((m) => m.id === 'routes/users+/index')
 	const searchBar = isOnSearchPage ? null : <SearchBar status="idle" />
-	useToast(data.toast)
+	const [socket, setSocket] = useState<Socket | undefined>(undefined)
+
+	useEffect(() => {
+		// Only create a socket if we have a user and don't already have a socket
+		if (user?.id && !socket) {
+			console.log("Creating new socket connection for user:", user.id)
+			const newSocket = connect()
+			
+			// Set up connection handler
+			newSocket.on("connect", () => {
+				console.log("Socket connected, setting user ID:", user.id)
+				newSocket.emit("set-user-id", user.id)
+				setSocket(newSocket)
+			})
+
+			// Clean up function
+			return () => {
+				console.log("Cleaning up socket connection")
+				if (newSocket.connected) {
+					newSocket.disconnect()
+				}
+			}
+		}
+
+		// If we have no user, but we have a socket, disconnect it
+		if (!user?.id && socket) {
+			console.log("No user found, disconnecting socket")
+			socket.disconnect()
+			setSocket(undefined)
+		}
+	}, [user?.id]) // Only depend on user.id, not the socket state
 
 	return (
 		<>
@@ -217,7 +250,9 @@ function App() {
 				</header>
 
 				<div className="flex-1">
+					<SocketProvider socket={socket}>
 					<Outlet />
+					</SocketProvider>
 				</div>
 
 				<div className="container flex justify-end pb-5">
@@ -228,6 +263,11 @@ function App() {
 			<EpicProgress />
 		</>
 	)
+}
+
+// provide our Socket.io instance to children views.
+function SocketProvider({ socket, children }: { socket: Socket | undefined; children: React.ReactNode }) {
+	return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
 }
 
 function Logo() {

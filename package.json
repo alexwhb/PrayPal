@@ -128,6 +128,8 @@
     "slate-history": "^0.110.3",
     "slate-html-serializer": "^0.8.13",
     "slate-react": "^0.112.1",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "sonner": "^1.7.4",
     "source-map-support": "^0.5.21",
     "spin-delay": "^2.0.1",

@@ -59,3 +59,6 @@ script_checks = [ ]
     method = "GET"
     timeout = "5s"
     path = "/litefs/health"
+
+[http_service.handlers]
+    ws = true # Enable WebSocket support
