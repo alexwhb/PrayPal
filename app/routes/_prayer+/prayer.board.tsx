@@ -7,8 +7,17 @@ import { prisma } from '#app/utils/db.server.ts'
 import { userHasRole } from '#app/utils/user.ts'
 import { type Route } from './+types/prayer.board.ts'
 
-export async function loader({ request }: Route.LoaderArgs) {
-	const userId = await requireUserId(request)
+export async function loader({ request }: LoaderFunctionArgs) {
+	const userId = await requireUserId(request).catch(() => null)
+	const user = userId ? await prisma.user.findUnique({
+		where: { id: userId },
+		include: { roles: true },
+	}) : null
+
+	const canModerate = user?.roles.some(role => 
+		['admin', 'moderator'].includes(role.name)
+	) ?? false
+
 	const url = new URL(request.url)
 
 	const boardData = await loadBoardData(
@@ -27,10 +36,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 		}
 	)
 
-	return {
-		...boardData,
-		prayers: boardData.items
-	}
+	return data({
+		prayers: boardData.items,
+		canModerate,
+		...boardData
+	})
 }
 
 export async function action({ request }: Route.ActionArgs) {

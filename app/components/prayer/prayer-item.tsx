@@ -5,13 +5,14 @@ import  { type Prayer } from './type.ts'
 interface PrayerItemProps {
 	prayer: Prayer
 	isCurrentUser: boolean
+	canModerate?: boolean
 	actionData: any
 }
 
-export default function PrayerItem({ prayer, isCurrentUser, actionData }: PrayerItemProps) {
+export default function PrayerItem({ prayer, isCurrentUser, actionData, canModerate }: PrayerItemProps) {
 	return isCurrentUser ? (
 		<UserPrayerItem prayer={prayer} actionData={actionData} />
 	) : (
-		<OtherPrayerItem prayer={prayer} />
+		<OtherPrayerItem prayer={prayer} canModerate={canModerate} />
 	)
 }

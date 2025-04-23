@@ -1,9 +1,11 @@
 import {
 	CalendarDays,
 	CheckCircle2,
-	HandIcon as PrayingHands,
+	HandIcon as PrayingHands, Trash 
 } from 'lucide-react'
+import { useState } from 'react'
 import { Form, Link } from 'react-router'
+import { DeleteDialog } from '#app/components/shared/delete-dialog.tsx'
 import {
 	Avatar,
 	AvatarFallback,
@@ -30,7 +32,9 @@ import { type Prayer } from './type.ts'
 
 // This is for users that are not me.
 
-export default function OtherPrayerItem({ prayer }: { prayer: Prayer }) {
+export default function OtherPrayerItem({ prayer, canModerate }: { prayer: Prayer, canModerate?: boolean }) {
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+
 	return (
 		<Card className={prayer.answered ? 'opacity-75' : ''}>
 			<CardHeader className="pb-2">
@@ -76,7 +80,7 @@ export default function OtherPrayerItem({ prayer }: { prayer: Prayer }) {
 					</div>
 				)}
 			</CardContent>
-			<CardFooter>
+			<CardFooter className="flex justify-between">
 				<Form method="post">
 					<input type="hidden" name="prayerId" value={prayer.id} />
 					<input type="hidden" name="_action" value="togglePraying" />
@@ -125,6 +129,29 @@ export default function OtherPrayerItem({ prayer }: { prayer: Prayer }) {
 						</TooltipProvider>
 					</div>
 				</Form>
+
+				{canModerate && (
+					<>
+						<Button
+							variant="destructive"
+							size="sm"
+							onClick={() => setIsDeleteDialogOpen(true)}
+						>
+							<Trash className="h-4 w-4 mr-2" />
+							Moderate
+						</Button>
+						<DeleteDialog
+							open={isDeleteDialogOpen}
+							onOpenChange={setIsDeleteDialogOpen}
+							additionalFormData={{
+								prayerId: prayer.id,
+								_action: 'delete',
+								moderatorAction: '1'
+							}}
+							isModerator={true}
+						/>
+					</>
+				)}
 			</CardFooter>
 		</Card>
 	)

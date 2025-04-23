@@ -22,6 +22,7 @@ export default function PrayerBoard({
 		prayers,
 		filters,
 		activeFilter,
+		canModerate, 
 		userId: currentUserId,
 		hasNextPage,
 	} = loaderData
@@ -43,6 +44,7 @@ export default function PrayerBoard({
 							key={prayer.id}
 							prayer={prayer}
 							actionData={actionData}
+							canModerate={canModerate}
 							isCurrentUser={prayer.user.id === currentUserId} // In a real app, check if the current user is the author
 						/>
 					))
