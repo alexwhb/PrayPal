@@ -2,70 +2,25 @@ import { useCallback } from 'react'
 import { data, redirect, useSearchParams } from 'react-router'
 import NeedsBoard from '#app/components/needs/needs-board.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
+import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { type Route } from './+types/needs.board.ts'
-
-const PAGE_SIZE = 30
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
 	const url = new URL(request.url)
 
-	// Extract query parameters.
-	const sort = url.searchParams.get('sort') === 'asc' ? 'asc' : 'desc'
-	const page = parseInt(url.searchParams.get('page') || '1', 10)
-	const filterParam = url.searchParams.get('filter')
-	const activeFilter = filterParam && filterParam !== 'All' ? filterParam : null
-
-	// Build the where clause dynamically
-	const where = {
-		type: 'NEED',
-		status: 'ACTIVE',
-		fulfilled: false, // Only include unfulfilled needs, wo we don't have a bunch of noise on the board.
-	} as any
-
-	// Only add category filter if activeFilter is not null and not "All"
-	if (activeFilter) {
-		where.category = {
-			name: activeFilter,
+	const boardData = await loadBoardData(
+		{ url, userId },
+		{ 
+			type: 'NEED',
+			includeFullfilled: false 
 		}
-	}
+	)
 
-	const [needs, totalPrayers] = await prisma.$transaction([
-		prisma.request.findMany({
-			where,
-			select: {
-				id: true,
-				user: { select: { id: true, name: true, image: true, username: true } },
-				category: { select: { name: true } },
-				description: true,
-				createdAt: true,
-				fulfilled: true,
-				response: true,
-			},
-			orderBy: { createdAt: sort },
-			skip: (page - 1) * PAGE_SIZE,
-			take: PAGE_SIZE,
-		}),
-		prisma.request.count({ where }),
-	])
-
-	const hasNextPage = totalPrayers > page * PAGE_SIZE
-
-	let filters = await prisma.category.findMany({
-		where: { type: 'NEED', active: true },
-		select: { name: true },
-	})
-
-	filters = [{ name: 'All' }, ...filters]
-
-	// Return "All" as activeFilter when it's null
 	return {
-		needs,
-		filters,
-		activeFilter: activeFilter || 'All',
-		userId,
-		hasNextPage,
+		...boardData,
+		needs: boardData.items
 	}
 }
 

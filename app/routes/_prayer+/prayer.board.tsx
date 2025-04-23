@@ -2,83 +2,32 @@ import { useCallback } from 'react'
 import { data, useSearchParams } from 'react-router'
 import PrayerBoard from '#app/components/prayer/prayer-board.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
+import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { type Route } from './+types/prayer.board.ts'
-
-const PAGE_SIZE = 30
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
 	const url = new URL(request.url)
 
-	// Extract query parameters.
-	const sort = url.searchParams.get('sort') === 'asc' ? 'asc' : 'desc'
-	const page = parseInt(url.searchParams.get('page') || '1', 10)
-	const filterParam = url.searchParams.get('filter')
-	const activeFilter = filterParam && filterParam !== 'All' ? filterParam : null
-
-	// Build the where clause dynamically
-	const where = {
-		type: 'PRAYER',
-		status: 'ACTIVE',
-	} as any
-
-	// Only add category filter if activeFilter is not null and not "All"
-	if (activeFilter) {
-		where.category = {
-			name: activeFilter,
+	const boardData = await loadBoardData(
+		{ url, userId },
+		{ 
+			type: 'PRAYER',
+			transformResponse: (items) => items.map(data => ({
+				answered: data.fulfilled,
+				answeredMessage: data.response?.message ?? null,
+				prayerCount: data.response?.prayerCount ?? 0,
+				hasPrayed: data.response?.prayedBy?.includes(userId) ?? false,
+				lastUpdatedAt: data.response?.lastUpdatedAt ?? null,
+				...data,
+			}))
 		}
-	}
+	)
 
-	const [prayerData, totalPrayers] = await prisma.$transaction([
-		prisma.request.findMany({
-			where,
-			select: {
-				id: true,
-				user: { select: { id: true, name: true, image: true, username: true } },
-				category: { select: { name: true } },
-				description: true,
-				createdAt: true,
-				fulfilled: true,
-				response: true,
-			},
-			orderBy: { createdAt: sort },
-			skip: (page - 1) * PAGE_SIZE,
-			take: PAGE_SIZE,
-		}),
-		prisma.request.count({ where }),
-	])
-
-	const hasNextPage = totalPrayers > page * PAGE_SIZE
-
-	let filters = await prisma.category.findMany({
-		where: { type: 'PRAYER', active: true },
-		select: { name: true },
-	})
-
-	filters = [{ name: 'All' }, ...filters]
-
-	const prayers = prayerData.map((data) => ({
-		answered: data.fulfilled,
-		answeredMessage:
-			data.response &&
-			typeof data.response === 'object' &&
-			'message' in data.response
-				? data.response.message
-				: ('' as string | null),
-		prayerCount: data.response?.prayerCount ?? 0,
-		hasPrayed: data.response?.prayedBy?.includes(userId) ?? false,
-		lastUpdatedAt: data.response?.lastUpdatedAt ?? null,
-		...data,
-	}))
-
-	// Return "All" as activeFilter when it's null
 	return {
-		prayers,
-		filters,
-		activeFilter: activeFilter || 'All',
-		userId,
-		hasNextPage,
+		...boardData,
+		prayers: boardData.items
 	}
 }
 
@@ -126,7 +75,6 @@ export async function action({ request }: Route.ActionArgs) {
 		await prisma.request.delete({ where: { id: prayerId as string } })
 		return data({ success: true })
 	} else if (action === 'markAsAnswered') {
-		// TODO update this.
 
 		await prisma.request.update({
 			where: { id: prayerId as string },
