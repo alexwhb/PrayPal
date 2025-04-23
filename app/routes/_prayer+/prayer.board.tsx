@@ -4,6 +4,7 @@ import PrayerBoard from '#app/components/prayer/prayer-board.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
+import { userHasRole } from '#app/utils/user.ts'
 import { type Route } from './+types/prayer.board.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -14,12 +15,13 @@ export async function loader({ request }: Route.LoaderArgs) {
 		{ url, userId },
 		{ 
 			type: 'PRAYER',
-			transformResponse: (items) => items.map(data => ({
+			transformResponse: (items, user) => items.map(data => ({
 				answered: data.fulfilled,
 				answeredMessage: data.response?.message ?? null,
 				prayerCount: data.response?.prayerCount ?? 0,
 				hasPrayed: data.response?.prayedBy?.includes(userId) ?? false,
 				lastUpdatedAt: data.response?.lastUpdatedAt ?? null,
+				canModerate: userHasRole(user, 'admin') || userHasRole(user, 'moderator'),
 				...data,
 			}))
 		}
@@ -71,7 +73,20 @@ export async function action({ request }: Route.ActionArgs) {
 
 		return data({ success: true })
 	} else if (action === 'delete') {
-		// Handle delete prayer action
+		const moderatorAction = formData.get('moderatorAction') === '1'
+		
+		if (moderatorAction) {
+			await prisma.moderationLog.create({
+				data: {
+					moderatorId: userId,
+					itemId: prayerId as string,
+					itemType: 'PRAYER',
+					action: 'DELETE',
+					reason: formData.get('reason') as string || 'Moderation action'
+				}
+			})
+		}
+
 		await prisma.request.delete({ where: { id: prayerId as string } })
 		return data({ success: true })
 	} else if (action === 'markAsAnswered') {

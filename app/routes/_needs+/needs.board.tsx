@@ -15,7 +15,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 		{ url, userId },
 		{ 
 			type: 'NEED',
-			includeFullfilled: false 
+			includeFulfilled: false,
+			transformResponse: (items, user: { roles: Array<{ name: string }> }) => items.map(data => ({
+				...data,
+				canModerate: user.roles.some(role => ['admin', 'moderator'].includes(role.name)),
+			}))
 		}
 	)
 
@@ -32,7 +36,20 @@ export async function action({ request }: Route.ActionArgs) {
 	const action = formData.get('_action')
 
 	if (action === 'delete') {
-		// Handle delete prayer action
+		const moderatorAction = formData.get('moderatorAction') === '1'
+		
+		if (moderatorAction) {
+			await prisma.moderationLog.create({
+				data: {
+					moderatorId: userId,
+					itemId: needId as string,
+					itemType: 'NEED',
+					action: 'DELETE',
+					reason: formData.get('reason') as string || 'Moderation action'
+				}
+			})
+		}
+
 		await prisma.request.delete({ where: { id: needId as string } })
 		return data({ success: true })
 	} else if (action === 'markFulfilled') {

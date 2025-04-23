@@ -1,11 +1,12 @@
 import { PAGE_SIZE } from '#app/utils/consts.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { type RequestType } from '#app/utils/types.ts'
+import { userHasRole } from '#app/utils/user.ts'
 
 type BoardLoaderOptions = {
   type: RequestType
   includeFullfilled?: boolean
-  transformResponse?: (data: any[]) => any[]
+  transformResponse?: (data: any[], user: { roles: Array<{ name: string }> }) => any[]
 }
 
 type BoardQueryParams = {
@@ -14,6 +15,21 @@ type BoardQueryParams = {
 }
 
 export async function loadBoardData({ url, userId }: BoardQueryParams, options: BoardLoaderOptions) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      roles: {
+        select: {
+          name: true,
+          permissions: true
+        }
+      }
+    }
+  })
+
+  if (!user) throw new Error('User not found')
+
   // Extract query parameters
   const sort = url.searchParams.get('sort') === 'asc' ? 'asc' : 'desc'
   const page = parseInt(url.searchParams.get('page') || '1', 10)
@@ -64,7 +80,9 @@ export async function loadBoardData({ url, userId }: BoardQueryParams, options: 
 
   filters = [{ name: 'All' }, ...filters]
 
-  const transformedItems = options.transformResponse ? options.transformResponse(items) : items
+  const transformedItems = options.transformResponse 
+    ? options.transformResponse(items, user)
+    : items
 
   return {
     items: transformedItems,
@@ -72,5 +90,6 @@ export async function loadBoardData({ url, userId }: BoardQueryParams, options: 
     activeFilter: activeFilter || 'All',
     userId,
     hasNextPage,
+    user // Return the user object instead of just roles
   }
 }

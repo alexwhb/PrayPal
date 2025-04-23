@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2 } from 'lucide-react'
+import { CalendarDays, CheckCircle2, Trash } from 'lucide-react'
 import { useState } from 'react'
 import { Form, Link } from 'react-router'
 import DeleteDialog from '#app/components/delete-dialog.tsx'
@@ -17,7 +17,7 @@ import { getUserImgSrc } from '#app/utils/misc.tsx'
 
 function OwnerActions({ need }: { need: Need }) {
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-	
+
 	return (
 		<>
 			<Form method="post">
@@ -57,6 +57,8 @@ export function NeedItem({
 	need: Need
 	isCurrentUser: boolean
 }) {
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+
 	return (
 		<Card className={need.fulfilled ? 'opacity-75' : ''}>
 			<CardHeader className="pb-2">
@@ -100,6 +102,25 @@ export function NeedItem({
 				) : (
 					<ContactAction needId={need.id} />
 				)}
+				{(isCurrentUser || need.canModerate) && (
+					<Button
+						variant="destructive"
+						size="sm"
+						onClick={() => setIsDeleteDialogOpen(true)}
+					>
+						<Trash className="h-4 w-4" />
+						{need.canModerate && !isCurrentUser ? 'Moderate' : 'Delete'}
+					</Button>
+				)}
+				<DeleteDialog
+					open={isDeleteDialogOpen}
+					onOpenChange={setIsDeleteDialogOpen}
+					displayTriggerButton={false}
+					additionalFormData={{
+						needId: need.id,
+						moderatorAction: (!isCurrentUser && need.canModerate) ? '1' : '0'
+					}}
+				/>
 			</CardFooter>
 		</Card>
 	)

@@ -26,13 +26,14 @@ model User {
   connections Connection[]
   requests    Request[]
 
-  messagesSent     Message[]         @relation("Sender")
-  messagesReceived Message[]         @relation("RecipientUser")
-  conversations    Conversation[]    @relation("ConversationParticipants") // Added this
-  groupMemberships GroupMembership[]
-  Conversation     Conversation?     @relation(fields: [conversationId], references: [id])
-  conversationId   String?
-  MessageSeen      MessageSeen[]
+  messagesSent      Message[]         @relation("Sender")
+  messagesReceived  Message[]         @relation("RecipientUser")
+  conversations     Conversation[]    @relation("ConversationParticipants") // Added this
+  groupMemberships  GroupMembership[]
+  Conversation      Conversation?     @relation(fields: [conversationId], references: [id])
+  conversationId    String?
+  MessageSeen       MessageSeen[]
+  moderationActions ModerationLog[]
 }
 
 model UserImage {
@@ -260,4 +261,33 @@ model Group {
   conversations Conversation[]
 
   @@index([name])
+}
+
+enum ModerationType {
+  NEED
+  PRAYER
+  MESSAGE
+}
+
+enum ModeratorAction {
+  DELETE
+  FLAG
+  HIDE
+  RESTORE
+}
+
+model ModerationLog {
+  id        String          @id @default(cuid())
+  itemId    String // ID of the moderated item
+  itemType  ModerationType
+  action    ModeratorAction
+  reason    String?
+  createdAt DateTime        @default(now())
+
+  moderator   User   @relation(fields: [moderatorId], references: [id])
+  moderatorId String
+
+  @@index([itemId])
+  @@index([moderatorId])
+  @@index([createdAt])
 }
