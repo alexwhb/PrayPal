@@ -1,10 +1,10 @@
 import { invariantResponse } from '@epic-web/invariant'
-import { Trash } from 'lucide-react'
+import { MessageCircle, Trash } from 'lucide-react'
 import { useState } from 'react'
 import {
 	Form,
 	Link,
-	type LoaderFunctionArgs,
+	type LoaderFunctionArgs, redirect,
 	useLoaderData,
 } from 'react-router'
 
@@ -19,6 +19,7 @@ import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { useOptionalUser } from '#app/utils/user.ts'
 import { type Route } from './+types/$username.ts'
+import { createOrGetConversation } from '#app/utils/messaging.server.ts'
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
 	const user = await prisma.user.findFirst({
@@ -60,6 +61,17 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 export async function action({ request }: Route.ActionArgs) {
 	const formData = await request.formData()
 	const userId = await requireUserId(request)
+
+	if (formData.get('_action') === 'startConversation') {
+		const participantId = formData.get('participantId') as string
+		const { conversation } = await createOrGetConversation({
+			initiatorId: userId,
+			participantIds: [participantId],
+			checkExisting: true,
+		})
+
+		return redirect(`/messages/${conversation.id}`)
+	}
 
 	if (formData.get('_action') === 'deleteUser') {
 		const targetUserId = formData.get('userId') as string
@@ -155,11 +167,16 @@ export default function ProfileRoute() {
 							</>
 						) : (
 							<>
-								<Button asChild>
-									<Link to="notes" prefetch="intent">
-										{userDisplayName}'s notes
-									</Link>
-								</Button>
+								{loggedInUser && !isLoggedInUser && (
+									<Form method="POST">
+										<input type="hidden" name="_action" value="startConversation" />
+										<input type="hidden" name="participantId" value={user.id} />
+										<Button type="submit" variant="secondary">
+											<MessageCircle />
+											Message
+										</Button>
+									</Form>
+								)}
 
 								{data.canModerate && (
 									<>
@@ -169,7 +186,6 @@ export default function ProfileRoute() {
 										>
 											<Trash /> Delete User
 										</Button>
-
 										<DeleteDialog
 											open={isDeleteDialogOpen}
 											onOpenChange={setIsDeleteDialogOpen}
@@ -190,6 +206,7 @@ export default function ProfileRoute() {
 	)
 }
 
+
 export const meta: Route.MetaFunction = ({ data, params }) => {
 	const displayName = data?.user.name ?? params.username
 	return [
@@ -200,6 +217,7 @@ export const meta: Route.MetaFunction = ({ data, params }) => {
 		},
 	]
 }
+
 
 export function ErrorBoundary() {
 	return (
