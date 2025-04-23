@@ -9,8 +9,10 @@ import { prisma } from '#app/utils/db.server.ts'
 import { useSocket } from '#app/utils/socket.tsx'
 import { type Route } from './+types/messages.ts'
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, params}: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
+
+	const activeConversationId: string | null = params.conversationId || null
 
 	const conversations = await prisma.conversation.findMany({
 		where: {
@@ -67,11 +69,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 		}
 	})
 
-	return { conversations: formattedConversations, userId }
+	return { conversations: formattedConversations, userId, activeConversationId }
 }
 
 export default function MessagesPage() {
-	const { conversations, userId } = useLoaderData<typeof loader>()
+	const { conversations, userId, activeConversationId } = useLoaderData<typeof loader>()
 	const socket = useSocket()
 	const isMobile = useMediaQuery('(max-width: 768px)')
 	const revalidator = useRevalidator()
@@ -101,7 +103,7 @@ export default function MessagesPage() {
 				<div className="flex h-[calc(80vh-8rem)]">
 					{!isMobile && (
 						<div className={`${isMobile ? 'w-full' : 'w-1/3 border-r'}`}>
-							<ConversationList conversations={conversations} />
+							<ConversationList conversations={conversations} activeConversationId={activeConversationId} />
 						</div>
 					)}
 					{!isMobile && (

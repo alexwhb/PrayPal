@@ -4,6 +4,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { Send } from 'lucide-react'
 import { useRef, useEffect, useState } from 'react'
 import { data, useFetcher, useRevalidator } from 'react-router'
+import io from 'socket.io-client'
 import { z } from 'zod'
 import { TextareaField } from '#app/components/forms.tsx'
 import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.tsx'
@@ -13,9 +14,6 @@ import { prisma } from '#app/utils/db.server.ts'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { useSocket } from '#app/utils/socket.tsx'
 import { type Route } from './+types/messages.$conversationId.ts'
-import { emitNewMessage } from '../../../server/index.js'
-import { global } from '@juggle/resize-observer/lib/utils/global'
-import io from 'socket.io-client'
 
 export async function loader({ request, params }: Route.LoaderArgs) {
 	const conversationId = params.conversationId
@@ -139,11 +137,30 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function ConversationPage({loaderData, actionData}: Route.ComponentProps) {
 	const { messages, name, image, userId, conversationId, conversation } = loaderData
-	const fetcher = useFetcher()
+	const formRef = useRef<HTMLFormElement>(null)
+	const fetcher = useFetcher<typeof action>()
 	const socket = useSocket()
 	const messagesEndRef = useRef(null)
 	const revalidator = useRevalidator()
 	const [hasMarkedSeen, setHasMarkedSeen] = useState(false)
+	const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+	const [form, fields] = useForm({
+		id: 'message-form',
+		constraint: getZodConstraint(MessageSchema),
+		onValidate({ formData }) {
+			return parseWithZod(formData, { schema: MessageSchema })
+		},
+		defaultValue: { message: '', conversationId },
+	})
+
+	useEffect(function resetFormOnSuccess() {
+		if (fetcher.state === "idle" && fetcher.data?.success) {
+			formRef.current?.reset()
+			// Maintain focus after form reset
+			textareaRef.current?.focus()
+		}
+	}, [fetcher.state, fetcher.data])
 
 	useEffect(() => {
 		if (!hasMarkedSeen && fetcher.state === 'idle' && !fetcher.data) {
@@ -187,15 +204,6 @@ export default function ConversationPage({loaderData, actionData}: Route.Compone
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
 	}, [messages])
 
-	const [form, fields] = useForm({
-		id: 'message-form',
-		constraint: getZodConstraint(MessageSchema),
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema: MessageSchema })
-		},
-		defaultValue: { message: '', conversationId },
-	})
-
 	const getGroupAvatars = () => {
 		const otherParticipants = conversation.participants
 			.filter(p => p.id !== userId)
@@ -230,6 +238,13 @@ export default function ConversationPage({loaderData, actionData}: Route.Compone
 		);
 	};
 
+	const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+		if (event.key === 'Enter' && !event.shiftKey) {
+			event.preventDefault()
+			formRef.current?.requestSubmit()
+		}
+	}
+
 	return (
 		<div className="flex h-full flex-col">
 			<div className="flex items-center gap-3 border-b p-4">
@@ -260,7 +275,7 @@ export default function ConversationPage({loaderData, actionData}: Route.Compone
 								message.sender.id === userId ? 'bg-primary text-primary-foreground' : 'bg-muted'
 							}`}
 						>
-							<p className="text-sm">{message.content}</p>
+							<p className="text-sm whitespace-pre-wrap">{message.content}</p>
 							<p className="mt-1 text-xs opacity-70">
 								{formatDistanceToNow(message.createdAt, { addSuffix: true })}
 							</p>
@@ -271,7 +286,12 @@ export default function ConversationPage({loaderData, actionData}: Route.Compone
 			</div>
 
 			<div className="border-t p-4">
-				<fetcher.Form method="POST" {...getFormProps(form)} className="flex items-center gap-2">
+				<fetcher.Form 
+					ref={formRef}
+					method="POST" 
+					{...getFormProps(form)} 
+					className="flex items-center gap-2"
+				>
 					<input type="hidden" name="conversationId" value={conversationId} />
 					<TextareaField
 						labelProps={{ htmlFor: 'message' }}
@@ -280,6 +300,8 @@ export default function ConversationPage({loaderData, actionData}: Route.Compone
 							maxLength: 1000,
 							rows: 1,
 							className: "flex-1 resize-none overflow-hidden",
+							onKeyDown: handleKeyDown,
+							ref: textareaRef,  // Add ref to maintain focus
 						}}
 						errors={fields?.message?.errors}
 						className="flex-1"
