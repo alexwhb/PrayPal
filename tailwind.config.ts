@@ -72,6 +72,9 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))',
 				},
 			},
+			whitespace: {
+				'pre-wrap': 'pre-wrap',
+			},
 		},
 	},
 	presets: [marketingPreset],
