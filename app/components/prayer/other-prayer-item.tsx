@@ -1,4 +1,8 @@
-import { CalendarDays, CheckCircle2, HandIcon as PrayingHands } from 'lucide-react'
+import {
+	CalendarDays,
+	CheckCircle2,
+	HandIcon as PrayingHands,
+} from 'lucide-react'
 import { Form, Link } from 'react-router'
 import {
 	Avatar,
@@ -44,7 +48,9 @@ export default function OtherPrayerItem({ prayer }: { prayer: Prayer }) {
 							</Avatar>
 						</Link>
 						<div>
-							<h3 className="font-medium">{prayer.user.username}</h3>
+							<Link to={`/users/${prayer.user.username}`} prefetch="intent">
+								<h3 className="font-medium">{prayer.user.username}</h3>
+							</Link>
 							<div className="flex items-center text-sm text-muted-foreground">
 								<CalendarDays className="mr-1 h-3 w-3" />
 								{formatDate(prayer.createdAt)}
@@ -60,21 +66,21 @@ export default function OtherPrayerItem({ prayer }: { prayer: Prayer }) {
 				<p className="text-sm">{prayer.description}</p>
 
 				{prayer.answered && prayer.answeredMessage && (
-					<div className="mt-4 rounded-md border border-green-100 bg-green-50  dark:border-green-100/20 dark:bg-green-200/10  p-3">
+					<div className="mt-4 rounded-md border border-green-100 bg-green-50 p-3 dark:border-green-100/20 dark:bg-green-200/10">
 						<p className="mb-1 text-sm font-medium text-green-800 dark:text-green-200">
 							Prayer Answered:
 						</p>
-						<p className="text-sm dark:text-green-200 text-green-800">{prayer.answeredMessage}</p>
+						<p className="text-sm text-green-800 dark:text-green-200">
+							{prayer.answeredMessage}
+						</p>
 					</div>
 				)}
 			</CardContent>
 			<CardFooter>
-
-
-					<Form method="post">
-						<input type="hidden" name="prayerId" value={prayer.id} />
-						<input type="hidden" name="_action" value="togglePraying" />
-						<div className="flex items-center gap-4">
+				<Form method="post">
+					<input type="hidden" name="prayerId" value={prayer.id} />
+					<input type="hidden" name="_action" value="togglePraying" />
+					<div className="flex items-center gap-4">
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -106,22 +112,19 @@ export default function OtherPrayerItem({ prayer }: { prayer: Prayer }) {
 										: 'Click to pray'}
 								</TooltipContent>
 							</Tooltip>
-							{prayer.answered  && (
-									<Tooltip>
-										<TooltipTrigger asChild>
+							{prayer.answered && (
+								<Tooltip>
+									<TooltipTrigger asChild>
 										<span className="text-sm font-medium text-green-600">
 											<CheckCircle2 />
 										</span>
-										</TooltipTrigger>
-										<TooltipContent>
-											Prayer marked as answered
-										</TooltipContent>
-									</Tooltip>
+									</TooltipTrigger>
+									<TooltipContent>Prayer marked as answered</TooltipContent>
+								</Tooltip>
 							)}
 						</TooltipProvider>
-						</div>
-					</Form>
-
+					</div>
+				</Form>
 			</CardFooter>
 		</Card>
 	)

@@ -1,12 +1,13 @@
 
 import { X } from "lucide-react"
 import { useState } from "react"
-import { Form, redirect, useLoaderData, useSearchParams } from 'react-router'
+import { Form, useSearchParams } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from "#app/components/ui/avatar"
 import { Badge } from "#app/components/ui/badge"
 import { Button } from "#app/components/ui/button"
 import { requireUserId } from "#app/utils/auth.server"
 import { prisma } from "#app/utils/db.server"
+import { initiateConversation } from '#app/utils/messaging.server.ts'
 import { getUserImgSrc } from "#app/utils/misc"
 import  { type Route } from './+types/messages.new.ts'
 
@@ -29,30 +30,19 @@ export async function loader({ request } :Route.LoaderArgs) {
 	return { users }
 }
 
-export async function action({ request } : Route.ActionArgs) {
+export async function action({ request }: Route.ActionArgs) {
 	const userId = await requireUserId(request)
 	const formData = await request.formData()
-	const selectedUserIds = formData.getAll('participants')
+	const selectedUserIds = formData.getAll('participants') as string[]
 
-	if (selectedUserIds.length === 1) {
-		const existingConversation = await prisma.conversation.findFirst({
-			where: {
-				AND: [
-					{ participants: { every: { id: { in: [userId, selectedUserIds[0]] } } } },
-					{ group: null }
-				],
-			},
-		})
-		if (existingConversation) return redirect(`/messages/${existingConversation.id}`)
-	}
-
-	const conversation = await prisma.conversation.create({
-		data: {
-			participants: { connect: [userId, ...selectedUserIds].map(id => ({ id })) },
-		},
+	const isGroup = selectedUserIds.length > 1
+  
+	return initiateConversation({
+		initiatorId: userId,
+		participantIds: selectedUserIds,
+		groupData: isGroup ? { name: '' } : null, // You might want to add group name handling
+		checkExisting: !isGroup, // Only check existing for direct messages
 	})
-
-	return redirect(`/messages/${conversation.id}`)
 }
 
 type User = Awaited<ReturnType<typeof loader>>['users'][number]

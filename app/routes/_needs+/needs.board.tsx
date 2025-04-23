@@ -1,9 +1,10 @@
 import { useCallback } from 'react'
-import { data, redirect, useSearchParams } from 'react-router'
+import { data, useSearchParams } from 'react-router'
 import NeedsBoard from '#app/components/needs/needs-board.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
+import { initiateConversation } from '#app/utils/messaging.server.ts'
 import { type Route } from './+types/needs.board.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -43,7 +44,6 @@ export async function action({ request }: Route.ActionArgs) {
 		})
 		return data({ success: true })
 	} else if (action === 'contact') {
-		// First get the need to find its creator
 		const need = await prisma.request.findUnique({
 			where: { id: needId as string },
 			select: { userId: true },
@@ -51,33 +51,10 @@ export async function action({ request }: Route.ActionArgs) {
 
 		if (!need) return null
 
-		// Find existing conversation between these two users
-		const existingConversation = await prisma.conversation.findFirst({
-			where: {
-				AND: [
-					{ participants: { every: { id: { in: [userId, need.userId] } } } },
-					{ group: null },
-				],
-			},
+		return initiateConversation({
+			initiatorId: userId,
+			participantIds: [need.userId],
 		})
-
-		if (existingConversation) {
-			return redirect(`/messages/${existingConversation.id}`)
-		}
-
-		// Create new conversation between the two users
-		const conversation = await prisma.conversation.create({
-			data: {
-				participants: {
-					connect: [
-						{ id: userId }, // Current user
-						{ id: need.userId }, // Need creator
-					],
-				},
-			},
-		})
-
-		return redirect(`/messages/${conversation.id}`)
 	}
 }
 
