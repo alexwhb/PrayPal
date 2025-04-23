@@ -267,6 +267,7 @@ enum ModerationType {
   NEED
   PRAYER
   MESSAGE
+  USER
 }
 
 enum ModeratorAction {
