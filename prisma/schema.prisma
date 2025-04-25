@@ -28,12 +28,14 @@ model User {
 
   messagesSent      Message[]         @relation("Sender")
   messagesReceived  Message[]         @relation("RecipientUser")
-  conversations     Conversation[]    @relation("ConversationParticipants") // Added this
+  conversations     Conversation[]    @relation("ConversationParticipants")
   groupMemberships  GroupMembership[]
   Conversation      Conversation?     @relation(fields: [conversationId], references: [id])
   conversationId    String?
   MessageSeen       MessageSeen[]
   moderationActions ModerationLog[]
+  ownedItems        ShareItem[]       @relation("ShareItemOwner")
+  claimedItems      ShareItem[]       @relation("ClaimedItems")
 }
 
 model UserImage {
@@ -142,21 +144,36 @@ model Connection {
   @@unique([providerName, providerId])
 }
 
+enum CategoryType {
+  NEED
+  PRAYER
+  SHARE
+  // Add other category types as needed
+}
+
 model Category {
-  id       String      @id @default(cuid())
-  type     RequestType
-  name     String
-  active   Boolean     @default(true) // Indicates if the category is active as in visible to be used.
-  requests Request[]
+  id     String       @id @default(cuid())
+  type   CategoryType
+  name   String
+  active Boolean      @default(true)
+
+  // Relations
+  requests   Request[]
+  shareItems ShareItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([type, name])
+  @@index([type])
+  @@index([active])
 }
 
 model Request {
   id         String      @id @default(cuid())
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId     String
-  type       RequestType // Enum to distinguish between Need and Prayer
+  type       RequestType // Keep this as is for request-specific types
   category   Category    @relation(fields: [categoryId], references: [id])
   categoryId String
 
@@ -291,4 +308,42 @@ model ModerationLog {
   @@index([itemId])
   @@index([moderatorId])
   @@index([createdAt])
+}
+
+enum ShareType {
+  BORROW
+  GIVE
+}
+
+model ShareItem {
+  id          String @id @default(cuid())
+  title       String
+  description String
+  location    String
+
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+
+  claimed     Boolean   @default(false)
+  claimedAt   DateTime?
+  claimedBy   User?     @relation("ClaimedItems", fields: [claimedById], references: [id])
+  claimedById String?
+
+  shareType ShareType @default(BORROW)
+  duration  String? // Only applicable for BORROW type
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner  User   @relation("ShareItemOwner", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId String
+
+  status  ContentStatus @default(ACTIVE)
+  flagged Boolean       @default(false)
+
+  @@index([categoryId])
+  @@index([shareType])
+  @@index([userId])
+  @@index([claimedById])
+  @@index([status])
 }

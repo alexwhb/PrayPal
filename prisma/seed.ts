@@ -9,6 +9,7 @@ import {
 	img,
 } from '#tests/db-utils.ts'
 import { insertGitHubUser } from '#tests/mocks/github.ts'
+import { ShareType } from '@prisma/client'
 
 async function seed() {
 	console.log('🌱 Seeding...')
@@ -26,39 +27,55 @@ async function seed() {
 		],
 	})
 
-	// First, create categories for both PRAYER and NEED types
-	const prayerCategories = [
-		'Spiritual Growth',
-		'Health & Healing',
-		'Family & Relationships',
-		'Work & Career',
-		'Guidance & Direction',
-		'Emotional Support',
-		'Financial Breakthrough',
-		'Education',
-	]
-
-	const needCategories = [
-		'Food & Groceries',
-		'Housing & Shelter',
-		'Transportation',
-		'Medical & Healthcare',
-		'Education & Training',
-		'Clothing',
-		'Financial Assistance',
-		'Home Repairs',
-	]
+	// Categories for all types
+	const categories = {
+		prayer: [
+			'Spiritual Growth',
+			'Health & Healing',
+			'Family & Relationships',
+			'Work & Career',
+			'Guidance & Direction',
+			'Emotional Support',
+			'Financial Breakthrough',
+			'Education',
+		],
+		need: [
+			'Food & Groceries',
+			'Housing & Shelter',
+			'Transportation',
+			'Medical & Healthcare',
+			'Education & Training',
+			'Clothing',
+			'Financial Assistance',
+			'Home Repairs',
+		],
+		share: [
+			'Power Tools',
+			'Yard Equipment',
+			'Kitchen Appliances',
+			'Sports Equipment',
+			'Books',
+			'Electronics',
+			'Furniture',
+			'Other',
+		],
+	}
 
 	// Create all categories
 	await prisma.category.createMany({
 		data: [
-			...prayerCategories.map((name) => ({
+			...categories.prayer.map((name) => ({
 				type: 'PRAYER',
 				name,
 				active: true,
 			})),
-			...needCategories.map((name) => ({
+			...categories.need.map((name) => ({
 				type: 'NEED',
+				name,
+				active: true,
+			})),
+			...categories.share.map((name) => ({
+				type: 'SHARE',
 				name,
 				active: true,
 			})),
@@ -72,6 +89,10 @@ async function seed() {
 
 	const needCategoryRecords = await prisma.category.findMany({
 		where: { type: 'NEED', active: true },
+	})
+
+	const shareCategoryRecords = await prisma.category.findMany({
+		where: { type: 'SHARE', active: true },
 	})
 
 	// Update user creation to include requests
@@ -327,6 +348,40 @@ async function seed() {
 		}
 	}
 	console.timeEnd(`✉️ Created group messages...`)
+
+	// After creating users, add share items
+	console.time(`📦 Creating share items...`)
+	const shareItems = []
+	for (const userId of userIds) {
+		const itemCount = faker.number.int({ min: 1, max: 5 })
+		for (let i = 0; i < itemCount; i++) {
+			const shareType = faker.helpers.arrayElement(['BORROW', 'GIVE']) as ShareType
+			const claimed = faker.datatype.boolean()
+			const claimedById = claimed
+				? faker.helpers.arrayElement(userIds.filter((id) => id !== userId))
+				: null
+
+			shareItems.push({
+				title: faker.commerce.productName(),
+				description: faker.lorem.paragraph(),
+				location: faker.location.city(),
+				categoryId: faker.helpers.arrayElement(shareCategoryRecords).id,
+				claimed,
+				claimedAt: claimed ? faker.date.past() : null,
+				claimedById,
+				shareType,
+				duration: shareType === 'BORROW' ? faker.helpers.arrayElement(['1 week', '2 weeks', '1 month', 'Flexible']) : null,
+				userId,
+				status: faker.helpers.arrayElement(['ACTIVE', 'PENDING']),
+				flagged: faker.datatype.boolean(),
+			})
+		}
+	}
+
+	await prisma.shareItem.createMany({
+		data: shareItems,
+	})
+	console.timeEnd(`📦 Creating share items...`)
 
 	console.timeEnd(`🌱 Database has been seeded`)
 }
