@@ -230,19 +230,12 @@ function App() {
 
 	return (
 		<>
-			<LayoutMainApp>
-				{/*{user && <Header searchBar={searchBar} />}*/}
-
+			<LayoutMainApp theme={data.requestInfo.userPrefs.theme} user={user} >
 				<div className="flex-1">
 					<SocketProvider socket={socket}>
 						<Outlet />
 					</SocketProvider>
 				</div>
-
-				{/*TODO add this back in, but in the header */}
-				{/*<div className="container flex justify-end pb-5">*/}
-				{/*	<ThemeSwitch userPreference={data.requestInfo.userPrefs.theme} />*/}
-				{/*</div>*/}
 			</LayoutMainApp>
 			<Toaster closeButton position="top-center" theme={theme} />
 			<EpicProgress />

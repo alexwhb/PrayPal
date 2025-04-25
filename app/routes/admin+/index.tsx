@@ -10,6 +10,22 @@
 // just for a single small church body, that should be quite possible, and
 // would massively reduce the amount of spam that gets posted.
 
+
+import { logout, requireUserId } from '#app/utils/auth.server.ts'
+import  { type Route } from '../../../.react-router/types/app/routes/+types/me.ts'
+
+export async function loader({ request }: Route.LoaderArgs) {
+
+	// todo test if a user has admin permissions
+	const userId = await requireUserId(request)
+	
+
+// TODO this is how we should handle if you are not an admin. 	
+	await logout({ request, redirectTo: '/' })
+
+}
+
+
 export default function Index() {
 	return <main>Admin</main>
 }
