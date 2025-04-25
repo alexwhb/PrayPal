@@ -13,10 +13,31 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 	const boardData = await loadBoardData(
 		{ url, userId },
-		{ 
-			type: 'NEED',
-			includeFulfilled: false,
-			transformResponse: (items, user: { roles: Array<{ name: string }> }) => items.map(data => ({
+		{
+			model: prisma.request,
+			where: {
+				type: 'NEED',
+				status: 'ACTIVE',
+				fulfilled: false,
+			},
+			getCategoryWhere: () => ({ type: 'NEED', active: true }),
+			select: {
+				id: true,
+				user: {
+					select: {
+						id: true,
+						name: true,
+						image: true,
+						username: true
+					}
+				},
+				category: { select: { name: true } },
+				description: true,
+				createdAt: true,
+				fulfilled: true,
+				response: true,
+			},
+			transformResponse: (items, user) => items.map(data => ({
 				...data,
 				canModerate: user.roles.some(role => ['admin', 'moderator'].includes(role.name)),
 			}))
@@ -37,7 +58,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 	if (action === 'delete') {
 		const moderatorAction = formData.get('moderatorAction') === '1'
-		
+
 		if (moderatorAction) {
 			await prisma.moderationLog.create({
 				data: {

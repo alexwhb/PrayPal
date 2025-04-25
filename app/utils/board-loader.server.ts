@@ -1,12 +1,15 @@
 import { PAGE_SIZE } from '#app/utils/consts.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { type RequestType } from '#app/utils/types.ts'
-import { userHasRole } from '#app/utils/user.ts'
 
 type BoardLoaderOptions = {
   type: RequestType
   includeFullfilled?: boolean
   transformResponse?: (data: any[], user: { roles: Array<{ name: string }> }) => any[]
+  model: any // Prisma model
+  where: Record<string, any>
+  getCategoryWhere: () => { type: RequestType; active: boolean }
+  select?: Record<string, any> // Add select option
 }
 
 type BoardQueryParams = {
@@ -36,26 +39,20 @@ export async function loadBoardData({ url, userId }: BoardQueryParams, options: 
   const filterParam = url.searchParams.get('filter')
   const activeFilter = filterParam && filterParam !== 'All' ? filterParam : null
 
-  // Build the where clause dynamically
-  const where: any = {
-    type: options.type,
-    status: 'ACTIVE',
-  }
-
-  if (options.includeFullfilled === false) {
-    where.fulfilled = false
-  }
-
-  if (activeFilter) {
-    where.category = {
-      name: activeFilter,
-    }
+  // Build the where clause by combining the base where with filters
+  const where = {
+    ...options.where,
+    ...(activeFilter ? {
+      category: {
+        name: activeFilter,
+      },
+    } : {}),
   }
 
   const [items, total] = await prisma.$transaction([
-    prisma.request.findMany({
+    options.model.findMany({
       where,
-      select: {
+      select: options.select || {
         id: true,
         user: { select: { id: true, name: true, image: true, username: true } },
         category: { select: { name: true } },
@@ -68,16 +65,19 @@ export async function loadBoardData({ url, userId }: BoardQueryParams, options: 
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
-    prisma.request.count({ where }),
+    options.model.count({ where }),
   ])
 
   const hasNextPage = total > page * PAGE_SIZE
 
+  // Get categories using the provided getCategoryWhere function
   let filters = await prisma.category.findMany({
-    where: { type: options.type, active: true },
+    where: options.getCategoryWhere(),
     select: { name: true },
+    orderBy: { name: 'asc' }
   })
 
+  // Add "All" as the first filter option
   filters = [{ name: 'All' }, ...filters]
 
   const transformedItems = options.transformResponse 
@@ -90,6 +90,8 @@ export async function loadBoardData({ url, userId }: BoardQueryParams, options: 
     activeFilter: activeFilter || 'All',
     userId,
     hasNextPage,
-    user // Return the user object instead of just roles
+    user,
+    total,
+    page
   }
 }

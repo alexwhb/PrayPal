@@ -4,10 +4,9 @@ import PrayerBoard from '#app/components/prayer/prayer-board.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
-import { userHasRole } from '#app/utils/user.ts'
 import { type Route } from './+types/prayer.board.ts'
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request).catch(() => null)
 	const user = userId ? await prisma.user.findUnique({
 		where: { id: userId },
@@ -22,15 +21,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	const boardData = await loadBoardData(
 		{ url, userId },
-		{ 
-			type: 'PRAYER',
+		{
+			model: prisma.request,
+			where: {
+				type: 'PRAYER',
+				status: 'ACTIVE',
+			},
+			getCategoryWhere: () => ({ type: 'PRAYER', active: true }),
 			transformResponse: (items, user) => items.map(data => ({
 				answered: data.fulfilled,
 				answeredMessage: data.response?.message ?? null,
 				prayerCount: data.response?.prayerCount ?? 0,
 				hasPrayed: data.response?.prayedBy?.includes(userId) ?? false,
 				lastUpdatedAt: data.response?.lastUpdatedAt ?? null,
-				canModerate: userHasRole(user, 'admin') || userHasRole(user, 'moderator'),
+				canModerate: user.roles.some(role => ['admin', 'moderator'].includes(role.name)),
 				...data,
 			}))
 		}
