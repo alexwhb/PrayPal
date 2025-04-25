@@ -1,1 +1,1 @@
-export type RequestType = 'PRAYER' | 'NEED'
+export type RequestType = 'PRAYER' | 'NEED' | 'SHARE'
