@@ -1,6 +1,6 @@
 import { CalendarDays, Clock, Gift, MapPin, Share, Trash } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { data, Link, useSearchParams } from 'react-router'
+import { data, useSearchParams } from 'react-router'
 import BoardFooter from '#app/components/board/board-footer.tsx'
 import BoardHeader from '#app/components/board/board-header.tsx'
 import { DeleteDialog } from '#app/components/shared/delete-dialog.tsx'
