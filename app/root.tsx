@@ -17,8 +17,6 @@ import faviconAssetUrl from './assets/favicons/favicon.svg'
 import { GeneralErrorBoundary } from './components/error-boundary.tsx'
 import { EpicProgress } from './components/progress-bar.tsx'
 import { SearchBar } from './components/search-bar.tsx'
-import { useToast } from './components/toaster.tsx'
-import { Button } from './components/ui/button.tsx'
 import { href as iconsHref } from './components/ui/icon.tsx'
 import { Toaster } from './components/ui/sonner.tsx'
 import { UserDropdown } from './components/user-dropdown.tsx'
@@ -36,7 +34,7 @@ import { pipeHeaders } from './utils/headers.server.ts'
 import { honeypot } from './utils/honeypot.server.ts'
 import { combineHeaders, getDomainUrl } from './utils/misc.tsx'
 import { useNonce } from './utils/nonce-provider.ts'
-import { type Theme, getTheme } from './utils/theme.server.ts'
+import { getTheme, type Theme } from './utils/theme.server.ts'
 import { makeTimings, time } from './utils/timing.server.ts'
 import { getToast } from './utils/toast.server.ts'
 import { useOptionalUser } from './utils/user.ts'
@@ -67,7 +65,10 @@ export const links: Route.LinksFunction = () => {
 export const meta: Route.MetaFunction = ({ data }) => {
 	return [
 		{ title: data ? 'Podcasty' : 'Error | Podcasty' },
-		{ name: 'description', content: `Your one stop shop for hosting your own podcast` },
+		{
+			name: 'description',
+			content: `Your one stop shop for hosting your own podcast`,
+		},
 	]
 }
 
@@ -200,19 +201,19 @@ function App() {
 	useEffect(() => {
 		// Only create a socket if we have a user and don't already have a socket
 		if (user?.id && !socket) {
-			console.log("Creating new socket connection for user:", user.id)
+			console.log('Creating new socket connection for user:', user.id)
 			const newSocket = connect()
-			
+
 			// Set up connection handler
-			newSocket.on("connect", () => {
-				console.log("Socket connected, setting user ID:", user.id)
-				newSocket.emit("set-user-id", user.id)
+			newSocket.on('connect', () => {
+				console.log('Socket connected, setting user ID:', user.id)
+				newSocket.emit('set-user-id', user.id)
 				setSocket(newSocket)
 			})
 
 			// Clean up function
 			return () => {
-				console.log("Cleaning up socket connection")
+				console.log('Cleaning up socket connection')
 				if (newSocket.connected) {
 					newSocket.disconnect()
 				}
@@ -221,37 +222,20 @@ function App() {
 
 		// If we have no user, but we have a socket, disconnect it
 		if (!user?.id && socket) {
-			console.log("No user found, disconnecting socket")
+			console.log('No user found, disconnecting socket')
 			socket.disconnect()
 			setSocket(undefined)
 		}
-	}, [user?.id]) // Only depend on user.id, not the socket state
+	}, [socket, user?.id]) // Only depend on user.id, not the socket state
 
 	return (
 		<>
 			<div className="flex min-h-screen flex-col justify-between">
-				<header className="container py-6">
-					<nav className="flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap md:gap-8">
-						<Logo />
-						<div className="ml-auto hidden max-w-sm flex-1 sm:block">
-							{searchBar}
-						</div>
-						<div className="flex items-center gap-10">
-							{user ? (
-								<UserDropdown />
-							) : (
-								<Button asChild variant="default" size="lg">
-									<Link to="/login">Log In</Link>
-								</Button>
-							)}
-						</div>
-						<div className="block w-full sm:hidden">{searchBar}</div>
-					</nav>
-				</header>
+				{user && <Header searchBar={searchBar} />}
 
 				<div className="flex-1">
 					<SocketProvider socket={socket}>
-					<Outlet />
+						<Outlet />
 					</SocketProvider>
 				</div>
 
@@ -265,9 +249,31 @@ function App() {
 	)
 }
 
+function Header({ searchBar }: { searchBar: React.ReactNode }) {
+	return (
+		<header className="container py-6">
+			<nav className="flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap md:gap-8">
+				<Logo />
+				<h1 className="text-2xl font-bold">PrayPal</h1>
+				<div className="flex items-center gap-10">
+					<UserDropdown />
+				</div>
+			</nav>
+		</header>
+	)
+}
+
 // provide our Socket.io instance to children views.
-function SocketProvider({ socket, children }: { socket: Socket | undefined; children: React.ReactNode }) {
-	return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
+function SocketProvider({
+	socket,
+	children,
+}: {
+	socket: Socket | undefined
+	children: React.ReactNode
+}) {
+	return (
+		<SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
+	)
 }
 
 function Logo() {
