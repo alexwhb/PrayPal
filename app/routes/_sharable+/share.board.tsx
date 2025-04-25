@@ -1,6 +1,14 @@
-import { CalendarDays, Clock, Gift, MapPin, Share, Trash } from 'lucide-react'
+import {
+	CalendarDays,
+	Clock,
+	Flag,
+	Gift,
+	MapPin,
+	Share,
+	Trash,
+} from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { data, useSearchParams } from 'react-router'
+import { data, Link, useSearchParams } from 'react-router'
 import BoardFooter from '#app/components/board/board-footer.tsx'
 import BoardHeader from '#app/components/board/board-header.tsx'
 import { DeleteDialog } from '#app/components/shared/delete-dialog.tsx'
@@ -17,6 +25,12 @@ import {
 	CardFooter,
 	CardHeader,
 } from '#app/components/ui/card.tsx'
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '#app/components/ui/dropdown-menu'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
@@ -26,6 +40,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
 	const url = new URL(request.url)
 	const sort = url.searchParams.get('sort') === 'asc' ? 'asc' : 'desc'
+	const type = url.searchParams.get('type')?.toUpperCase() === 'GIVE' ? 'GIVE' : 'BORROW'
 
 	const boardData = await loadBoardData(
 		{ url, userId },
@@ -33,17 +48,18 @@ export async function loader({ request }: Route.LoaderArgs) {
 			model: prisma.shareItem,
 			where: {
 				status: 'ACTIVE',
+				shareType: type,
 			},
 			getCategoryWhere: () => ({ type: 'SHARE', active: true }),
 			select: {
 				id: true,
-				owner: { 
-					select: { 
-						id: true, 
-						name: true, 
-						image: true, 
-						username: true 
-					} 
+				owner: {
+					select: {
+						id: true,
+						name: true,
+						image: true,
+						username: true,
+					},
 				},
 				category: { select: { name: true } },
 				title: true,
@@ -54,25 +70,29 @@ export async function loader({ request }: Route.LoaderArgs) {
 				shareType: true,
 				duration: true,
 			},
-			transformResponse: (items, user) => items.map(item => ({
-				id: item.id,
-				userId: item.owner.id,
-				userName: item.owner.name ?? item.owner.username,
-				userAvatar: item.owner.image?.id
-					? `/resources/user-images/${item.owner.image.id}`
-					: '/placeholder.svg?height=40&width=40',
-				title: item.title,
-				description: item.description,
-				category: item.category.name,
-				location: item.location,
-				image: 'https://placehold.co/600x400',
-				postedDate: item.createdAt,
-				claimed: item.claimed,
-				shareType: item.shareType.toLowerCase(),
-				duration: item.duration,
-				canModerate: user.roles.some(role => ['admin', 'moderator'].includes(role.name)),
-			}))
-		}
+			transformResponse: (items, user) =>
+				items.map((item) => ({
+					id: item.id,
+					userId: item.owner.id,
+					userDisplayName: item.owner.name ?? item.owner.username,
+					userName: item.owner.username,
+					userAvatar: item.owner.image?.id
+						? `/resources/user-images/${item.owner.image.id}`
+						: '/placeholder.svg?height=40&width=40',
+					title: item.title,
+					description: item.description,
+					category: item.category.name,
+					location: item.location,
+					image: 'https://placehold.co/600x400',
+					postedDate: item.createdAt,
+					claimed: item.claimed,
+					shareType: item.shareType.toLowerCase(),
+					duration: item.duration,
+					canModerate: user.roles.some((role) =>
+						['admin', 'moderator'].includes(role.name),
+					),
+				})),
+		},
 	)
 
 	return data({
@@ -84,9 +104,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 		activeFilter: boardData.activeFilter,
 		userId,
 		sort,
+		type,
 	})
 }
-
 
 type Share = Awaited<ReturnType<typeof loader>>['items'][number]
 
@@ -103,7 +123,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 	if (action === 'delete') {
 		const moderatorAction = formData.get('moderatorAction') === '1'
-		
+
 		if (moderatorAction) {
 			await prisma.moderationLog.create({
 				data: {
@@ -111,8 +131,8 @@ export async function action({ request }: Route.ActionArgs) {
 					itemId: itemId as string,
 					itemType: 'SHARE',
 					action: 'DELETE',
-					reason: formData.get('reason') as string || 'Moderation action'
-				}
+					reason: (formData.get('reason') as string) || 'Moderation action',
+				},
 			})
 		}
 
@@ -128,6 +148,7 @@ export default function ShareBoard({
 	loaderData,
 }: Route.ComponentProps) {
 	const [searchParams] = useSearchParams()
+	const isBorrowBoard = loaderData.type === 'BORROW'
 
 	// Helper to generate URLs with updated search params
 	const generateUrl = useCallback(
@@ -171,27 +192,44 @@ export default function ShareBoard({
 				activeFilter={loaderData.activeFilter}
 				getFilterUrl={getFilterUrl}
 				getSortUrl={getSortUrl}
-				newActionToolTipString="Share Equipment"
+				newActionToolTipString={isBorrowBoard ? "Share Equipment" : "Give Item"}
+				secondaryAction={
+					isBorrowBoard 
+						? {
+							label: "View Free Items",
+							href: "?type=give",
+							tooltip: "Switch to Free Items board",
+							icon: Gift
+						}
+						: {
+							label: "View Borrowable Items",
+							href: "?",
+							tooltip: "Switch to Borrowable Items board",
+							icon: Gift
+						}
+				}
 			/>
 
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{loaderData.items.length > 0 ? (
 					loaderData.items.map((item: Share) => (
-						<ItemCard 
-							key={item.id} 
-							item={item} 
+						<ItemCard
+							key={item.id}
+							item={item}
 							isCurrentUser={item.userId === loaderData.userId}
 						/>
 					))
 				) : (
 					<div className="col-span-full rounded-lg border p-8 text-center">
-						<p className="text-muted-foreground">No items found in this category.</p>
+						<p className="text-muted-foreground">
+							No items found in this category.
+						</p>
 					</div>
 				)}
 			</div>
-			<BoardFooter 
-				getNextPageUrl={getNextPageUrl} 
-				hasNextPage={loaderData.hasMore} 
+			<BoardFooter
+				getNextPageUrl={getNextPageUrl}
+				hasNextPage={loaderData.hasMore}
 			/>
 		</div>
 	)
@@ -199,6 +237,9 @@ export default function ShareBoard({
 
 function ItemCard({ item, isCurrentUser }: ItemCardProps) {
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+	const [moderationAction, setModerationAction] = useState<
+		'delete' | 'pending' | 'removed'
+	>('delete')
 
 	const formatDate = (date: Date | string) => {
 		return new Date(date).toLocaleDateString('en-US', {
@@ -215,11 +256,11 @@ function ItemCard({ item, isCurrentUser }: ItemCardProps) {
 			className={`${item.claimed ? 'opacity-75' : ''} border-2 transition-shadow hover:shadow-md`}
 		>
 			<CardHeader className="p-0">
-				<div className="relative h-48 w-full">
+				<div className="relative h-58 w-full overflow-hidden">
 					<img
 						src={item.image}
 						alt={item.title}
-						className="rounded-t-lg object-cover"
+						className="h-full w-full rounded-t-lg object-cover"
 					/>
 					<div className="absolute right-2 top-2">
 						<Badge
@@ -252,10 +293,10 @@ function ItemCard({ item, isCurrentUser }: ItemCardProps) {
 						</Badge>
 					</div>
 					{item.claimed && (
-						<div className="absolute inset-0 flex items-center justify-center rounded-t-lg bg-zinc-800/70">
+						<div className="absolute inset-0 flex items-center justify-center rounded-t-lg bg-black/50">
 							<Badge
 								variant="default"
-								className="bg-amber-500 py-2 text-lg hover:bg-amber-500"
+								className="bg-red-200 py-2 text-lg hover:bg-red-300 text-red-900"
 							>
 								{isBorrowable ? 'Currently Borrowed' : 'Claimed'}
 							</Badge>
@@ -284,40 +325,96 @@ function ItemCard({ item, isCurrentUser }: ItemCardProps) {
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Avatar className="h-6 w-6">
-						<AvatarImage src={item.userAvatar} alt={item.userName} />
-						<AvatarFallback>{item.userName.charAt(0)}</AvatarFallback>
-					</Avatar>
-					<span className="text-sm">{item.userName}</span>
+					{/*TODO username is not the user name*/}
+					<Link to={`/users/${item.userName}`} prefetch="intent" className="flex items-center gap-2">
+						<Avatar className="h-6 w-6">
+							<AvatarImage src={item.userAvatar} alt={item.userDisplayName} />
+							<AvatarFallback>{item.userDisplayName.charAt(0)}</AvatarFallback>
+						</Avatar>
+						<span className="text-sm">{item.userDisplayName}</span>
+					</Link>
 				</div>
 			</CardContent>
 			<CardFooter className="flex justify-between pt-0">
-				{item.canModerate && (
-					<Button>
-						{item.claimed ? 'Mark as Available' : 'Mark as Claimed'}
-					</Button>
-				)}
-				{(isCurrentUser || item.canModerate) && (
-					<>
+				<Button>
+					{item.claimed ? 'Mark as Available' : 'Mark as Claimed'}
+				</Button>
+
+				<div className="flex gap-2">
+					{item.canModerate && !isCurrentUser && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="ghost" size="sm">
+									<Flag className="h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem
+									onClick={() => {
+										setModerationAction('pending')
+										setIsDeleteDialogOpen(true)
+									}}
+								>
+									Mark as Pending
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => {
+										setModerationAction('removed')
+										setIsDeleteDialogOpen(true)
+									}}
+								>
+									Remove Item
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					)}
+
+					{isCurrentUser && (
 						<Button
 							variant="destructive"
 							size="sm"
-							onClick={() => setIsDeleteDialogOpen(true)}
-						>
-							<Trash className="h-4 w-4 mr-2" />
-							{item.canModerate && !isCurrentUser ? 'Moderate' : 'Delete'}
-						</Button>
-						<DeleteDialog
-							open={isDeleteDialogOpen}
-							onOpenChange={setIsDeleteDialogOpen}
-							additionalFormData={{
-								itemId: item.id,
-								_action: 'delete',
-								moderatorAction: (!isCurrentUser && item.canModerate) ? '1' : '0'
+							onClick={() => {
+								setModerationAction('delete')
+								setIsDeleteDialogOpen(true)
 							}}
-							isModerator={!isCurrentUser && item.canModerate}
-						/>
-					</>
+						>
+							<Trash className="mr-2 h-4 w-4" />
+							Delete
+						</Button>
+					)}
+				</div>
+
+				{(isCurrentUser || item.canModerate) && (
+					<DeleteDialog
+						open={isDeleteDialogOpen}
+						onOpenChange={setIsDeleteDialogOpen}
+						additionalFormData={{
+							itemId: item.id,
+							_action: moderationAction,
+						}}
+						isModerator={!isCurrentUser && item.canModerate}
+						title={
+							moderationAction === 'pending'
+								? 'Mark Item as Pending'
+								: moderationAction === 'removed'
+									? 'Remove Item'
+									: 'Delete Item'
+						}
+						description={
+							moderationAction === 'pending'
+								? 'This item will be flagged for review by other moderators.'
+								: moderationAction === 'removed'
+									? 'This item will be removed from public view.'
+									: 'This item will be permanently deleted.'
+						}
+						confirmLabel={
+							moderationAction === 'pending'
+								? 'Mark as Pending'
+								: moderationAction === 'removed'
+									? 'Remove Item'
+									: 'Delete Item'
+						}
+					/>
 				)}
 			</CardFooter>
 		</Card>

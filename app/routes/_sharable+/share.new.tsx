@@ -27,7 +27,7 @@ import { type Route } from './+types/share.new.ts'
 
 export const ShareItemSchema = z.object({
     title: z.string().min(1, 'Title is required.').max(100),
-    description: z.string().min(1, 'Description is required.').max(400),
+    description: z.string().min(1, 'Description is required.').max(200),
     location: z.string().min(1, 'Location is required.').max(100),
     category: z.string().min(1, 'Category is required.'),
     shareType: z.enum(['BORROW', 'GIVE']),
@@ -150,13 +150,13 @@ export default function NewShareForm({
                         textareaProps={{
                             ...getInputProps(fields.description, { type: 'text' }),
                             placeholder: 'Describe the item you want to share',
-                            maxLength: 400,
+                            maxLength: 200,
                         }}
                         errors={fields.description.errors}
                         className="relative"
                     >
                         <div className="absolute bottom-4 right-4 text-xs text-muted-foreground">
-                            {fields.description.value?.length ?? 0} / 400
+                            {fields.description.value?.length ?? 0} / 200
                         </div>
                     </TextareaField>
 
