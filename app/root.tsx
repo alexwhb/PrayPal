@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
 	data,
 	Link,
@@ -10,6 +11,9 @@ import {
 	useMatches,
 } from 'react-router'
 import { HoneypotProvider } from 'remix-utils/honeypot/react'
+import { type Socket } from 'socket.io-client'
+import LayoutMainApp from '#app/components/layout.tsx'
+import { connect, SocketContext } from '#app/utils/socket'
 import logoIcon from '../public/podcasty.svg'
 import { type Route } from './+types/root.ts'
 import appleTouchIconAssetUrl from './assets/favicons/apple-touch-icon.png'
@@ -21,7 +25,6 @@ import { href as iconsHref } from './components/ui/icon.tsx'
 import { Toaster } from './components/ui/sonner.tsx'
 import { UserDropdown } from './components/user-dropdown.tsx'
 import {
-	ThemeSwitch,
 	useOptionalTheme,
 	useTheme,
 } from './routes/resources+/theme-switch.tsx'
@@ -38,9 +41,6 @@ import { getTheme, type Theme } from './utils/theme.server.ts'
 import { makeTimings, time } from './utils/timing.server.ts'
 import { getToast } from './utils/toast.server.ts'
 import { useOptionalUser } from './utils/user.ts'
-import { useEffect, useState } from 'react'
-import { connect, SocketContext } from '#app/utils/socket'
-import { Socket } from 'socket.io-client'
 
 export const links: Route.LinksFunction = () => {
 	return [
@@ -195,7 +195,7 @@ function App() {
 	const theme = useTheme()
 	const matches = useMatches()
 	const isOnSearchPage = matches.find((m) => m.id === 'routes/users+/index')
-	const searchBar = isOnSearchPage ? null : <SearchBar status="idle" />
+	// const searchBar = isOnSearchPage ? null : <SearchBar status="idle" />
 	const [socket, setSocket] = useState<Socket | undefined>(undefined)
 
 	useEffect(() => {
@@ -230,8 +230,8 @@ function App() {
 
 	return (
 		<>
-			<div className="flex min-h-screen flex-col justify-between">
-				{user && <Header searchBar={searchBar} />}
+			<LayoutMainApp>
+				{/*{user && <Header searchBar={searchBar} />}*/}
 
 				<div className="flex-1">
 					<SocketProvider socket={socket}>
@@ -239,10 +239,11 @@ function App() {
 					</SocketProvider>
 				</div>
 
-				<div className="container flex justify-end pb-5">
-					<ThemeSwitch userPreference={data.requestInfo.userPrefs.theme} />
-				</div>
-			</div>
+				{/*TODO add this back in, but in the header */}
+				{/*<div className="container flex justify-end pb-5">*/}
+				{/*	<ThemeSwitch userPreference={data.requestInfo.userPrefs.theme} />*/}
+				{/*</div>*/}
+			</LayoutMainApp>
 			<Toaster closeButton position="top-center" theme={theme} />
 			<EpicProgress />
 		</>
