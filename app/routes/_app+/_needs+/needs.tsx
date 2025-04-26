@@ -1,4 +1,14 @@
-import { Outlet } from 'react-router'
+import { Outlet, redirect } from 'react-router'
+import { type Route } from './+types/needs'
+
+export async function loader({ request }: Route.LoaderArgs) {
+	// if this page is just /needs then redirect to /needs/board
+	if (new URL(request.url).pathname === '/needs') {
+		return redirect('/needs/board')
+	}
+
+	return {}
+}
 
 export default function Needs() {
 	return (

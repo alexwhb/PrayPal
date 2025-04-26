@@ -10,6 +10,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model ReferralLink {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  createdBy   User     @relation("CreatedReferrals", fields: [createdById], references: [id])
+  createdById String
+  usedBy      User?    @relation("UsedReferral", fields: [usedById], references: [id])
+  usedById    String?  @unique
+  used        Boolean  @default(false)
+
+  @@index([createdById])
+}
+
 model User {
   id       String  @id @default(cuid())
   email    String  @unique
@@ -19,12 +32,14 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  image       UserImage?
-  password    Password?
-  roles       Role[]
-  sessions    Session[]
-  connections Connection[]
-  requests    Request[]
+  image            UserImage?
+  password         Password?
+  roles            Role[]
+  sessions         Session[]
+  connections      Connection[]
+  requests         Request[]
+  createdReferrals ReferralLink[] @relation("CreatedReferrals")
+  usedReferral     ReferralLink?  @relation("UsedReferral")
 
   messagesSent      Message[]         @relation("Sender")
   messagesReceived  Message[]         @relation("RecipientUser")

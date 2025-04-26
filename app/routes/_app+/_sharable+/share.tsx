@@ -1,9 +1,13 @@
-import { Outlet, useSearchParams } from 'react-router'
-import { requireUserId } from '#app/utils/auth.server.ts'
+import { Outlet, redirect, useSearchParams } from 'react-router'
 import { type Route } from './+types/share'
 
 export async function loader({ request }: Route.LoaderArgs) {
-	await requireUserId(request)
+
+	// if this page is just /needs then redirect to /needs/board
+	if (new URL(request.url).pathname === '/needs') {
+		return redirect('/needs/board')
+	}
+
 	return {}
 }
 

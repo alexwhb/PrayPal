@@ -191,71 +191,42 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 function App() {
 	const data = useLoaderData<typeof loader>()
-	const user = useOptionalUser()
 	const theme = useTheme()
-	const matches = useMatches()
-	const isOnSearchPage = matches.find((m) => m.id === 'routes/users+/index')
-	// const searchBar = isOnSearchPage ? null : <SearchBar status="idle" />
+	const user = useOptionalUser()
 	const [socket, setSocket] = useState<Socket | undefined>(undefined)
 
 	useEffect(() => {
-		// Only create a socket if we have a user and don't already have a socket
 		if (user?.id && !socket) {
-			console.log('Creating new socket connection for user:', user.id)
 			const newSocket = connect()
-
-			// Set up connection handler
 			newSocket.on('connect', () => {
-				console.log('Socket connected, setting user ID:', user.id)
 				newSocket.emit('set-user-id', user.id)
 				setSocket(newSocket)
 			})
 
-			// Clean up function
 			return () => {
-				console.log('Cleaning up socket connection')
 				if (newSocket.connected) {
 					newSocket.disconnect()
 				}
 			}
 		}
 
-		// If we have no user, but we have a socket, disconnect it
 		if (!user?.id && socket) {
-			console.log('No user found, disconnecting socket')
 			socket.disconnect()
 			setSocket(undefined)
 		}
-	}, [socket, user?.id]) // Only depend on user.id, not the socket state
+	}, [socket, user?.id])
 
 	return (
 		<>
-			<LayoutMainApp theme={data.requestInfo.userPrefs.theme} user={user} >
-				<div className="flex-1">
-					<SocketProvider socket={socket}>
-						<Outlet />
-					</SocketProvider>
-				</div>
-			</LayoutMainApp>
+			<SocketProvider socket={socket}>
+				<Outlet />
+			</SocketProvider>
 			<Toaster closeButton position="top-center" theme={theme} />
 			<EpicProgress />
 		</>
 	)
 }
 
-function Header({ searchBar }: { searchBar: React.ReactNode }) {
-	return (
-		<header className="container py-6">
-			<nav className="flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap md:gap-8">
-				<Logo />
-				<h1 className="text-2xl font-bold">PrayPal</h1>
-				<div className="flex items-center gap-10">
-					<UserDropdown />
-				</div>
-			</nav>
-		</header>
-	)
-}
 
 // provide our Socket.io instance to children views.
 function SocketProvider({
@@ -270,13 +241,6 @@ function SocketProvider({
 	)
 }
 
-function Logo() {
-	return (
-		<Link to="/" className="group grid leading-snug">
-			<img src={logoIcon} alt="" />
-		</Link>
-	)
-}
 
 function AppWithProviders() {
 	const data = useLoaderData<typeof loader>()

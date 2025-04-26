@@ -32,8 +32,8 @@ export function DeleteDialog({
 	confirmLabel = 'Delete',
 }: DeleteDialogProps) {
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
+		<Dialog open={open} onOpenChange={onOpenChange} modal>
+			<DialogContent onOpenAutoFocus={(event) => event.preventDefault()}>
 				<Form method="post">
 					{Object.entries(additionalFormData ?? {}).map(([key, value]) => (
 						<input

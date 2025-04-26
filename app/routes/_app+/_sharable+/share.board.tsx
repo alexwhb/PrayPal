@@ -34,6 +34,7 @@ import {
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
+import { formatDate } from '#app/utils/formatter.ts'
 import { type Route } from './+types/share.board.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -78,7 +79,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 					userName: item.owner.username,
 					userAvatar: item.owner.image?.id
 						? `/resources/user-images/${item.owner.image.id}`
-						: '/placeholder.svg?height=40&width=40',
+						: '',
 					title: item.title,
 					description: item.description,
 					category: item.category.name,
@@ -113,6 +114,7 @@ type Share = Awaited<ReturnType<typeof loader>>['items'][number]
 type ItemCardProps = {
 	item: Share
 	isCurrentUser: boolean
+	onOpenDialog: (itemId: string, action: 'delete' | 'pending' | 'removed', isModerator: boolean) => void
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -143,12 +145,25 @@ export async function action({ request }: Route.ActionArgs) {
 	// ... other actions
 }
 
+type DialogState = {
+	isOpen: boolean;
+	itemId: string | null;
+	action: 'delete' | 'pending' | 'removed';
+	isModerator: boolean;
+}
+
 export default function ShareBoard({
 	actionData,
 	loaderData,
 }: Route.ComponentProps) {
 	const [searchParams] = useSearchParams()
 	const isBorrowBoard = loaderData.type === 'BORROW'
+	const [dialogState, setDialogState] = useState<DialogState>({
+		isOpen: false,
+		itemId: null,
+		action: 'delete',
+		isModerator: false
+	})
 
 	// Helper to generate URLs with updated search params
 	const generateUrl = useCallback(
@@ -185,6 +200,24 @@ export default function ShareBoard({
 		return generateUrl({ page: currentPage + 1 })
 	}, [generateUrl, searchParams])
 
+	const handleOpenDialog = (itemId: string, action: 'delete' | 'pending' | 'removed', isModerator: boolean) => {
+		setDialogState({
+			isOpen: true,
+			itemId,
+			action,
+			isModerator
+		})
+	}
+
+	const handleCloseDialog = () => {
+		setDialogState({
+			isOpen: false,
+			itemId: null,
+			action: 'delete',
+			isModerator: false
+		})
+	}
+
 	return (
 		<div className="space-y-6">
 			<BoardHeader
@@ -194,7 +227,7 @@ export default function ShareBoard({
 				getSortUrl={getSortUrl}
 				newActionToolTipString={isBorrowBoard ? "Share Equipment" : "Give Item"}
 				secondaryAction={
-					isBorrowBoard 
+					isBorrowBoard
 						? {
 							label: "View Free Items",
 							href: "?type=give",
@@ -217,6 +250,7 @@ export default function ShareBoard({
 							key={item.id}
 							item={item}
 							isCurrentUser={item.userId === loaderData.userId}
+							onOpenDialog={handleOpenDialog}
 						/>
 					))
 				) : (
@@ -227,6 +261,38 @@ export default function ShareBoard({
 					</div>
 				)}
 			</div>
+
+			<DeleteDialog
+				open={dialogState.isOpen}
+				onOpenChange={handleCloseDialog}
+				additionalFormData={{
+					itemId: dialogState.itemId ?? '',
+					_action: dialogState.action,
+				}}
+				isModerator={dialogState.isModerator}
+				title={
+					dialogState.action === 'pending'
+						? 'Mark Item as Pending'
+						: dialogState.action === 'removed'
+							? 'Remove Item'
+							: 'Delete Item'
+				}
+				description={
+					dialogState.action === 'pending'
+						? 'This item will be flagged for review by other moderators.'
+						: dialogState.action === 'removed'
+							? 'This item will be removed from public view.'
+							: 'This item will be permanently deleted.'
+				}
+				confirmLabel={
+					dialogState.action === 'pending'
+						? 'Mark as Pending'
+						: dialogState.action === 'removed'
+							? 'Remove Item'
+							: 'Delete Item'
+				}
+			/>
+
 			<BoardFooter
 				getNextPageUrl={getNextPageUrl}
 				hasNextPage={loaderData.hasMore}
@@ -235,20 +301,7 @@ export default function ShareBoard({
 	)
 }
 
-function ItemCard({ item, isCurrentUser }: ItemCardProps) {
-	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-	const [moderationAction, setModerationAction] = useState<
-		'delete' | 'pending' | 'removed'
-	>('delete')
-
-	const formatDate = (date: Date | string) => {
-		return new Date(date).toLocaleDateString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			year: 'numeric',
-		})
-	}
-
+function ItemCard({ item, isCurrentUser, onOpenDialog }: ItemCardProps) {
 	const isBorrowable = item.shareType === 'borrow'
 
 	return (
@@ -342,25 +395,23 @@ function ItemCard({ item, isCurrentUser }: ItemCardProps) {
 
 				<div className="flex gap-2">
 					{item.canModerate && !isCurrentUser && (
-						<DropdownMenu>
+						<DropdownMenu modal={false}>
 							<DropdownMenuTrigger asChild>
 								<Button variant="ghost" size="sm">
 									<Flag className="h-4 w-4" />
 								</Button>
 							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
+							<DropdownMenuContent align="end" onCloseAutoFocus={(event) => event.preventDefault()}>
 								<DropdownMenuItem
 									onClick={() => {
-										setModerationAction('pending')
-										setIsDeleteDialogOpen(true)
+										onOpenDialog(item.id, 'pending', true)
 									}}
 								>
 									Mark as Pending
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									onClick={() => {
-										setModerationAction('removed')
-										setIsDeleteDialogOpen(true)
+										onOpenDialog(item.id, 'removed', true)
 									}}
 								>
 									Remove Item
@@ -373,49 +424,13 @@ function ItemCard({ item, isCurrentUser }: ItemCardProps) {
 						<Button
 							variant="destructive"
 							size="sm"
-							onClick={() => {
-								setModerationAction('delete')
-								setIsDeleteDialogOpen(true)
-							}}
+							onClick={() => onOpenDialog(item.id, 'delete', false)}
 						>
 							<Trash className="mr-2 h-4 w-4" />
 							Delete
 						</Button>
 					)}
 				</div>
-
-				{(isCurrentUser || item.canModerate) && (
-					<DeleteDialog
-						open={isDeleteDialogOpen}
-						onOpenChange={setIsDeleteDialogOpen}
-						additionalFormData={{
-							itemId: item.id,
-							_action: moderationAction,
-						}}
-						isModerator={!isCurrentUser && item.canModerate}
-						title={
-							moderationAction === 'pending'
-								? 'Mark Item as Pending'
-								: moderationAction === 'removed'
-									? 'Remove Item'
-									: 'Delete Item'
-						}
-						description={
-							moderationAction === 'pending'
-								? 'This item will be flagged for review by other moderators.'
-								: moderationAction === 'removed'
-									? 'This item will be removed from public view.'
-									: 'This item will be permanently deleted.'
-						}
-						confirmLabel={
-							moderationAction === 'pending'
-								? 'Mark as Pending'
-								: moderationAction === 'removed'
-									? 'Remove Item'
-									: 'Delete Item'
-						}
-					/>
-				)}
 			</CardFooter>
 		</Card>
 	)

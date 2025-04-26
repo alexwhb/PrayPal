@@ -17,6 +17,7 @@ const schema = z.object({
 	GITHUB_CLIENT_SECRET: z.string().default('MOCK_GITHUB_CLIENT_SECRET'),
 	GITHUB_TOKEN: z.string().default('MOCK_GITHUB_TOKEN'),
 	ALLOW_INDEXING: z.enum(['true', 'false']).optional(),
+	REGISTRATION_MODE: z.enum(['public', 'referral-only']).default('public'),
 })
 
 declare global {
@@ -58,7 +59,7 @@ export function getEnv() {
 type ENV = ReturnType<typeof getEnv>
 
 declare global {
-	var ENV: ENV
+	let ENV: ENV
 	interface Window {
 		ENV: ENV
 	}

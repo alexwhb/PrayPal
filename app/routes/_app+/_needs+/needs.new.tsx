@@ -28,7 +28,7 @@ import {
 } from '#app/components/ui/select'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
-import { type Route } from './+types/prayer/new'
+import { type Route } from './+types/needs.new.ts'
 
 export async function loader({ params }: LoaderFunctionArgs) {
 	const categories = await prisma.category.findMany({

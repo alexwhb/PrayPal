@@ -122,10 +122,10 @@ export default function Sidebar() {
 
 					<div className="border-t border-gray-200 px-4 py-4 dark:border-[#1F1F23]">
 						<div className="space-y-1">
-							<NavItem href="#" icon={Settings}>
-								Settings
-							</NavItem>
-							<NavItem href="#" icon={HelpCircle}>
+							{/*<NavItem href="#" icon={Settings}>*/}
+							{/*	Settings*/}
+							{/*</NavItem>*/}
+							<NavItem href="/help" icon={HelpCircle}>
 								Help
 							</NavItem>
 						</div>

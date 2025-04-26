@@ -1,5 +1,7 @@
 import { FileText, LogOut, MoveUpRight, Settings } from 'lucide-react'
-import { Link } from 'react-router'
+import { Form, Link } from 'react-router'
+import { DropdownMenuItem } from '#app/components/ui/dropdown-menu.tsx'
+import { Icon } from '#app/components/ui/icon.tsx'
 
 interface MenuItem {
 	label: string
@@ -84,17 +86,15 @@ export default function ProfileDropdown({
 							</Link>
 						))}
 
-						<button
-							type="button"
-							className="flex w-full items-center justify-between rounded-lg p-2 transition-colors duration-200 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-						>
-							<div className="flex items-center gap-2">
-								<LogOut className="h-4 w-4" />
-								<span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-									Logout
-								</span>
-							</div>
-						</button>
+						<Form method="POST" action="/logout">
+							<DropdownMenuItem asChild>
+								<button type="submit" className="w-full">
+									<Icon className="text-body-md" name="exit">
+										Logout
+									</Icon>
+								</button>
+							</DropdownMenuItem>
+						</Form>
 					</div>
 				</div>
 			</div>

@@ -4,6 +4,7 @@ import { createReadableStreamFromReadable } from '@react-router/node'
 import * as Sentry from '@sentry/node'
 import chalk from 'chalk'
 import { isbot } from 'isbot'
+import { getInstanceInfo } from 'litefs-js'
 import { renderToPipeableStream } from 'react-dom/server'
 import {
 	ServerRouter,
@@ -12,7 +13,6 @@ import {
 	type HandleDocumentRequestFunction,
 } from 'react-router'
 import { getEnv, init } from './utils/env.server.ts'
-import { getInstanceInfo } from 'litefs-js'
 import { NonceProvider } from './utils/nonce-provider.ts'
 import { makeTimings } from './utils/timing.server.ts'
 

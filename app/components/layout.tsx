@@ -1,9 +1,9 @@
 // import { useTheme } from "next-themes"
+import { type User } from '@prisma/client'
 import  { type ReactNode, useEffect, useState  } from "react"
 import  { type Theme } from '#app/utils/theme.server.ts'
 import Sidebar from "./sidebar"
 import TopNav from "./top-nav"
-import { type User } from '@prisma/client'
 
 interface LayoutProps {
 	children: ReactNode,

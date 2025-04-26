@@ -1,11 +1,20 @@
-import { ArrowRight, Gift, Heart, Users } from 'lucide-react'
+import { ArrowRight, Gift, Heart, Users, InfoIcon } from 'lucide-react'
 import { Link } from 'react-router'
-import { Button } from '#app/components/ui/button.tsx'
-import { type Route } from './+types/index.ts'
+import { Alert, AlertDescription } from '#app/components/ui/alert'
+import { Button } from '#app/components/ui/button'
+import { CTASection } from '#app/components/marketing/cta-section'
+import { type Route } from './+types/index'
+
+export async function loader({ }: Route.LoaderArgs) {
+	return {
+		isInviteOnly: process.env.REGISTRATION_MODE === 'referral-only',
+	}
+}
+
 
 export const meta: Route.MetaFunction = () => [{ title: 'PrayPal' }]
 
-export default function LandingPage() {
+export default function LandingPage({loaderData}: Route.ComponentProps) {
 	return (
 		<div className="flex min-h-screen flex-col">
 			{/* Hero Section */}
@@ -22,16 +31,37 @@ export default function LandingPage() {
 							</p>
 						</div>
 						<div className="flex flex-col gap-4 sm:flex-row">
-							<Link to="/signup" prefetch="intent">
-								<Button size="lg">
-									Sign Up <ArrowRight className="ml-2 h-4 w-4" />
-								</Button>
-							</Link>
-							<Link to="/login" prefetch="intent">
-								<Button variant="outline" size="lg">
-									Log In
-								</Button>
-							</Link>
+							{loaderData.isInviteOnly ? (
+								<div className="max-w-[500px]">
+									<Alert>
+										<InfoIcon className="h-4 w-4" />
+										<AlertDescription>
+											PrayPal is currently invite-only. If you know someone who's already 
+											a member, please ask them to generate an invite link for you.
+										</AlertDescription>
+									</Alert>
+									<div className="mt-4">
+										<Link to="/login" prefetch="intent">
+											<Button size="lg">
+												Log In
+											</Button>
+										</Link>
+									</div>
+								</div>
+							) : (
+								<>
+									<Link to="/signup" prefetch="intent">
+										<Button size="lg">
+											Sign Up <ArrowRight className="ml-2 h-4 w-4" />
+										</Button>
+									</Link>
+									<Link to="/login" prefetch="intent">
+										<Button variant="outline" size="lg">
+											Log In
+										</Button>
+									</Link>
+								</>
+							)}
 						</div>
 					</div>
 				</div>
@@ -210,38 +240,8 @@ export default function LandingPage() {
 				</div>
 			</section>
 
-			{/* CTA Section */}
-			<section className="bg-primary py-16 text-primary-foreground md:py-24">
-				<div className="container px-4 md:px-6">
-					<div className="flex flex-col items-center justify-center space-y-4 text-center">
-						<div className="space-y-2">
-							<h2 className="text-3xl font-bold tracking-tighter md:text-4xl">
-								Join Our Community Today
-							</h2>
-							<p className="mx-auto max-w-[700px]">
-								Be part of a movement that's bringing neighbors together to
-								create stronger, more connected communities.
-							</p>
-						</div>
-						<div className="flex flex-col gap-4 sm:flex-row">
-							<Link to="/signup" prefetch="intent">
-								<Button variant="secondary" size="lg">
-									Sign Up Now <ArrowRight className="ml-2 h-4 w-4" />
-								</Button>
-							</Link>
-							<Link to="/login" prefetch="intent">
-								<Button
-									variant="outline"
-									size="lg"
-									className="border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
-								>
-									Log In
-								</Button>
-							</Link>
-						</div>
-					</div>
-				</div>
-			</section>
+			{/* CTA Section - only show if not invite only */}
+			{!loaderData.isInviteOnly && <CTASection />}
 
 			{/* Footer */}
 			<footer className="border-t py-6 md:py-8">

@@ -19,6 +19,7 @@ import { useIsPending } from '#app/utils/misc.tsx'
 import { EmailSchema } from '#app/utils/user-validation.ts'
 import { type Route } from './+types/signup.ts'
 import { prepareVerification } from './verify.server.ts'
+import { env } from '#app/utils/env.server.ts'
 
 export const handle: SEOHandle = {
 	getSitemapEntries: () => null,
@@ -27,6 +28,31 @@ export const handle: SEOHandle = {
 const SignupSchema = z.object({
 	email: EmailSchema,
 })
+
+export async function loader({ request }: Route.LoaderArgs) {
+	const url = new URL(request.url)
+	const referralId = url.searchParams.get('ref')
+
+	// If in referral-only mode, require valid referral
+	if (process.env.REGISTRATION_MODE === 'referral-only') {
+		if (!referralId) {
+			throw redirect('/login')
+		}
+		
+		const referral = await prisma.referralLink.findUnique({
+			where: { id: referralId },
+		})
+		
+		if (!referral || 
+			referral.used || 
+			referral.expiresAt < new Date() ||
+			referral.usedById) {
+			throw redirect('/login')
+		}
+	}
+	
+	return data({ referralId })
+}
 
 export async function action({ request }: Route.ActionArgs) {
 	const formData = await request.formData()
@@ -57,6 +83,25 @@ export async function action({ request }: Route.ActionArgs) {
 		)
 	}
 	const { email } = submission.value
+	const referralId = formData.get('referralId')
+	
+	// Create user transaction that also marks referral as used
+	await prisma.$transaction(async tx => {
+		const user = await tx.user.create({
+			data: { email },
+		})
+		
+		if (referralId) {
+			await tx.referralLink.update({
+				where: { id: referralId },
+				data: { 
+					used: true,
+					usedById: user.id,
+				},
+			})
+		}
+	})
+	
 	const { verifyUrl, redirectTo, otp } = await prepareVerification({
 		period: 10 * 60,
 		request,
@@ -66,7 +111,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 	const response = await sendEmail({
 		to: email,
-		subject: `Welcome to Podcasty!`,
+		subject: `Welcome to PrayPal!!`,
 		react: <SignupEmail onboardingUrl={verifyUrl.toString()} otp={otp} />,
 	})
 
