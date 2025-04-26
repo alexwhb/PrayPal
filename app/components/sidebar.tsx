@@ -100,10 +100,21 @@ export default function Sidebar() {
 
 							<div>
 								<div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+									Groups
+								</div>
+								<div className="space-y-1">
+									<NavItem href="/groups" icon={Users2}>
+										Groups
+									</NavItem>
+								</div>
+							</div>
+
+							<div>
+								<div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
 									Members
 								</div>
 								<div className="space-y-1">
-									<NavItem href="#" icon={Users2}>
+									<NavItem href="/users" icon={Users2}>
 										Members
 									</NavItem>
 									<NavItem href="/messages" icon={MessagesSquare}>
