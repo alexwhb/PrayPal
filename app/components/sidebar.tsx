@@ -43,13 +43,13 @@ export default function Sidebar() {
 		<>
 			<button
 				type="button"
-				className="fixed left-4 top-4 z-[70] rounded-lg bg-white p-2 shadow-md dark:bg-[#0F0F12] lg:hidden"
+				className="fixed left-4 top-4 z-[10] rounded-lg bg-white p-2 shadow-md dark:bg-[#000000] lg:hidden"
 				onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
 			>
 				<Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
 			</button>
 			<nav
-				className={`fixed inset-y-0 left-0 z-[70] w-64 transform border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out dark:border-[#1F1F23] dark:bg-[#0F0F12] lg:static lg:w-64 lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} `}
+				className={`fixed inset-y-0 left-0 z-[10] w-64 transform border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out dark:border-[#1F1F23] dark:bg-[#000000] lg:static lg:w-64 lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} `}
 			>
 				<div className="flex h-full flex-col">
 					<Link
@@ -95,14 +95,6 @@ export default function Sidebar() {
 									<NavItem href="/share/board" icon={Gift}>
 										Share Board
 									</NavItem>
-								</div>
-							</div>
-
-							<div>
-								<div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-									Groups
-								</div>
-								<div className="space-y-1">
 									<NavItem href="/groups" icon={Users2}>
 										Groups
 									</NavItem>
