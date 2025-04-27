@@ -95,7 +95,7 @@ export default function Sidebar() {
 									<NavItem href="/share/board" icon={Gift}>
 										Share Board
 									</NavItem>
-									<NavItem href="/groups" icon={Users2}>
+									<NavItem href="/groups/board" icon={Users2}>
 										Groups
 									</NavItem>
 								</div>
