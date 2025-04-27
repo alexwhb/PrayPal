@@ -31,15 +31,15 @@ export default function UserPrayerItem({
 							<Avatar>
 								<AvatarImage
 									src={getUserImgSrc(prayer.user.image?.id)}
-									alt={prayer.user.username}
+									alt={prayer.user.name}
 								/>
 								<AvatarFallback>
-									{prayer.user.username.charAt(0)}
+									{prayer.user.name.charAt(0)}
 								</AvatarFallback>
 							</Avatar>
 						</Link>
 						<div>
-							<h3 className="font-medium">{prayer.user.username}</h3>
+							<h3 className="font-medium">{prayer.user.name}</h3>
 							<div className="flex items-center text-sm text-muted-foreground">
 								<CalendarDays className="mr-1 h-3 w-3" />
 								{formatDate(prayer.createdAt)}
