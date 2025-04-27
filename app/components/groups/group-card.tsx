@@ -1,124 +1,164 @@
-import { Clock, MapPin, Calendar, Users, Video } from "lucide-react"
-import { useState } from "react"
-import { Badge } from "#app/components/ui/badge"
-import { Button } from "#app/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "#app/components/ui/card"
+import { type Group } from '@prisma/client'
+import { CalendarIcon, MapPinIcon, MoreVerticalIcon } from 'lucide-react'
+import { Form, Link } from 'react-router'
+import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar'
+import { Badge } from '#app/components/ui/badge'
+import { Button } from '#app/components/ui/button'
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "#app/components/ui/dialog"
-import { Input } from "#app/components/ui/input"
-import { Label } from "#app/components/ui/label"
-import { Textarea } from "#app/components/ui/textarea"
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '#app/components/ui/dropdown-menu'
+import { getUserImgSrc } from '#app/utils/misc'
+import { 
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '#app/components/ui/tooltip'
 
-export function GroupCard({ group }) {
-	const [isDialogOpen, setIsDialogOpen] = useState(false)
-	const [message, setMessage] = useState("")
-	const [name, setName] = useState("")
-	const [email, setEmail] = useState("")
-	const [phone, setPhone] = useState("")
+type GroupCardProps = {
+    group: Group & {
+        isMember: boolean
+        isLeader: boolean
+        memberCount: number
+        hasCapacity: boolean
+        memberships: Array<{
+            user: {
+                id: string
+                name: string | null
+                username: string
+                image: { id: string } | null
+            }
+        }>
+    }
+    canModerate: boolean
+    isCurrentUser: boolean
+}
 
-	const handleJoin = (e) => {
-		e.preventDefault()
-		setIsDialogOpen(false)
-		// In a real app, this would send the join request to the group leader
-		alert(`Join request sent to ${group.leaderName} for ${group.name}`)
-		setMessage("")
-		setName("")
-		setEmail("")
-		setPhone("")
-	}
+export default function GroupCard({
+    group,
+    canModerate,
+    isCurrentUser,
+}: GroupCardProps) {
+    const leaders = group.memberships
+    const displayedLeaders = leaders.slice(0, 3)
+    const remainingLeaders = Math.max(0, leaders.length - 3)
 
-	return (
-		<Card className="h-full flex flex-col">
-			<CardHeader className="p-0">
-				<div className="relative h-40 w-full">
-					<img src={group.image || "/placeholder.svg"} alt={group.name} className="object-cover rounded-t-lg" />
-					<div className="absolute top-2 right-2">
-						<Badge variant="secondary">{group.type}</Badge>
-					</div>
-				</div>
-			</CardHeader>
-			<CardContent className="pt-4 flex-grow">
-				<h3 className="font-semibold text-lg mb-1">{group.name}</h3>
-				<p className="text-sm text-muted-foreground mb-3">{group.description}</p>
+    return (
+        <div className="flex flex-col space-y-4 rounded-lg border p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2">
+                    <h3 className="text-xl font-semibold">{group.name}</h3>
 
-				<div className="space-y-1 mt-4">
-					<div className="flex items-center text-sm">
-						<Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-						<span>
-              {group.frequency} on {group.day}
-            </span>
-					</div>
-					<div className="flex items-center text-sm">
-						<Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-						<span>{group.time}</span>
-					</div>
-					<div className="flex items-center text-sm">
-						{group.online ? (
-							<Video className="mr-2 h-4 w-4 text-muted-foreground" />
-						) : (
-							<MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                </div>
+                {group.hasCapacity ? (
+                    <Badge variant="outline">
+                        {group.memberCount}/{group.capacity ?? '∞'} members
+                    </Badge>
+                ) : (
+                    <Badge variant="secondary">Full</Badge>
+                )}
+            </div>
+
+            <p className="text-muted-foreground">{group.description}</p>
+
+            <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CalendarIcon className="h-4 w-4" />
+                    <span>
+                        Meets {group.frequency.toLowerCase()} at{' '}
+                        {new Date(group.meetingTime).toLocaleTimeString()}
+                    </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPinIcon className="h-4 w-4" />
+                    <span>{group.isOnline ? 'Online' : group.location}</span>
+                </div>
+            </div>
+					<div className="flex items-center gap-1">
+						<div className="flex -space-x-2">
+							<TooltipProvider>
+								{displayedLeaders.map((leader) => (
+									<Tooltip key={leader.user.id}>
+										<TooltipTrigger asChild>
+											<Link
+												to={`/users/${leader.user.username}`}
+												className="relative inline-block"
+											>
+												<Avatar className="h-6 w-6 border-2 border-background">
+													{leader.user.image?.id ? (
+														<AvatarImage
+															src={getUserImgSrc(leader.user.image.id)}
+															alt={leader.user.name || leader.user.username}
+														/>
+													) : (
+														<AvatarFallback>
+															{(leader.user.name || leader.user.username)[0]}
+														</AvatarFallback>
+													)}
+												</Avatar>
+											</Link>
+										</TooltipTrigger>
+										<TooltipContent>
+											Organized by {leader.user.name || leader.user.username}
+										</TooltipContent>
+									</Tooltip>
+								))}
+							</TooltipProvider>
+						</div>
+						{remainingLeaders > 0 && (
+							<span className="text-sm text-muted-foreground ml-1">
+                                +{remainingLeaders} more
+                            </span>
 						)}
-						<span>{group.location}</span>
 					</div>
-					<div className="flex items-center text-sm">
-						<Users className="mr-2 h-4 w-4 text-muted-foreground" />
-						<span>Led by {group.leaderName}</span>
-					</div>
-				</div>
-			</CardContent>
-			<CardFooter className="pt-0">
-				<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-					<DialogTrigger asChild>
-						<Button variant="default" className="w-full">
-							Join Group
-						</Button>
-					</DialogTrigger>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Join {group.name}</DialogTitle>
-							<DialogDescription>
-								Fill out this form to request to join this group. The group leader will contact you with more
-								information.
-							</DialogDescription>
-						</DialogHeader>
-						<form onSubmit={handleJoin}>
-							<div className="grid gap-4 py-4">
-								<div className="grid gap-2">
-									<Label htmlFor="name">Your Name</Label>
-									<Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-								</div>
-								<div className="grid gap-2">
-									<Label htmlFor="email">Email</Label>
-									<Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-								</div>
-								<div className="grid gap-2">
-									<Label htmlFor="phone">Phone (optional)</Label>
-									<Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-								</div>
-								<div className="grid gap-2">
-									<Label htmlFor="message">Message (optional)</Label>
-									<Textarea
-										id="message"
-										placeholder="Share a bit about yourself or ask questions about the group..."
-										value={message}
-										onChange={(e) => setMessage(e.target.value)}
-									/>
-								</div>
-							</div>
-							<DialogFooter>
-								<Button type="submit">Send Join Request</Button>
-							</DialogFooter>
-						</form>
-					</DialogContent>
-				</Dialog>
-			</CardFooter>
-		</Card>
-	)
+            <div className="mt-auto flex gap-2 pt-4">
+                <Form method="post" className="flex-1">
+                    <input type="hidden" name="groupId" value={group.id} />
+                    <input
+                        type="hidden"
+                        name="_action"
+                        value={group.isMember ? 'leave' : 'join'}
+                    />
+                    <Button
+                        variant={group.isMember ? 'outline' : 'default'}
+                        className="w-full"
+                        type="submit"
+                        disabled={!group.hasCapacity && !group.isMember}
+                    >
+                        {group.isMember
+                            ? 'Leave Group'
+                            : group.hasCapacity
+                            ? 'Join Group'
+                            : 'Group Full'}
+                    </Button>
+                </Form>
+
+                {(group.isLeader || canModerate) && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <MoreVerticalIcon className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                                <Link to={`/groups/${group.id}/edit`}>Edit Group</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                className="text-destructive"
+                                onSelect={() => {
+                                    // Handle delete confirmation
+                                }}
+                            >
+                                Delete Group
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+            </div>
+        </div>
+    )
 }

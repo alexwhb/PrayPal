@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -45,12 +42,14 @@ model User {
   messagesReceived  Message[]         @relation("RecipientUser")
   conversations     Conversation[]    @relation("ConversationParticipants")
   groupMemberships  GroupMembership[]
-  Conversation      Conversation?     @relation(fields: [conversationId], references: [id])
   conversationId    String?
   MessageSeen       MessageSeen[]
   moderationActions ModerationLog[]
   ownedItems        ShareItem[]       @relation("ShareItemOwner")
   claimedItems      ShareItem[]       @relation("ClaimedItems")
+  images            Image[]           @relation("ImageOwner")
+  reports           Report[]          @relation("UserReports")
+  resolvedReports   Report[]          @relation("ModeratorResolutions")
 }
 
 model UserImage {
@@ -64,6 +63,23 @@ model UserImage {
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String @unique
+}
+
+model Image {
+  id          String     @id @default(cuid())
+  altText     String?
+  contentType String
+  blob        Bytes
+  purpose     String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  user        User       @relation("ImageOwner", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId      String
+  group       Group?     @relation("GroupImage")
+  shareItem   ShareItem? @relation("ShareItemImage")
+
+  @@index([userId])
+  @@index([purpose])
 }
 
 model Password {
@@ -83,15 +99,14 @@ model Session {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId String
 
-  // non-unique foreign key
   @@index([userId])
 }
 
 model Permission {
   id          String @id @default(cuid())
-  action      String // e.g. create, read, update, delete
-  entity      String // e.g. note, user, etc.
-  access      String // e.g. own or any
+  action      String
+  entity      String
+  access      String
   description String @default("")
 
   createdAt DateTime @default(now())
@@ -115,31 +130,15 @@ model Role {
 }
 
 model Verification {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-
-  /// The type of verification, e.g. "email" or "phone"
-  type String
-
-  /// The thing we're trying to verify, e.g. a user's email or phone number
-  target String
-
-  /// The secret key used to generate the otp
-  secret String
-
-  /// The algorithm used to generate the otp
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  type      String
+  target    String
+  secret    String
   algorithm String
-
-  /// The number of digits in the otp
-  digits Int
-
-  /// The number of seconds the otp is valid for
-  period Int
-
-  /// The valid characters for the otp
-  charSet String
-
-  /// When it's safe to delete this verification
+  digits    Int
+  period    Int
+  charSet   String
   expiresAt DateTime?
 
   @@unique([target, type])
@@ -163,7 +162,7 @@ enum CategoryType {
   NEED
   PRAYER
   SHARE
-  // Add other category types as needed
+  GROUP
 }
 
 model Category {
@@ -172,9 +171,9 @@ model Category {
   name   String
   active Boolean      @default(true)
 
-  // Relations
   requests   Request[]
   shareItems ShareItem[]
+  groups     Group[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -188,25 +187,18 @@ model Request {
   id         String      @id @default(cuid())
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId     String
-  type       RequestType // Keep this as is for request-specific types
+  type       RequestType
   category   Category    @relation(fields: [categoryId], references: [id])
   categoryId String
 
   description String
-
-  // Fulfillment/Answering fields
-  fulfilled   Boolean   @default(false) // Used for Needs
+  fulfilled   Boolean       @default(false)
   fulfilledAt DateTime?
-  fulfilledBy String? // Used for Needs
+  fulfilledBy String?
+  response    Json?
+  status      ContentStatus @default(ACTIVE)
+  flagged     Boolean       @default(false)
 
-  // Generic field for additional information
-  response Json? // Can store structured data or text
-
-  // Moderation
-  status  ContentStatus @default(ACTIVE)
-  flagged Boolean       @default(false)
-
-  // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -230,10 +222,9 @@ model Conversation {
   lastMessage   Message?  @relation("ConversationLastMessage", fields: [lastMessageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   messages      Message[] @relation("MessageConversation")
   groupId       String?
-  group         Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  group         Group?    @relation("GroupConversations", fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  User          User[]
 
   @@index([lastMessageId])
   @@index([groupId])
@@ -246,7 +237,7 @@ model Message {
   recipient               User?         @relation("RecipientUser", fields: [recipientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   recipientId             String?
   groupId                 String?
-  group                   Group?        @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  group                   Group?        @relation("GroupMessages", fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   content                 String
   seen                    Boolean       @default(false)
   createdAt               DateTime      @default(now())
@@ -273,26 +264,63 @@ model MessageSeen {
   @@id([messageId, userId])
 }
 
+enum GroupRole {
+  MEMBER
+  LEADER
+}
+
+enum GroupFrequency {
+  ONCE
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+model Group {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  frequency   GroupFrequency @default(WEEKLY)
+  meetingTime DateTime
+  location    String?
+  isOnline    Boolean        @default(false)
+  active      Boolean        @default(true)
+  capacity    Int?
+
+  image         Image?            @relation("GroupImage", fields: [imageId], references: [id])
+  imageId       String?           @unique // Unique because it’s a one-to-one relation
+  category      Category          @relation(fields: [categoryId], references: [id])
+  categoryId    String
+  memberships   GroupMembership[]
+  conversations Conversation[]    @relation("GroupConversations")
+  messages      Message[]         @relation("GroupMessages")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([categoryId])
+  @@index([active])
+  @@index([active, createdAt])
+  @@index([categoryId, active])
+}
+
 model GroupMembership {
   userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   groupId  String
-  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  joinedAt DateTime @default(now())
+  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  role     GroupRole @default(MEMBER)
+  joinedAt DateTime  @default(now())
 
   @@id([userId, groupId])
   @@index([groupId])
   @@index([userId])
-}
-
-model Group {
-  id            String            @id @default(cuid())
-  name          String
-  members       GroupMembership[]
-  messages      Message[]
-  conversations Conversation[]
-
-  @@index([name])
+  @@index([role])
+  @@index([userId, role])
+  @@index([groupId, role])
 }
 
 enum ModerationType {
@@ -300,6 +328,8 @@ enum ModerationType {
   PRAYER
   MESSAGE
   USER
+  GROUP
+  SHARE_ITEM
 }
 
 enum ModeratorAction {
@@ -311,14 +341,15 @@ enum ModeratorAction {
 
 model ModerationLog {
   id        String          @id @default(cuid())
-  itemId    String // ID of the moderated item
+  itemId    String
   itemType  ModerationType
   action    ModeratorAction
   reason    String?
   createdAt DateTime        @default(now())
 
-  moderator   User   @relation(fields: [moderatorId], references: [id])
+  moderator   User    @relation(fields: [moderatorId], references: [id])
   moderatorId String
+  report      Report? @relation("ReportModerationLog")
 
   @@index([itemId])
   @@index([moderatorId])
@@ -339,13 +370,17 @@ model ShareItem {
   category   Category @relation(fields: [categoryId], references: [id])
   categoryId String
 
+  // Add imageId as the foreign key and define the relation
+  image   Image?  @relation("ShareItemImage", fields: [imageId], references: [id])
+  imageId String? @unique // Unique because it’s a one-to-one relation
+
   claimed     Boolean   @default(false)
   claimedAt   DateTime?
   claimedBy   User?     @relation("ClaimedItems", fields: [claimedById], references: [id])
   claimedById String?
 
   shareType ShareType @default(BORROW)
-  duration  String? // Only applicable for BORROW type
+  duration  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -361,4 +396,55 @@ model ShareItem {
   @@index([userId])
   @@index([claimedById])
   @@index([status])
+  @@index([imageId]) // Index the foreign key for performance
+}
+
+enum ReportableType {
+  SHARE_ITEM
+  MESSAGE
+  USER
+  GROUP
+  REQUEST
+}
+
+model Report {
+  id          String         @id @default(cuid())
+  itemId      String
+  itemType    ReportableType
+  reason      ReportReason
+  description String?
+  status      ReportStatus   @default(PENDING)
+
+  reportedBy User   @relation("UserReports", fields: [reporterId], references: [id])
+  reporterId String
+
+  resolvedBy   User?   @relation("ModeratorResolutions", fields: [resolvedById], references: [id])
+  resolvedById String?
+
+  moderationLog   ModerationLog? @relation("ReportModerationLog", fields: [moderationLogId], references: [id])
+  moderationLogId String?        @unique
+
+  resolution String?
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([itemId])
+  @@index([itemType])
+  @@index([status])
+  @@index([reporterId])
+  @@index([resolvedById])
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  HARASSMENT
+  SCAM
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
 }

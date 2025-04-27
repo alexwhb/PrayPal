@@ -9,7 +9,8 @@ import {
 	img,
 } from '#tests/db-utils.ts'
 import { insertGitHubUser } from '#tests/mocks/github.ts'
-import { ShareType } from '@prisma/client'
+import { CategoryType, RequestType, ShareType, ContentStatus, $Enums, GroupFrequency } from '@prisma/client'
+import GroupRole = $Enums.GroupRole
 
 async function seed() {
 	console.log('🌱 Seeding...')
@@ -59,23 +60,38 @@ async function seed() {
 			'Furniture',
 			'Other',
 		],
+		group: [
+			'Bible Study',
+			'Prayer',
+			'Outreach',
+			'Support',
+			'Activity',
+			'Book Club',
+			'Worship',
+			'Other',
+		],
 	}
 
 	// Create all categories
 	await prisma.category.createMany({
 		data: [
 			...categories.prayer.map((name) => ({
-				type: 'PRAYER',
+				type: CategoryType.PRAYER,
 				name,
 				active: true,
 			})),
 			...categories.need.map((name) => ({
-				type: 'NEED',
+				type: CategoryType.NEED,
 				name,
 				active: true,
 			})),
 			...categories.share.map((name) => ({
-				type: 'SHARE',
+				type: CategoryType.SHARE,
+				name,
+				active: true,
+			})),
+			...categories.group.map((name) => ({
+				type: CategoryType.GROUP,
 				name,
 				active: true,
 			})),
@@ -84,15 +100,15 @@ async function seed() {
 
 	// Fetch created categories for reference
 	const prayerCategoryRecords = await prisma.category.findMany({
-		where: { type: 'PRAYER', active: true },
+		where: { type: CategoryType.PRAYER, active: true },
 	})
 
 	const needCategoryRecords = await prisma.category.findMany({
-		where: { type: 'NEED', active: true },
+		where: { type: CategoryType.NEED, active: true },
 	})
 
 	const shareCategoryRecords = await prisma.category.findMany({
-		where: { type: 'SHARE', active: true },
+		where: { type: CategoryType.SHARE, active: true },
 	})
 
 	// Update user creation to include requests
@@ -114,11 +130,11 @@ async function seed() {
 							}).map(() => {
 								const fulfilled = faker.datatype.boolean()
 								return {
-									type: 'PRAYER' as const,
+									type: RequestType.PRAYER,
 									categoryId: faker.helpers.arrayElement(prayerCategoryRecords).id,
 									description: faker.lorem.paragraph(),
 									fulfilled: fulfilled,
-									status: faker.helpers.arrayElement(['ACTIVE', 'PENDING'] as const),
+									status: faker.helpers.arrayElement([ContentStatus.ACTIVE, ContentStatus.PENDING]),
 									flagged: faker.datatype.boolean(),
 									response: fulfilled
 										? {
@@ -132,13 +148,13 @@ async function seed() {
 							...Array.from({
 								length: faker.number.int({ min: 0, max: 3 }),
 							}).map(() => ({
-								type: 'NEED' as const,
+								type: RequestType.NEED,
 								categoryId: faker.helpers.arrayElement(needCategoryRecords).id,
 								description: faker.lorem.paragraph(),
 								fulfilled: faker.datatype.boolean(),
 								fulfilledAt: faker.datatype.boolean() ? faker.date.past() : null,
 								fulfilledBy: faker.datatype.boolean() ? faker.string.uuid() : null,
-								status: faker.helpers.arrayElement(['ACTIVE', 'PENDING'] as const),
+								status: faker.helpers.arrayElement([ContentStatus.ACTIVE, ContentStatus.PENDING]),
 								flagged: faker.datatype.boolean(),
 								response: null,
 							})),
@@ -221,35 +237,151 @@ async function seed() {
 
 	console.timeEnd(`🐨 Created admin user "kody"`)
 
-	// Create groups
-	console.time(`🏘️ Created groups...`)
-	await prisma.group.createMany({
-		data: [
-			{ name: 'Family' },
-			{ name: 'Friends' },
-		],
+	// Seed groups
+	console.time(`👥 Creating groups...`)
+	const groupCategoryRecords = await prisma.category.findMany({
+		where: { type: CategoryType.GROUP, active: true },
 	})
-	const familyGroup = await prisma.group.findFirst({ where: { name: 'Family' } })
-	const friendsGroup = await prisma.group.findFirst({ where: { name: 'Friends' } })
-	console.timeEnd(`🏘️ Created groups...`)
 
-	// Create group memberships
-	console.time(`🤝 Created group memberships...`)
-	for (const userId of userIds) {
-		await prisma.groupMembership.createMany({
-			data: [
-				{ userId, groupId: familyGroup.id, joinedAt: new Date() },
-				{ userId, groupId: friendsGroup.id, joinedAt: new Date() },
-			],
+	const groups = []
+
+	// Create 10 groups
+	for (let i = 0; i < 10; i++) {
+		const meetingTime = faker.date.future()
+		const isOnline = faker.datatype.boolean()
+		
+		groups.push({
+			name: faker.helpers.arrayElement([
+				'Sunday Morning Bible Study',
+				'Youth Prayer Warriors',
+				'Women\'s Fellowship',
+				'Men\'s Breakfast Group',
+				'Marriage Enrichment',
+				'College & Career',
+				'Senior Saints',
+				'Young Adults',
+				'Worship Team Practice',
+				'Community Outreach Team',
+				'Financial Peace Group',
+				'Grief Support Circle',
+			]),
+			description: faker.lorem.paragraph(),
+			frequency: faker.helpers.arrayElement(Object.values(GroupFrequency)),
+			meetingTime,
+			location: isOnline ? null : faker.location.streetAddress(),
+			isOnline,
+			active: faker.datatype.boolean({ probability: 0.9 }), // 90% chance of being active
+			categoryId: faker.helpers.arrayElement(groupCategoryRecords).id,
 		})
 	}
+
+	const createdGroups = await Promise.all(
+		groups.map(group => 
+			prisma.group.create({
+				data: group
+			})
+		)
+	)
+	console.timeEnd(`👥 Created groups...`)
+
+	// Seed group memberships
+	console.time(`🤝 Creating group memberships...`)
+	const memberships = []
+
+	for (const group of createdGroups) {
+		// Always create exactly one leader for each group initially
+		const initialLeader = faker.helpers.arrayElement(userIds)
+		memberships.push({
+			userId: initialLeader,
+			groupId: group.id,
+			role: GroupRole.LEADER,
+			joinedAt: faker.date.past(),
+		})
+
+		// Optionally add one more leader (50% chance)
+		if (faker.datatype.boolean()) {
+			const secondLeader = faker.helpers.arrayElement(
+				userIds.filter(id => id !== initialLeader)
+			)
+			memberships.push({
+				userId: secondLeader,
+				groupId: group.id,
+				role: GroupRole.LEADER,
+				joinedAt: faker.date.past(),
+			})
+		}
+
+		// Add 3-15 regular members
+		const memberCount = faker.number.int({ min: 3, max: 15 })
+		const existingUserIds = memberships
+			.filter(m => m.groupId === group.id)
+			.map(m => m.userId)
+		
+		const members = faker.helpers.arrayElements(
+			userIds.filter(id => !existingUserIds.includes(id)),
+			memberCount
+		)
+
+		members.forEach(userId => {
+			memberships.push({
+				userId,
+				groupId: group.id,
+				role: GroupRole.MEMBER,
+				joinedAt: faker.date.past(),
+			})
+		})
+	}
+
+	await prisma.groupMembership.createMany({
+		data: memberships,
+	})
 	console.timeEnd(`🤝 Created group memberships...`)
+
+	// Make sure Kody is a leader of at least one group
+	const kodyGroup = createdGroups[0]
+	await prisma.groupMembership.upsert({
+		where: {
+			userId_groupId: {
+				userId: kody.id,
+				groupId: kodyGroup.id,
+			},
+		},
+		update: {
+			role: GroupRole.LEADER,
+		},
+		create: {
+			userId: kody.id,
+			groupId: kodyGroup.id,
+			role: GroupRole.LEADER,
+			joinedAt: faker.date.past(),
+		},
+	})
+
+	// Make sure the other test user (mody) is a member of at least one group
+	const modyGroup = createdGroups[1]
+	await prisma.groupMembership.upsert({
+		where: {
+			userId_groupId: {
+				userId: other.id,
+				groupId: modyGroup.id,
+			},
+		},
+		update: {
+			role: GroupRole.MEMBER,
+		},
+		create: {
+			userId: other.id,
+			groupId: modyGroup.id,
+			role: GroupRole.MEMBER,
+			joinedAt: faker.date.past(),
+		},
+	})
 
 	// Create group conversations
 	console.time(`💬 Created group conversations...`)
 	const familyConversation = await prisma.conversation.create({
 		data: {
-			groupId: familyGroup.id,
+			groupId: createdGroups[0].id,
 			participants: {
 				connect: userIds.map((id) => ({ id })),
 			},
@@ -257,7 +389,7 @@ async function seed() {
 	})
 	const friendsConversation = await prisma.conversation.create({
 		data: {
-			groupId: friendsGroup.id,
+			groupId: createdGroups[1].id,
 			participants: {
 				connect: userIds.map((id) => ({ id })),
 			},
@@ -355,7 +487,7 @@ async function seed() {
 	for (const userId of userIds) {
 		const itemCount = faker.number.int({ min: 1, max: 5 })
 		for (let i = 0; i < itemCount; i++) {
-			const shareType = faker.helpers.arrayElement(['BORROW', 'GIVE']) as ShareType
+			const shareType = faker.helpers.arrayElement(Object.values(ShareType))
 			const claimed = faker.datatype.boolean()
 			const claimedById = claimed
 				? faker.helpers.arrayElement(userIds.filter((id) => id !== userId))
@@ -370,9 +502,9 @@ async function seed() {
 				claimedAt: claimed ? faker.date.past() : null,
 				claimedById,
 				shareType,
-				duration: shareType === 'BORROW' ? faker.helpers.arrayElement(['1 week', '2 weeks', '1 month', 'Flexible']) : null,
+				duration: shareType === ShareType.BORROW ? faker.helpers.arrayElement(['1 week', '2 weeks', '1 month', 'Flexible']) : null,
 				userId,
-				status: faker.helpers.arrayElement(['ACTIVE', 'PENDING']),
+				status: faker.helpers.arrayElement(Object.values(ContentStatus)),
 				flagged: faker.datatype.boolean(),
 			})
 		}
