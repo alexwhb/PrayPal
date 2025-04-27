@@ -22,10 +22,27 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const boardData = await loadBoardData(
 		{ url, userId },
 		{
+			type: 'PRAYER',
 			model: prisma.request,
 			where: {
 				type: 'PRAYER',
 				status: 'ACTIVE',
+			},
+			select: {
+				id: true,
+				user: {
+					select: {
+						id: true,
+						name: true,
+						image: { select: { id: true } },
+						username: true
+					}
+				},
+				category: { select: { name: true } },
+				description: true,
+				createdAt: true,
+				fulfilled: true,
+				response: true,
 			},
 			getCategoryWhere: () => ({ type: 'PRAYER', active: true }),
 			transformResponse: (items, user) => items.map(data => ({
@@ -87,6 +104,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 		return data({ success: true })
 	} else if (action === 'delete') {
+		// TODO invalidate our total cache value whenever we remove an element.
 		const moderatorAction = formData.get('moderatorAction') === '1'
 		
 		if (moderatorAction) {

@@ -46,6 +46,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const boardData = await loadBoardData(
 		{ url, userId },
 		{
+			type: type,
 			model: prisma.shareItem,
 			where: {
 				status: 'ACTIVE',
@@ -58,7 +59,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 					select: {
 						id: true,
 						name: true,
-						image: true,
+						image: { select: { id: true } },
 						username: true,
 					},
 				},
@@ -124,6 +125,7 @@ export async function action({ request }: Route.ActionArgs) {
 	const action = formData.get('_action')
 
 	if (action === 'delete') {
+		// TODO invalidate our total cache value whenever we remove an element.
 		const moderatorAction = formData.get('moderatorAction') === '1'
 
 		if (moderatorAction) {
@@ -131,7 +133,7 @@ export async function action({ request }: Route.ActionArgs) {
 				data: {
 					moderatorId: userId,
 					itemId: itemId as string,
-					itemType: 'SHARE',
+					itemType: 'SHARE_ITEM',
 					action: 'DELETE',
 					reason: (formData.get('reason') as string) || 'Moderation action',
 				},

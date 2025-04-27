@@ -1,3 +1,5 @@
+import { cachified } from '@epic-web/cachified'
+import { cache } from '#app/utils/cache.server.ts'
 import { PAGE_SIZE } from '#app/utils/consts.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { type RequestType } from '#app/utils/types.ts'
@@ -49,7 +51,7 @@ export async function loadBoardData({ url, userId }: BoardQueryParams, options: 
     } : {}),
   }
 
-  const [items, total] = await prisma.$transaction([
+  const [items] = await prisma.$transaction([
     options.model.findMany({
       where,
       select: options.select || {
@@ -65,20 +67,38 @@ export async function loadBoardData({ url, userId }: BoardQueryParams, options: 
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
-    options.model.count({ where }),
+    // options.model.count({ where }),
   ])
 
-  const hasNextPage = total > page * PAGE_SIZE
+	const totalCacheKey = `groups:total:${options.type}:filter:${activeFilter || 'All'}`;
+	const total = await cachified({
+		key: totalCacheKey,
+		cache,
+		getFreshValue: async () => {
+			return options.model.count({ where });
+		},
+		ttl: 1000 * 60 * 5, // 5 minutes
+	});
+
+
+	const hasNextPage = total > page * PAGE_SIZE
 
   // Get categories using the provided getCategoryWhere function
-  let filters = await prisma.category.findMany({
-    where: options.getCategoryWhere(),
-    select: { name: true },
-    orderBy: { name: 'asc' }
-  })
+	const filtersCacheKey = `categories:${options.type}`;
+	const filters = await cachified({
+		key: filtersCacheKey,
+		cache,
+		getFreshValue: async () => {
+			const categories = await prisma.category.findMany({
+				where: options.getCategoryWhere(),
+				select: { name: true },
+				orderBy: { name: 'asc' },
+			});
+			return [{ name: 'All' }, ...categories];
+		},
+		ttl: 1000 * 60 * 20, // 20 minutes
+	});
 
-  // Add "All" as the first filter option
-  filters = [{ name: 'All' }, ...filters]
 
   const transformedItems = options.transformResponse 
     ? options.transformResponse(items, user)
