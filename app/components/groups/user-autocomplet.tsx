@@ -53,7 +53,7 @@ export function UserAutocomplete({
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className={className}>
-				<Command>
+				<Command shouldFilter={false}>
 					<CommandInput
 						placeholder="Search user..."
 						onValueChange={(newValue: string) => onQueryChange(newValue)}
