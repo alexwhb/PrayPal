@@ -127,8 +127,9 @@ export default function NewPrayerForm({loaderData: { categories }, actionData}: 
 					<TextareaField
 						labelProps={{ htmlFor: 'description', children: 'Prayer Request' }}
 						textareaProps={{
-							...getInputProps(fields.description, { type: 'text' }),
-							maxLength: 400, // Set maximum characters allowed
+							...getInputProps(fields.description, { type: 'text' }), // Changed to textarea
+							placeholder: 'Enter your prayer request',
+							maxLength: 400,
 						}}
 						errors={fields?.description?.errors}
 						className="relative"

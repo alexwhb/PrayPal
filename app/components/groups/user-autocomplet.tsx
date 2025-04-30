@@ -1,5 +1,4 @@
 import { ChevronsUpDown } from 'lucide-react'
-
 import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.tsx'
 import {
 	Command,
@@ -14,10 +13,10 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from '#app/components/ui/popover.tsx'
+import { cn } from '#app/lib/utils.ts'
 import { type UserSearchResult } from '#app/routes/resources+/users.search.tsx'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { Button } from '../ui/button'
-import { cn } from '#app/lib/utils.ts'
 
 
 interface UserAutocompleteProps {

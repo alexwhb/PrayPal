@@ -68,14 +68,14 @@ export function NeedItem({
 							<Avatar>
 								<AvatarImage
 									src={getUserImgSrc(need.user.image?.id)}
-									alt={need.user.username}
+									alt={need.user.name}
 								/>
-								<AvatarFallback>{need.user.username.charAt(0)}</AvatarFallback>
+								<AvatarFallback>{need.user.name.charAt(0)}</AvatarFallback>
 							</Avatar>
 						</Link>
 						<div>
 							<Link to={`/users/${need.user.username}`} prefetch="intent">
-								<h3 className="font-medium">{need.user.username}</h3>
+								<h3 className="font-medium">{need.user.name}</h3>
 							</Link>
 							<div className="flex items-center text-sm text-muted-foreground">
 								<CalendarDays className="mr-1 h-3 w-3" />

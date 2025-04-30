@@ -165,7 +165,7 @@ export default function NewShareForm({
                         labelProps={{ children: 'Location' }}
                         inputProps={{
                             ...getInputProps(fields.location, { type: 'text' }),
-                            placeholder: 'Where can people find this item?',
+                            placeholder: 'You can be vague here. Leave specifics for messages. ex. East Medford',
                         }}
                         errors={fields.location.errors}
                     />

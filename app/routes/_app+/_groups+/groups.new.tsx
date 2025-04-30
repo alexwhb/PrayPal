@@ -1,16 +1,16 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { SelectGroup } from '@radix-ui/react-select'
-import React, { useState } from 'react'
-import { data, Form, useFetcher  } from 'react-router'
+import React, { useCallback, useMemo, useState } from 'react'
+import { data, Form, useFetcher } from 'react-router'
 import { z } from 'zod'
 import {
 	ErrorList,
 	Field,
-	NumberField, TagField,
+	NumberField,
 	TextareaField,
 } from '#app/components/forms'
-
+import { format } from 'date-fns/format'
 import { UserAutocomplete } from '#app/components/groups/user-autocomplet.tsx'
 import { Button } from '#app/components/ui/button'
 import { Label } from '#app/components/ui/label'
@@ -26,11 +26,26 @@ import { requireUserId } from '#app/utils/auth.server'
 import { prisma } from '#app/utils/db.server'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/groups.new.ts'
-
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from '#app/components/ui/popover.tsx'
+import { Input } from '#app/components/ui/input.tsx'
+import { Calendar } from '#app/components/ui/calendar.tsx'
+import { CalendarIcon, Clock } from 'lucide-react'
+import {
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from '#app/components/ui/form.tsx'
+import { DateTimePicker } from '#app/components/date-time-picker.tsx'
 
 interface User {
-  id: string;
-  name: string;
+	id: string
+	name: string
 }
 
 const GroupSchema = z.object({
@@ -44,7 +59,13 @@ const GroupSchema = z.object({
 		'MONTHLY',
 		'CUSTOM',
 	]),
+
+	startDate: z.date({
+		required_error: 'A start date is required.',
+	}),
 	meetingTime: z.string().min(1, 'Meeting time is required'),
+	endDate: z.date().optional(),
+
 	location: z.string().optional(),
 	isOnline: z.boolean().default(false),
 	capacity: z.number().int().positive().optional(),
@@ -123,78 +144,50 @@ export default function NewGroupForm({
 	const { categories } = loaderData
 	const [isOpen, setIsOpen] = useState(false)
 	const [query, setQuery] = useState('')
+	const [capacity, setCapacity] = useState<number | null>(null)
+
+	const initialDate = useMemo(() => new Date(), [])
+
+	const [selectedDate, setSelectedDate] = useState(initialDate)
+	const formattedDate = useMemo(
+		() => format(selectedDate, 'PPP'),
+		[selectedDate],
+	)
+	const isoDate = useMemo(() => selectedDate.toISOString(), [selectedDate])
 
 	// const [selectedAdmins, setSelectedAdmins] = useState<User[]>([]);
-	const userFetcher = useFetcher<UserSearchResult[]>();
+	const userFetcher = useFetcher<UserSearchResult[]>()
 	//
 	const fetchUsers = React.useCallback(
-		async (newQuery: string)=> {
-			if (query == newQuery) return;
+		async (newQuery: string) => {
+			if (query == newQuery) return
 			// Load the data using the fetcher
 			setQuery(newQuery)
-			await userFetcher.load(`/resources/users/search?q=${newQuery}`);
-
+			await userFetcher.load(`/resources/users/search?q=${newQuery}`)
 		},
-		[userFetcher, query]
-	);
+		[userFetcher, query],
+	)
 
+	const [selectedAdmins, setSelectedAdmins] = React.useState<
+		UserSearchResult[]
+	>([])
 
-	// console.log(userFetcher.data)
-
-	// const fetchUsers = async (query: string): Promise<User[]> => {
-	// 	if (!query) return [];
-	//
-	// 	userFetcher.load(`/resources/users/search?q=${query}`);
-	//
-	// 	return [];
-	// }
-
-
-	// // Add debugging to see when results update
-	// const searchResults = React.useMemo(() => {
-	// 	console.log('userFetcher state:', userFetcher.state);
-	// 	console.log('userFetcher data:', userFetcher.data);
-	//
-	// 	if (userFetcher.state === "idle" && userFetcher.data) {
-	// 		return userFetcher.data.map((u) => ({
-	// 			id: u.id,
-	// 			name: u.name ?? u.username,
-	// 		}));
-	// 	}
-	// 	return [];
-	// }, [userFetcher.state, userFetcher.data]);
-	//
-	// // Add this useEffect to monitor fetcher state changes
-	// React.useEffect(() => {
-	// 	console.log('Fetcher state changed:', userFetcher.state);
-	// 	console.log('Fetcher data:', userFetcher.data);
-	// }, [userFetcher.state, userFetcher.data]);
-	//
-	// console.log(searchResults)
-	const [selectedAdmins, setSelectedAdmins] = React.useState<UserSearchResult[]>([]);
-
-	// Stabilize fetchUsers with useCallback
-	// const fetchUsers = React.useCallback(
-	// 	async (query: string): Promise<User[]> => {
-	// 		if (!query || query.length < 2) return [];
-	// 		// Your API call here, e.g., fetch(`/users/search?q=${query}`)
-	// 		return [];
-	// 	},
-	// 	[]
-	// );
+	const handleDateSelect = useCallback((date: Date | undefined) => {
+		if (date) setSelectedDate(date)
+	}, [])
 
 	// Stabilize onSelect with useCallback
-	const onSelect = React.useCallback((user: UserSearchResult | null) => {
-		if (!user) return;
-		if (!selectedAdmins.some(admin => admin.id === user.id)) {
-			setSelectedAdmins(prev => [...prev, user]);
-		}
-		setQuery("")
-		setIsOpen(false)
-	}, [selectedAdmins]);
-
-
-
+	const onSelect = React.useCallback(
+		(user: UserSearchResult | null) => {
+			if (!user) return
+			if (!selectedAdmins.some((admin) => admin.id === user.id)) {
+				setSelectedAdmins((prev) => [...prev, user])
+			}
+			setQuery('')
+			setIsOpen(false)
+		},
+		[selectedAdmins],
+	)
 
 	const defaultValues = {
 		categoryId: categories[0]?.id,
@@ -221,13 +214,7 @@ export default function NewGroupForm({
 
 	return (
 		<Form method="post" {...getFormProps(form)} className="space-y-8">
-
-			<Button onClick={(e) =>{
-				e.preventDefault()
-			void fetchUsers('m')
-
-			}}>Log form value</Button>
-
+			{/* This should have a limit of 75 characters */}
 			<Field
 				labelProps={{ children: 'Group Name' }}
 				inputProps={{
@@ -241,11 +228,26 @@ export default function NewGroupForm({
 				labelProps={{ children: 'Description' }}
 				textareaProps={{
 					...getInputProps(fields.description, { type: 'text' }),
-					placeholder: 'Describe your group',
+					maxLength: 400, // Set maximum characters allowed
 				}}
 				errors={fields.description.errors}
+				className="relative"
+			>
+				<div className="absolute bottom-4 right-4 text-xs text-muted-foreground">
+					{fields.description.value?.length ?? 0} / 400
+				</div>
+			</TextareaField>
+
+			<Field
+				labelProps={{ children: 'Location' }}
+				inputProps={{
+					...getInputProps(fields.location, { type: 'text' }),
+					placeholder: 'Enter group location',
+				}}
+				errors={fields.location.errors}
 			/>
 
+			{/* TODO we should make custom have a text input maybe? */}
 			<div className="space-y-2">
 				<Label htmlFor="frequency">Frequency</Label>
 				<Select
@@ -258,9 +260,9 @@ export default function NewGroupForm({
 					<SelectContent>
 						{['ONCE', 'DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'CUSTOM'].map(
 							(freq) => (
-								<option key={freq} value={freq}>
+								<SelectItem key={freq} value={freq}>
 									{freq.charAt(0) + freq.slice(1).toLowerCase()}
-								</option>
+								</SelectItem>
 							),
 						)}
 					</SelectContent>
@@ -276,39 +278,39 @@ export default function NewGroupForm({
 			</div>
 
 
-
-			{/*<Field*/}
-			{/*  labelProps={{ children: 'Meeting Time' }}*/}
-			{/*  inputProps={{*/}
-			{/*    ...conform.input(fields.meetingTime),*/}
-			{/*    type: 'datetime-local',*/}
-			{/*  }}*/}
-			{/*  errors={fields.meetingTime.errors}*/}
-			{/*/>*/}
-
-			<Field
-				labelProps={{ children: 'Location' }}
-				inputProps={{
-					...getInputProps(fields.location, { type: 'text' }),
-					placeholder:
-						'Enter group location',
-				}}
-				errors={fields.location.errors}
-			/>
-
-			{/*<div className="flex items-center gap-2">*/}
-			{/*  <input*/}
-			{/*    type="checkbox"*/}
-			{/*		...getInputProps(fields.isOnline, { type: 'checkbox' })*/}
-			{/*    /!*{...conform.input(fields.isOnline, { type: 'checkbox' })}*!/*/}
-			{/*  />*/}
-			{/*  <Label>Online Meeting</Label>*/}
-			{/*</div>*/}
+			<div className="space-y-1">
+				<Label htmlFor="pubDate">Start Date</Label>
+				<Popover>
+					<PopoverTrigger asChild>
+						<div className="relative">
+							<Input
+								id="pubDate"
+								readOnly
+								placeholder="Pick a date"
+								value={formattedDate}
+								className="cursor-pointer text-left"
+							/>
+							<CalendarIcon className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
+						</div>
+					</PopoverTrigger>
+					<PopoverContent className="w-auto p-0" align="start">
+						<Calendar
+							mode="single"
+							selected={selectedDate}
+							onSelect={handleDateSelect}
+							initialFocus
+						/>
+					</PopoverContent>
+				</Popover>
+				<input type="hidden" name="startDate" value={isoDate} />
+			</div>
 
 			<NumberField
-				labelProps={{ children: 'Capacity (optional)' }}
-				{...getInputProps(fields.capacity, { type: 'number' })}
 				min={1}
+				max={10000}
+				labelProps={{ children: 'Capacity (optional)' }}
+				onChange={setCapacity}
+				value={capacity}
 				errors={fields.capacity.errors}
 			/>
 
@@ -323,11 +325,11 @@ export default function NewGroupForm({
 					</SelectTrigger>
 					<SelectContent>
 						<SelectGroup>
-						{categories.map((category: { id: string; name: string }) => (
-							<SelectItem key={category.id} value={category.id}>
-								{category.name}
-							</SelectItem>
-						))}
+							{categories.map((category: { id: string; name: string }) => (
+								<SelectItem key={category.id} value={category.id}>
+									{category.name}
+								</SelectItem>
+							))}
 						</SelectGroup>
 					</SelectContent>
 				</Select>
@@ -340,6 +342,8 @@ export default function NewGroupForm({
 					) : null}
 				</div>
 			</div>
+
+			<DateTimePicker />
 
 			{/*TODO this is not worth my time right now, but it would be nice to have down the road. */}
 
@@ -367,7 +371,11 @@ export default function NewGroupForm({
 							<span>{admin.name}</span>
 							<button
 								type="button"
-								onClick={() => setSelectedAdmins(selectedAdmins.filter(a => a.id !== admin.id))}
+								onClick={() =>
+									setSelectedAdmins(
+										selectedAdmins.filter((a) => a.id !== admin.id),
+									)
+								}
 								className="text-muted-foreground hover:text-foreground"
 							>
 								×
@@ -377,7 +385,7 @@ export default function NewGroupForm({
 				</div>
 
 				{/* Hidden input to submit selected admins */}
-				{selectedAdmins.map(admin => (
+				{selectedAdmins.map((admin) => (
 					<input
 						key={admin.id}
 						type="hidden"

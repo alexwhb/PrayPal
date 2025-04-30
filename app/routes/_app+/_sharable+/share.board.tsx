@@ -8,7 +8,7 @@ import {
 	Trash,
 } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { data, Link, useSearchParams } from 'react-router'
+import { data, Form, Link, useSearchParams } from 'react-router'
 import BoardFooter from '#app/components/board/board-footer.tsx'
 import BoardHeader from '#app/components/board/board-header.tsx'
 import { DeleteDialog } from '#app/components/shared/delete-dialog.tsx'
@@ -36,12 +36,14 @@ import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { formatDate } from '#app/utils/formatter.ts'
 import { type Route } from './+types/share.board.ts'
+import { initiateConversation } from '#app/utils/messaging.server.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
 	const url = new URL(request.url)
 	const sort = url.searchParams.get('sort') === 'asc' ? 'asc' : 'desc'
-	const type = url.searchParams.get('type')?.toUpperCase() === 'GIVE' ? 'GIVE' : 'BORROW'
+	const type =
+		url.searchParams.get('type')?.toUpperCase() === 'GIVE' ? 'GIVE' : 'BORROW'
 
 	const boardData = await loadBoardData(
 		{ url, userId },
@@ -115,7 +117,11 @@ type Share = Awaited<ReturnType<typeof loader>>['items'][number]
 type ItemCardProps = {
 	item: Share
 	isCurrentUser: boolean
-	onOpenDialog: (itemId: string, action: 'delete' | 'pending' | 'removed', isModerator: boolean) => void
+	onOpenDialog: (
+		itemId: string,
+		action: 'delete' | 'pending' | 'removed',
+		isModerator: boolean,
+	) => void
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -125,7 +131,6 @@ export async function action({ request }: Route.ActionArgs) {
 	const action = formData.get('_action')
 
 	if (action === 'delete') {
-		// TODO invalidate our total cache value whenever we remove an element.
 		const moderatorAction = formData.get('moderatorAction') === '1'
 
 		if (moderatorAction) {
@@ -142,16 +147,74 @@ export async function action({ request }: Route.ActionArgs) {
 
 		await prisma.shareItem.delete({ where: { id: itemId as string } })
 		return data({ success: true })
+	} 
+	
+	if (action === 'toggleClaimed') {
+		const item = await prisma.shareItem.findUnique({
+			where: { id: itemId as string },
+			select: { userId: true, claimed: true }
+		})
+
+		// Verify ownership
+		invariantResponse(item?.userId === userId, 'Not authorized', { status: 403 })
+
+		await prisma.shareItem.update({
+			where: { id: itemId as string },
+			data: { claimed: !item.claimed }
+		})
+
+		return data({ success: true })
 	}
 
-	// ... other actions
+	if (action === 'requestItem') {
+		const item = await prisma.shareItem.findUnique({
+			where: { id: itemId as string },
+			select: { userId: true, title: true }
+		})
+
+		if (!item) return null
+
+		return initiateConversation({
+			initiatorId: userId,
+			participantIds: [item.userId],
+			checkExisting: true,
+			initialMessage: `Hi! I'm interested in your shared item: "${item.title}"`
+		})
+	}
+
+	if (action === 'pending' || action === 'removed') {
+		const moderatorAction = formData.get('moderatorAction') === '1'
+		
+		if (moderatorAction) {
+			await prisma.moderationLog.create({
+				data: {
+					moderatorId: userId,
+					itemId: itemId as string,
+					itemType: 'SHARE_ITEM',
+					action: action.toUpperCase(),
+					reason: (formData.get('reason') as string) || 'Moderation action',
+				},
+			})
+
+			await prisma.shareItem.update({
+				where: { id: itemId as string },
+				data: {
+					status: action === 'pending' ? 'PENDING' : 'REMOVED',
+				},
+			})
+		}
+
+		return data({ success: true })
+	}
+
+	return null
 }
 
 type DialogState = {
-	isOpen: boolean;
-	itemId: string | null;
-	action: 'delete' | 'pending' | 'removed';
-	isModerator: boolean;
+	isOpen: boolean
+	itemId: string | null
+	action: 'delete' | 'pending' | 'removed'
+	isModerator: boolean
 }
 
 export default function ShareBoard({
@@ -164,7 +227,7 @@ export default function ShareBoard({
 		isOpen: false,
 		itemId: null,
 		action: 'delete',
-		isModerator: false
+		isModerator: false,
 	})
 
 	// Helper to generate URLs with updated search params
@@ -202,12 +265,16 @@ export default function ShareBoard({
 		return generateUrl({ page: currentPage + 1 })
 	}, [generateUrl, searchParams])
 
-	const handleOpenDialog = (itemId: string, action: 'delete' | 'pending' | 'removed', isModerator: boolean) => {
+	const handleOpenDialog = (
+		itemId: string,
+		action: 'delete' | 'pending' | 'removed',
+		isModerator: boolean,
+	) => {
 		setDialogState({
 			isOpen: true,
 			itemId,
 			action,
-			isModerator
+			isModerator,
 		})
 	}
 
@@ -216,7 +283,7 @@ export default function ShareBoard({
 			isOpen: false,
 			itemId: null,
 			action: 'delete',
-			isModerator: false
+			isModerator: false,
 		})
 	}
 
@@ -227,21 +294,21 @@ export default function ShareBoard({
 				activeFilter={loaderData.activeFilter}
 				getFilterUrl={getFilterUrl}
 				getSortUrl={getSortUrl}
-				newActionToolTipString={isBorrowBoard ? "Share Equipment" : "Give Item"}
+				newActionToolTipString={isBorrowBoard ? 'Share Equipment' : 'Give Item'}
 				secondaryAction={
 					isBorrowBoard
 						? {
-							label: "View Free Items",
-							href: "?type=give",
-							tooltip: "Switch to Free Items board",
-							icon: Gift
-						}
+								label: 'View Free Items',
+								href: '?type=give',
+								tooltip: 'Switch to Free Items board',
+								icon: Gift,
+							}
 						: {
-							label: "View Borrowable Items",
-							href: "?",
-							tooltip: "Switch to Borrowable Items board",
-							icon: Gift
-						}
+								label: 'View Borrowable Items',
+								href: '?',
+								tooltip: 'Switch to Borrowable Items board',
+								icon: Gift,
+							}
 				}
 			/>
 
@@ -311,7 +378,7 @@ function ItemCard({ item, isCurrentUser, onOpenDialog }: ItemCardProps) {
 			className={`${item.claimed ? 'opacity-75' : ''} border-2 transition-shadow hover:shadow-md`}
 		>
 			<CardHeader className="p-0">
-				<div className="relative h-58 w-full overflow-hidden">
+				<div className="h-58 relative w-full overflow-hidden">
 					<img
 						src={item.image}
 						alt={item.title}
@@ -351,7 +418,7 @@ function ItemCard({ item, isCurrentUser, onOpenDialog }: ItemCardProps) {
 						<div className="absolute inset-0 flex items-center justify-center rounded-t-lg bg-black/50">
 							<Badge
 								variant="default"
-								className="bg-red-200 py-2 text-lg hover:bg-red-300 text-red-900"
+								className="bg-red-200 py-2 text-lg text-red-900 hover:bg-red-300"
 							>
 								{isBorrowable ? 'Currently Borrowed' : 'Claimed'}
 							</Badge>
@@ -381,7 +448,11 @@ function ItemCard({ item, isCurrentUser, onOpenDialog }: ItemCardProps) {
 
 				<div className="flex items-center gap-2">
 					{/*TODO username is not the user name*/}
-					<Link to={`/users/${item.userName}`} prefetch="intent" className="flex items-center gap-2">
+					<Link
+						to={`/users/${item.userName}`}
+						prefetch="intent"
+						className="flex items-center gap-2"
+					>
 						<Avatar className="h-6 w-6">
 							<AvatarImage src={item.userAvatar} alt={item.userDisplayName} />
 							<AvatarFallback>{item.userDisplayName.charAt(0)}</AvatarFallback>
@@ -390,10 +461,29 @@ function ItemCard({ item, isCurrentUser, onOpenDialog }: ItemCardProps) {
 					</Link>
 				</div>
 			</CardContent>
+
 			<CardFooter className="flex justify-between pt-0">
-				<Button>
-					{item.claimed ? 'Mark as Available' : 'Mark as Claimed'}
-				</Button>
+				{isCurrentUser && (
+					<Form method="post">
+						<input type="hidden" name="itemId" value={item.id} />
+						<input type="hidden" name="_action" value="toggleClaimed" />
+						<Button type="submit">
+							{item.claimed ? 'Mark as Available' : 'Mark as Claimed'}
+						</Button>
+					</Form>
+				)}
+
+				{/*TODO this should open the message view and crate a conversation with
+				the owner and a basic message template. */}
+				{!isCurrentUser && !item.claimed && (
+					<Form method="post">
+						<input type="hidden" name="itemId" value={item.id} />
+						<input type="hidden" name="_action" value="requestItem" />
+						<Button type="submit" variant="outline">
+							Request Item
+						</Button>
+					</Form>
+				)}
 
 				<div className="flex gap-2">
 					{item.canModerate && !isCurrentUser && (
@@ -403,7 +493,10 @@ function ItemCard({ item, isCurrentUser, onOpenDialog }: ItemCardProps) {
 									<Flag className="h-4 w-4" />
 								</Button>
 							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" onCloseAutoFocus={(event) => event.preventDefault()}>
+							<DropdownMenuContent
+								align="end"
+								onCloseAutoFocus={(event) => event.preventDefault()}
+							>
 								<DropdownMenuItem
 									onClick={() => {
 										onOpenDialog(item.id, 'pending', true)

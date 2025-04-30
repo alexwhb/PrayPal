@@ -193,34 +193,34 @@ function App() {
 	const data = useLoaderData<typeof loader>()
 	const theme = useTheme()
 	const user = useOptionalUser()
-	const [socket, setSocket] = useState<Socket | undefined>(undefined)
+	// const [socket, setSocket] = useState<Socket | undefined>(undefined)
 
-	useEffect(() => {
-		if (user?.id && !socket) {
-			const newSocket = connect()
-			newSocket.on('connect', () => {
-				newSocket.emit('set-user-id', user.id)
-				setSocket(newSocket)
-			})
-
-			return () => {
-				if (newSocket.connected) {
-					newSocket.disconnect()
-				}
-			}
-		}
-
-		if (!user?.id && socket) {
-			socket.disconnect()
-			setSocket(undefined)
-		}
-	}, [socket, user?.id])
+	// useEffect(() => {
+	// 	if (user?.id && !socket) {
+	// 		const newSocket = connect()
+	// 		newSocket.on('connect', () => {
+	// 			newSocket.emit('set-user-id', user.id)
+	// 			setSocket(newSocket)
+	// 		})
+	//
+	// 		return () => {
+	// 			if (newSocket.connected) {
+	// 				newSocket.disconnect()
+	// 			}
+	// 		}
+	// 	}
+	//
+	// 	if (!user?.id && socket) {
+	// 		socket.disconnect()
+	// 		setSocket(undefined)
+	// 	}
+	// }, [socket, user?.id])
 
 	return (
 		<>
-			<SocketProvider socket={socket}>
+			{/*<SocketProvider socket={socket}>*/}
 				<Outlet />
-			</SocketProvider>
+			{/*</SocketProvider>*/}
 			<Toaster closeButton position="top-center" theme={theme} />
 			<EpicProgress />
 		</>
