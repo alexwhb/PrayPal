@@ -1,18 +1,14 @@
 import { format, subDays } from 'date-fns'
-import { Users, MessageCircle, Flag, CheckCircle2, PieChart, BarChart3, TrendingUp } from 'lucide-react'
 import { useCallback } from 'react'
 import { data, Link, useLoaderData, useNavigate } from 'react-router'
-import { BarChart, LineChart, PieChart as PieChartComponent } from '#app/components/charts.tsx'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#app/components/ui/card.tsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#app/components/ui/tabs.tsx'
 import { prisma } from '#app/utils/db.server.ts'
-// import { DateRangePicker } from '#app/components/date-range-picker.tsx'
 import { type Route } from './+types/admin.dashboard.ts'
+import { CommunityTab } from './components/dashboard/community-tab.tsx'
+import { ModerationTab } from './components/dashboard/moderation-tab.tsx'
+import { OverviewTab } from './components/dashboard/overview-tab.tsx'
 
 export async function loader({ request }: Route.LoaderArgs) {
-	// Ensure only admins/moderators can access this page
-	// await requireUserWithRole(request, ['admin', 'moderator'])
-
 	const url = new URL(request.url)
 	const startDateParam = url.searchParams.get('startDate')
 	const endDateParam = url.searchParams.get('endDate')
@@ -330,214 +326,16 @@ export default function Dashboard() {
 						<TabsTrigger value="moderation">Moderation</TabsTrigger>
 					</TabsList>
 
-					<TabsContent value="overview" className="space-y-4">
-						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-							<Card>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">Total Members</CardTitle>
-									<Users className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{metrics.totalUsers}</div>
-									<p className="text-xs text-muted-foreground">
-										+{metrics.newUsers} new in selected period
-									</p>
-								</CardContent>
-							</Card>
-
-							<Card>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">Prayer Requests</CardTitle>
-									<MessageCircle className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{metrics.newPrayers}</div>
-									<p className="text-xs text-muted-foreground">
-										{metrics.answeredPrayers} answered in selected period
-									</p>
-								</CardContent>
-							</Card>
-
-							<Card>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">Needs Posted</CardTitle>
-									<Flag className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{metrics.newNeeds}</div>
-									<p className="text-xs text-muted-foreground">
-										{metrics.fulfilledNeeds} fulfilled in selected period
-									</p>
-								</CardContent>
-							</Card>
-
-							<Card>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">Messages Sent</CardTitle>
-									<MessageCircle className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{metrics.messagesSent}</div>
-									<p className="text-xs text-muted-foreground">
-										Community engagement
-									</p>
-								</CardContent>
-							</Card>
-						</div>
-
-						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-							<Card className="col-span-4">
-								<CardHeader>
-									<CardTitle>Activity Overview</CardTitle>
-									<CardDescription>
-										Posts across different boards over the last 7 days
-									</CardDescription>
-								</CardHeader>
-								<CardContent className="pl-2">
-									<LineChart
-										data={activityData}
-										categories={['prayers', 'needs', 'shares']}
-										index="name"
-										colors={['#2563eb', '#16a34a', '#d97706']}
-										valueFormatter={(value) => `${value} posts`}
-										className="h-[300px]"
-									/>
-								</CardContent>
-							</Card>
-
-							<Card className="col-span-3">
-								<CardHeader>
-									<CardTitle>Prayer Categories</CardTitle>
-									<CardDescription>
-										Distribution of prayer requests by category
-									</CardDescription>
-								</CardHeader>
-								<CardContent>
-									<PieChartComponent
-										data={prayerCategoryData}
-										index="name"
-										categories={['value']}
-										colors={['#2563eb', '#16a34a', '#d97706', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']}
-										valueFormatter={(value) => `${value} prayers`}
-										className="h-[300px]"
-									/>
-								</CardContent>
-							</Card>
-						</div>
+					<TabsContent value="overview">
+						<OverviewTab metrics={metrics} activityData={activityData} prayerCategoryData={prayerCategoryData} />
 					</TabsContent>
 
-					<TabsContent value="community" className="space-y-4">
-						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-							<Card>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">Total Groups</CardTitle>
-									<Users className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{metrics.totalGroups}</div>
-									<p className="text-xs text-muted-foreground">
-										+{metrics.newGroups} new in selected period
-									</p>
-								</CardContent>
-							</Card>
-
-							<Card>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">Shared Items</CardTitle>
-									<TrendingUp className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{metrics.newShareItems}</div>
-									<p className="text-xs text-muted-foreground">
-										{metrics.claimedShareItems} claimed in selected period
-									</p>
-								</CardContent>
-							</Card>
-
-							<Card>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">User Engagement</CardTitle>
-									<CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{metrics.activeUsers}</div>
-									<p className="text-xs text-muted-foreground">
-										{metrics.engagementRate.toFixed(1)}% engagement rate
-									</p>
-								</CardContent>
-							</Card>
-						</div>
-
-						<Card>
-							<CardHeader>
-								<CardTitle>Community Growth</CardTitle>
-								<CardDescription>
-									New users and groups over time
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<BarChart
-									data={activityData}
-									categories={['prayers', 'needs', 'shares']}
-									index="name"
-									colors={['#2563eb', '#16a34a', '#d97706']}
-									valueFormatter={(value) => `${value}`}
-									className="h-[300px]"
-								/>
-							</CardContent>
-						</Card>
+					<TabsContent value="community">
+						<CommunityTab metrics={metrics} activityData={activityData} />
 					</TabsContent>
 
-					<TabsContent value="moderation" className="space-y-4">
-						<div className="grid gap-4 md:grid-cols-2">
-							<Card>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">Pending Reports</CardTitle>
-									<Flag className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{metrics.pendingReports}</div>
-									<p className="text-xs text-muted-foreground">
-										Awaiting moderation
-									</p>
-								</CardContent>
-							</Card>
-
-							<Card>
-								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-									<CardTitle className="text-sm font-medium">Moderation Actions</CardTitle>
-									<CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-								</CardHeader>
-								<CardContent>
-									<div className="text-2xl font-bold">{metrics.moderationActions}</div>
-									<p className="text-xs text-muted-foreground">
-										Actions taken in selected period
-									</p>
-								</CardContent>
-							</Card>
-						</div>
-
-						<Card>
-							<CardHeader>
-								<CardTitle>Moderation Activity</CardTitle>
-								<CardDescription>
-									Recent moderation actions
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<div className="rounded-md border">
-									<div className="flex items-center justify-between border-b px-4 py-3">
-										<div className="font-medium">Action</div>
-										<div className="font-medium">Date</div>
-									</div>
-									<div className="p-4 text-center text-sm text-muted-foreground">
-										<Link to="/admin/moderation" className="text-primary hover:underline">
-											View all moderation actions
-										</Link>
-									</div>
-								</div>
-							</CardContent>
-						</Card>
+					<TabsContent value="moderation">
+						<ModerationTab metrics={metrics} />
 					</TabsContent>
 				</Tabs>
 			</div>
