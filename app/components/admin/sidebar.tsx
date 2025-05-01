@@ -85,7 +85,7 @@ export default function Sidebar() {
 									Admin
 								</div>
 								<div className="space-y-1">
-									<NavItem href="/admin" icon={BarChart2}>
+									<NavItem href="/admin/dashboard" icon={BarChart2}>
 										Main Dashboard
 									</NavItem>
 									<NavItem href="/admin/category-edit" icon={Home}>
