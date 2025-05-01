@@ -5,7 +5,7 @@ import {
 	getInstanceInfo,
 	getInternalInstanceDomain,
 } from '#app/utils/litefs.server'
-import { type Route } from './+types/cache_.sqlite.ts'
+import { type Route } from './+types/admin.cache_.sqlite.ts'
 
 export async function updatePrimaryCacheValue({
 	key,

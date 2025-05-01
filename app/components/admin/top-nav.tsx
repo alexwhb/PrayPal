@@ -23,7 +23,7 @@ export default function TopNav({ theme, user }: TopNavProps) {
 
   return (
     <nav className="px-3 sm:px-6 flex items-center justify-between border-b h-full">
-      <div></div>
+      <div>Admin</div>
       <div className="flex items-center gap-2 sm:gap-4 ml-auto sm:ml-0">
         <button
           type="button"

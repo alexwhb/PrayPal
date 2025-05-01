@@ -10,22 +10,34 @@
 // just for a single small church body, that should be quite possible, and
 // would massively reduce the amount of spam that gets posted.
 
-
+import LayoutAdmin from '#app/components/admin/layout-admin.tsx'
+import { useTheme } from '#app/routes/resources+/theme-switch.tsx'
 import { logout, requireUserId } from '#app/utils/auth.server.ts'
-import  { type Route } from '../../../.react-router/types/app/routes/+types/me.ts'
+import { prisma } from '#app/utils/db.server.ts'
+import { useOptionalUser } from '#app/utils/user.ts'
+import { type Route } from './+types/admin._index.ts'
+import { Outlet } from 'react-router'
 
 export async function loader({ request }: Route.LoaderArgs) {
-
 	// todo test if a user has admin permissions
 	const userId = await requireUserId(request)
-	
 
-// TODO this is how we should handle if you are not an admin. 	
-	await logout({ request, redirectTo: '/' })
-
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: { roles: true },
+	})
+	if (!user || !user.roles.some((role) => role.name === 'admin')) {
+		await logout({ request, redirectTo: '/' })
+	}
 }
 
+export default function Admin() {
+	const user = useOptionalUser()
+	const theme = useTheme()
 
-export default function Index() {
-	return <main>Admin</main>
+	return (
+		<LayoutAdmin theme={theme} user={user}>
+			<Outlet />
+		</LayoutAdmin>
+	)
 }

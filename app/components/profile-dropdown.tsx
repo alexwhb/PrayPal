@@ -2,6 +2,8 @@ import { FileText, LogOut, MoveUpRight, Settings } from 'lucide-react'
 import { Form, Link } from 'react-router'
 import { DropdownMenuItem } from '#app/components/ui/dropdown-menu.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
+import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.tsx'
+import { getUserImgSrc } from '#app/utils/misc.tsx'
 
 interface MenuItem {
 	label: string
@@ -14,11 +16,13 @@ interface MenuItem {
 interface ProfileProps {
 	name: string
 	role: string
+	username: string
 	avatar: string
 }
 
 export default function ProfileDropdown({
 	name,
+	username,
 	role,
 	avatar,
 }: Partial<ProfileProps>) {
@@ -40,15 +44,18 @@ export default function ProfileDropdown({
 		<div className="mx-auto w-full max-w-sm">
 			<div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
 				<div className="relative px-6 pb-6 pt-12">
+					<Link to={`/users/${username}`} prefetch="intent">
 					<div className="mb-8 flex items-center gap-4">
 						<div className="relative shrink-0">
-							<img
-								src={avatar}
-								alt={name}
-								width={72}
-								height={72}
-								className="rounded-full object-cover ring-4 ring-white dark:ring-zinc-900"
-							/>
+								<Avatar>
+									<AvatarImage
+										src={avatar}
+										alt={name}
+									/>
+									<AvatarFallback>
+										{name.charAt(0)}
+									</AvatarFallback>
+								</Avatar>
 							<div className="absolute bottom-0 right-0 h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900" />
 						</div>
 
@@ -60,6 +67,7 @@ export default function ProfileDropdown({
 							<p className="text-zinc-600 dark:text-zinc-400">{role}</p>
 						</div>
 					</div>
+					</Link>
 					<div className="my-6 h-px bg-zinc-200 dark:bg-zinc-800" />
 					<div className="space-y-2">
 						{menuItems.map((item) => (

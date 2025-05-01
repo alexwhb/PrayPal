@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router'
-import LayoutMainApp from '#app/components/layout.tsx'
+import LayoutMainApp from '#app/components/layout-main-app.tsx'
 import { useTheme } from '#app/routes/resources+/theme-switch.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { useOptionalUser } from '#app/utils/user'
