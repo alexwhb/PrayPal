@@ -94,9 +94,9 @@ export default function Sidebar() {
 									<NavItem href="/admin/moderation" icon={Gift}>
 										Moderation
 									</NavItem>
-									{/*<NavItem href="/groups/board" icon={Users2}>*/}
-									{/*	Groups*/}
-									{/*</NavItem>*/}
+									<NavItem href="/admin/roles" icon={Users2}>
+										Role Editor
+									</NavItem>
 								</div>
 							</div>
 
