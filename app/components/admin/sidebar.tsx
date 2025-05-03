@@ -1,11 +1,12 @@
 import {
 	BarChart2,
-	Gift,
+	FolderTree,
 	HelpCircle,
-	Home,
-	Menu, Users2,
-
-
+	Users2,
+	Menu,
+	ShieldAlert,
+	UserCog,
+	MessageSquare,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -88,14 +89,20 @@ export default function Sidebar() {
 									<NavItem href="/admin/dashboard" icon={BarChart2}>
 										Main Dashboard
 									</NavItem>
-									<NavItem href="/admin/category-edit" icon={Home}>
+									<NavItem href="/admin/category-edit" icon={FolderTree}>
 										Category Editor
 									</NavItem>
-									<NavItem href="/admin/moderation" icon={Gift}>
+									<NavItem href="/admin/moderation" icon={ShieldAlert}>
 										Moderation
 									</NavItem>
-									<NavItem href="/admin/roles" icon={Users2}>
+									<NavItem href="/admin/roles" icon={UserCog}>
 										Role Editor
+									</NavItem>
+									<NavItem href="/admin/feedback" icon={MessageSquare}>
+										Feedback
+									</NavItem>
+									<NavItem href="/admin/help-faqs" icon={HelpCircle}>
+										Help FAQs
 									</NavItem>
 								</div>
 							</div>
@@ -114,16 +121,16 @@ export default function Sidebar() {
 						</div>
 					</div>
 
-					<div className="border-t border-gray-200 px-4 py-4 dark:border-[#1F1F23]">
-						<div className="space-y-1">
-							{/*<NavItem href="#" icon={Settings}>*/}
-							{/*	Settings*/}
-							{/*</NavItem>*/}
-							<NavItem href="/help" icon={HelpCircle}>
-								Help
-							</NavItem>
-						</div>
-					</div>
+					{/*<div className="border-t border-gray-200 px-4 py-4 dark:border-[#1F1F23]">*/}
+					{/*	<div className="space-y-1">*/}
+					{/*		/!*<NavItem href="#" icon={Settings}>*!/*/}
+					{/*		/!*	Settings*!/*/}
+					{/*		/!*</NavItem>*!/*/}
+					{/*		/!*<NavItem href="/help" icon={HelpCircle}>*!/*/}
+					{/*		/!*	Help*!/*/}
+					{/*		/!*</NavItem>*!/*/}
+					{/*	</div>*/}
+					{/*</div>*/}
 				</div>
 			</nav>
 

@@ -21,10 +21,10 @@ model ReferralLink {
 }
 
 model User {
-  id       String  @id @default(cuid())
-  email    String  @unique
-  username String  @unique
-  name     String?
+  id       String @id @default(cuid())
+  email    String @unique
+  username String @unique
+  name     String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -50,6 +50,7 @@ model User {
   images            Image[]           @relation("ImageOwner")
   reports           Report[]          @relation("UserReports")
   resolvedReports   Report[]          @relation("ModeratorResolutions")
+  Feedback          Feedback[]
 }
 
 model UserImage {
@@ -285,6 +286,7 @@ model Group {
   frequency   GroupFrequency @default(WEEKLY)
   meetingTime DateTime
   location    String?
+  isPrivate   Boolean        @default(true) // this determines if an admin has to approve a user to join.
   isOnline    Boolean        @default(false)
   active      Boolean        @default(true)
   capacity    Int?
@@ -309,18 +311,27 @@ model Group {
 
 model GroupMembership {
   userId   String
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   groupId  String
-  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  role     GroupRole @default(MEMBER)
-  joinedAt DateTime  @default(now())
+  group    Group            @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  role     GroupRole        @default(MEMBER)
+  joinedAt DateTime         @default(now())
+  status   MembershipStatus @default(PENDING) // Add membership status
 
   @@id([userId, groupId])
   @@index([groupId])
   @@index([userId])
   @@index([role])
+  @@index([status]) // Add index for status
   @@index([userId, role])
   @@index([groupId, role])
+  @@index([groupId, status]) // Add index for group+status queries
+}
+
+enum MembershipStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum ModerationType {
@@ -447,4 +458,50 @@ enum ReportStatus {
   PENDING
   RESOLVED
   DISMISSED
+}
+
+model HelpFAQ {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  category  String   @default("General")
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([active])
+  @@index([order])
+}
+
+model Feedback {
+  id          String         @id @default(cuid())
+  type        FeedbackType
+  title       String
+  description String
+  status      FeedbackStatus @default(OPEN)
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([userId])
+}
+
+enum FeedbackType {
+  BUG
+  QUESTION
+  FEATURE
+}
+
+enum FeedbackStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+  IMPLEMENTED
 }

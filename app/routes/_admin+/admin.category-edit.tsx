@@ -1,5 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { data, Form, useLoaderData } from 'react-router'
 import { z } from 'zod'
@@ -9,7 +10,6 @@ import {
 	Card,
 	CardContent,
 	CardDescription,
-	CardFooter,
 	CardHeader,
 	CardTitle,
 } from '#app/components/ui/card'
@@ -21,6 +21,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '#app/components/ui/dialog'
+import { Label } from '#app/components/ui/label'
 import {
 	Select,
 	SelectContent,
@@ -28,6 +29,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#app/components/ui/select'
+import { Switch } from '#app/components/ui/switch'
 import {
 	Table,
 	TableBody,
@@ -37,12 +39,9 @@ import {
 	TableRow,
 } from '#app/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#app/components/ui/tabs'
-import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
+import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { type Route } from './+types/admin.category.ts'
-import { Switch } from '#app/components/ui/switch'
-import { Label } from '#app/components/ui/label'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	// Ensure only admins can access this page

@@ -10,13 +10,13 @@
 // just for a single small church body, that should be quite possible, and
 // would massively reduce the amount of spam that gets posted.
 
+import { Outlet } from 'react-router'
 import LayoutAdmin from '#app/components/admin/layout-admin.tsx'
 import { useTheme } from '#app/routes/resources+/theme-switch.tsx'
 import { logout, requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { useOptionalUser } from '#app/utils/user.ts'
-import { type Route } from './+types/admin._index.ts'
-import { Outlet } from 'react-router'
+import { type Route } from './+types/admin.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	// todo test if a user has admin permissions

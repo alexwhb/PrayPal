@@ -9,7 +9,7 @@ import {
 	img,
 } from '#tests/db-utils.ts'
 import { insertGitHubUser } from '#tests/mocks/github.ts'
-import { CategoryType, RequestType, ShareType, ContentStatus, $Enums, GroupFrequency } from '@prisma/client'
+import { CategoryType, RequestType, ShareType, ContentStatus, $Enums, GroupFrequency, FeedbackType, FeedbackStatus, MembershipStatus } from '@prisma/client'
 import GroupRole = $Enums.GroupRole
 
 async function seed() {
@@ -233,7 +233,7 @@ async function seed() {
 		},
 	})
 	userIds.push(kody.id) // Add Kody to the user list
-	userIds.push(other.id) // Add Kody to the user list
+	userIds.push(other.id) // Add Mody to the user list
 
 	console.timeEnd(`🐨 Created admin user "kody"`)
 
@@ -270,6 +270,7 @@ async function seed() {
 			meetingTime,
 			location: isOnline ? null : faker.location.streetAddress(),
 			isOnline,
+			isPrivate: faker.datatype.boolean({ probability: 0.7 }), // 70% chance of being private
 			active: faker.datatype.boolean({ probability: 0.9 }), // 90% chance of being active
 			categoryId: faker.helpers.arrayElement(groupCategoryRecords).id,
 		})
@@ -296,6 +297,7 @@ async function seed() {
 			groupId: group.id,
 			role: GroupRole.LEADER,
 			joinedAt: faker.date.past(),
+			status: MembershipStatus.APPROVED, // Leaders are always approved
 		})
 
 		// Optionally add one more leader (50% chance)
@@ -308,6 +310,7 @@ async function seed() {
 				groupId: group.id,
 				role: GroupRole.LEADER,
 				joinedAt: faker.date.past(),
+				status: MembershipStatus.APPROVED, // Leaders are always approved
 			})
 		}
 
@@ -323,11 +326,17 @@ async function seed() {
 		)
 
 		members.forEach(userId => {
+			// For private groups, create a mix of pending and approved members
+			const status = group.isPrivate && faker.datatype.boolean({ probability: 0.3 }) 
+				? MembershipStatus.PENDING 
+				: MembershipStatus.APPROVED;
+			
 			memberships.push({
 				userId,
 				groupId: group.id,
 				role: GroupRole.MEMBER,
 				joinedAt: faker.date.past(),
+				status,
 			})
 		})
 	}
@@ -348,12 +357,14 @@ async function seed() {
 		},
 		update: {
 			role: GroupRole.LEADER,
+			status: MembershipStatus.APPROVED,
 		},
 		create: {
 			userId: kody.id,
 			groupId: kodyGroup.id,
 			role: GroupRole.LEADER,
 			joinedAt: faker.date.past(),
+			status: MembershipStatus.APPROVED,
 		},
 	})
 
@@ -368,12 +379,14 @@ async function seed() {
 		},
 		update: {
 			role: GroupRole.MEMBER,
+			status: MembershipStatus.APPROVED,
 		},
 		create: {
 			userId: other.id,
 			groupId: modyGroup.id,
 			role: GroupRole.MEMBER,
 			joinedAt: faker.date.past(),
+			status: MembershipStatus.APPROVED,
 		},
 	})
 
@@ -514,6 +527,89 @@ async function seed() {
 		data: shareItems,
 	})
 	console.timeEnd(`📦 Creating share items...`)
+
+	// After creating share items, add HelpFAQs
+	console.time(`❓ Creating help FAQs...`)
+	const helpFaqs = [
+		{
+			question: "How do I create a prayer request?",
+			answer: "Navigate to the Prayer section and click on 'New Prayer Request'. Fill out the form with your request details and submit.",
+			category: "Prayer",
+			order: 1,
+			active: true,
+		},
+		{
+			question: "Can I join multiple groups?",
+			answer: "Yes, you can join as many groups as you'd like. Browse available groups in the Groups section and request to join those that interest you.",
+			category: "Groups",
+			order: 1,
+			active: true,
+		},
+		{
+			question: "How do I share an item with others?",
+			answer: "Go to the Share section and click 'Share New Item'. Fill out the details about what you're sharing and whether it's for borrowing or giving away.",
+			category: "Sharing",
+			order: 1,
+			active: true,
+		},
+		{
+			question: "What's the difference between borrowing and giving?",
+			answer: "When you select 'Borrow', you're indicating the item will be returned after a period of time. 'Give' means you're donating the item permanently.",
+			category: "Sharing",
+			order: 2,
+			active: true,
+		},
+		{
+			question: "How do I update my profile information?",
+			answer: "Click on your profile picture in the top right corner and select 'Settings'. From there, you can update your personal information.",
+			category: "Account",
+			order: 1,
+			active: true,
+		},
+	];
+
+	await prisma.helpFAQ.createMany({
+		data: helpFaqs,
+	});
+	console.timeEnd(`❓ Creating help FAQs...`)
+
+	// Add feedback entries
+	console.time(`📝 Creating feedback entries...`)
+	const feedbackEntries = [
+		{
+			type: FeedbackType.FEATURE,
+			title: "Add calendar integration for group meetings",
+			description: "It would be helpful to have calendar integration so group meetings can be added to my personal calendar automatically.",
+			status: FeedbackStatus.OPEN,
+			userId: kody.id,
+		},
+		{
+			type: FeedbackType.BUG,
+			title: "Unable to upload profile picture",
+			description: "When I try to upload a new profile picture, I get an error message saying 'File too large' even for small images.",
+			status: FeedbackStatus.IN_PROGRESS,
+			userId: kody.id,
+		},
+		{
+			type: FeedbackType.QUESTION,
+			title: "How to delete my account?",
+			description: "I couldn't find an option to delete my account. Is this possible or do I need to contact an administrator?",
+			status: FeedbackStatus.CLOSED,
+			userId: other.id,
+		},
+		{
+			type: FeedbackType.FEATURE,
+			title: "Dark mode support",
+			description: "Please add dark mode to reduce eye strain when using the app at night.",
+			status: FeedbackStatus.IMPLEMENTED,
+			userId: userIds[2],
+		},
+	];
+
+	await prisma.feedback.createMany({
+		data: feedbackEntries,
+	});
+	console.timeEnd(`📝 Creating feedback entries...`)
 
 	console.timeEnd(`🌱 Database has been seeded`)
 }
