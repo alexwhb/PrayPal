@@ -5,7 +5,6 @@ import {
 	Home,
 	Menu,
 	MessagesSquare,
-	Settings,
 	Users2,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -53,9 +52,7 @@ export default function Sidebar() {
 			>
 				<div className="flex h-full flex-col">
 					<Link
-						to="https://kokonutui.com/"
-						target="_blank"
-						rel="noopener noreferrer"
+						to="/prayer"
 						className="flex h-16 items-center border-b border-gray-200 px-6 dark:border-[#1F1F23]"
 					>
 						<div className="flex items-center gap-3">
