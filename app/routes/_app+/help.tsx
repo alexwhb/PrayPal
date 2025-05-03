@@ -1,11 +1,11 @@
-import { getFormProps, getInputProps, useForm } from '@conform-to/react'
+import { getFormProps, getInputProps, getTextareaProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { Form, useLoaderData, data, redirect  } from 'react-router'
 import { z } from 'zod'
 import { Field, TextareaField } from '#app/components/forms'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '#app/components/ui/accordion'
 import { Button } from '#app/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '#app/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#app/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#app/components/ui/tabs'
 import { requireUserId } from '#app/utils/auth.server'
 import { prisma } from '#app/utils/db.server'
@@ -131,6 +131,7 @@ export default function HelpPage() {
               <CardContent>
                 <Form method="post" {...getFormProps(form)}>
                   <div className="space-y-4">
+										{/*TODO update this to be a normal select. */}
                     <Field
                       labelProps={{
                         children: 'Feedback Type',
@@ -167,7 +168,7 @@ export default function HelpPage() {
                         children: 'Description',
                       }}
                       textareaProps={{
-                        ...getInputProps(fields.description, { type: 'textarea' }),
+                        ...getTextareaProps(fields.description),
                         placeholder: 'Please provide details...',
                         rows: 5,
                       }}
