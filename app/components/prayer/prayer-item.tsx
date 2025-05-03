@@ -5,7 +5,7 @@ import  { type Prayer } from './type.ts'
 interface PrayerItemProps {
 	prayer: Prayer
 	isCurrentUser: boolean
-	canModerate?: boolean
+	canModerate: boolean
 	actionData: any
 }
 

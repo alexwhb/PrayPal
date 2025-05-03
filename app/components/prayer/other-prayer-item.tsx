@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { Form, Link } from 'react-router'
+import ContentModeration from '#app/components/content-moderation.tsx'
 import {
 	Avatar,
 	AvatarFallback,
@@ -28,10 +29,8 @@ import { cn } from '#app/lib/utils.ts'
 import { formatDate } from '#app/utils/formatter.ts'
 import { getUserImgSrc } from '#app/utils/misc.tsx' // This is for users that are not me.
 import { type Prayer } from './type.ts'
-import ContentModeration from '#app/components/content-moderation.tsx'
 
 // This is for users that are not me.
-
 export default function OtherPrayerItem({
 	prayer,
 	canModerate,
@@ -39,8 +38,6 @@ export default function OtherPrayerItem({
 	prayer: Prayer
 	canModerate: boolean
 }) {
-	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-
 	return (
 		<Card className={prayer.answered ? 'opacity-75' : ''}>
 			<CardHeader className="pb-2">

@@ -1,7 +1,8 @@
 import BoardFooter from '#app/components/board/board-footer.tsx'
 import BoardHeader from '#app/components/board/board-header.tsx'
 import PrayerItem from '#app/components/prayer/prayer-item.tsx'
-import { type loader } from '#app/routes/_prayer+/prayer.board.tsx'
+import { type Prayer } from '#app/components/prayer/type.ts'
+import { type loader } from '#app/routes/_app+/_prayer+/prayer.board.tsx'
 
 type PrayerBoardProps = {
 	loaderData: Awaited<ReturnType<typeof loader>>
@@ -39,7 +40,7 @@ export default function PrayerBoard({
 
 			<div className="grid gap-4">
 				{prayers.length > 0 ? (
-					prayers.map((prayer) => (
+					prayers.map((prayer: Prayer) => (
 						<PrayerItem
 							key={prayer.id}
 							prayer={prayer}
