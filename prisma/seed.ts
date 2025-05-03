@@ -135,7 +135,7 @@ async function seed() {
 									description: faker.lorem.paragraph(),
 									fulfilled: fulfilled,
 									status: faker.helpers.arrayElement([ContentStatus.ACTIVE, ContentStatus.PENDING]),
-									flagged: faker.datatype.boolean(),
+
 									response: fulfilled
 										? {
 											message: faker.lorem.sentence(),
@@ -155,7 +155,7 @@ async function seed() {
 								fulfilledAt: faker.datatype.boolean() ? faker.date.past() : null,
 								fulfilledBy: faker.datatype.boolean() ? faker.string.uuid() : null,
 								status: faker.helpers.arrayElement([ContentStatus.ACTIVE, ContentStatus.PENDING]),
-								flagged: faker.datatype.boolean(),
+
 								response: null,
 							})),
 						],
@@ -518,7 +518,6 @@ async function seed() {
 				duration: shareType === ShareType.BORROW ? faker.helpers.arrayElement(['1 week', '2 weeks', '1 month', 'Flexible']) : null,
 				userId,
 				status: faker.helpers.arrayElement(Object.values(ContentStatus)),
-				flagged: faker.datatype.boolean(),
 			})
 		}
 	}
