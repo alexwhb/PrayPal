@@ -1,7 +1,7 @@
 
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { data, Form, Link, redirect } from 'react-router'
 import { z } from 'zod'
 import { Field, TextareaField } from '#app/components/forms.tsx'
@@ -69,7 +69,6 @@ export async function action({ request }: Route.ActionArgs) {
             shareType,
             duration,
             status: 'ACTIVE',
-            flagged: false,
             userId,
         },
     })
@@ -81,6 +80,8 @@ export default function NewShareForm({
     loaderData: { categories },
     actionData,
 }: Route.ComponentProps) {
+	const [shareType, setShareType] = useState<'BORROW' | 'GIVE'>('BORROW')
+
     const defaultValues = useMemo(
         () => ({
             id: 'new-share',
@@ -174,6 +175,7 @@ export default function NewShareForm({
                         <Label htmlFor="shareType">Share Type</Label>
                         <Select
                             {...getInputProps(fields.shareType, { type: 'text' })}
+														onValueChange={(value : 'BORROW' | 'GIVE') => {setShareType(value)}}
                             required
                         >
                             <SelectTrigger id="shareType">
@@ -186,7 +188,7 @@ export default function NewShareForm({
                         </Select>
                     </div>
 
-                    {fields.shareType.value === 'BORROW' && (
+                    {shareType === 'BORROW' && (
                         <Field
                             labelProps={{ children: 'Duration' }}
                             inputProps={{
