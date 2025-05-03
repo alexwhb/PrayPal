@@ -9,7 +9,7 @@ import {
 	img,
 } from '#tests/db-utils.ts'
 import { insertGitHubUser } from '#tests/mocks/github.ts'
-import { CategoryType, RequestType, ShareType, ContentStatus, $Enums, GroupFrequency, FeedbackType, FeedbackStatus, MembershipStatus } from '@prisma/client'
+import { CategoryType, RequestType, ShareType, ContentStatus, $Enums, GroupFrequency, FeedbackType, FeedbackStatus, MembershipStatus, NotificationType } from '@prisma/client'
 import GroupRole = $Enums.GroupRole
 
 async function seed() {
@@ -610,6 +610,104 @@ async function seed() {
 		data: feedbackEntries,
 	});
 	console.timeEnd(`📝 Creating feedback entries...`)
+
+	// After creating feedback entries, add notifications
+	console.time(`🔔 Creating notifications...`)
+	const notificationTypes = Object.values($Enums.NotificationType)
+
+	// Create notifications for Kody
+	const kodyNotifications = [
+		{
+			userId: kody.id,
+			type: 'GROUP_JOIN_REQUEST',
+			title: 'New join request',
+			description: `${other.name} wants to join your Bible Study group`,
+			actionUrl: `/groups/${createdGroups[0].id}/manage?tab=requests`,
+			read: false,
+		},
+		{
+			userId: kody.id,
+			type: 'SHARE_ITEM_REQUEST',
+			title: 'Someone wants to borrow your item',
+			description: 'Your power drill has been requested by a community member',
+			actionUrl: `/share/items/manage`,
+			read: true,
+			readAt: faker.date.recent(),
+		},
+		{
+			userId: kody.id,
+			type: 'MESSAGE_RECEIVED',
+			title: 'New message from Mody',
+			description: 'Hey, can we meet up this weekend?',
+			actionUrl: `/messages/${familyConversation.id}`,
+			read: false,
+		},
+	]
+
+	// Create notifications for other test user (Mody)
+	const otherNotifications = [
+		{
+			userId: other.id,
+			type: 'GROUP_APPROVED',
+			title: 'Group join request approved',
+			description: 'Your request to join the Prayer Warriors group has been approved',
+			actionUrl: `/groups/${createdGroups[1].id}`,
+			read: false,
+		},
+		{
+			userId: other.id,
+			type: 'SHARE_ITEM_APPROVED',
+			title: 'Borrow request approved',
+			description: 'Your request to borrow the lawn mower has been approved',
+			actionUrl: `/share/items/borrowed`,
+			read: true,
+			readAt: faker.date.recent(),
+		},
+	]
+
+	// Create some random notifications for other users
+	const randomNotifications = []
+	for (const userId of userIds.filter(id => id !== kody.id && id !== other.id)) {
+		// Add 1-3 random notifications per user
+		const notificationCount = faker.number.int({ min: 1, max: 3 })
+		
+		for (let i = 0; i < notificationCount; i++) {
+			const type = faker.helpers.arrayElement(notificationTypes)
+			const read = faker.datatype.boolean({ probability: 0.3 }) // 30% chance of being read
+			
+			randomNotifications.push({
+				userId,
+				type,
+				title: faker.helpers.arrayElement([
+					'New prayer request',
+					'Group meeting reminder',
+					'Your item was borrowed',
+					'New message received',
+					'Join request approved',
+				]),
+				description: faker.lorem.sentence(),
+				actionUrl: faker.helpers.arrayElement([
+					'/prayer/board',
+					'/groups',
+					'/share/board',
+					'/messages',
+				]),
+				read,
+				readAt: read ? faker.date.recent() : null,
+			})
+		}
+	}
+
+	// Create all notifications
+	await prisma.notification.createMany({
+		data: [
+			...kodyNotifications,
+			...otherNotifications,
+			...randomNotifications,
+		],
+	})
+
+	console.timeEnd(`🔔 Creating notifications...`)
 
 	console.timeEnd(`🌱 Database has been seeded`)
 }
