@@ -10,13 +10,13 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '#app/components/ui/dropdown-menu'
-import { getUserImgSrc } from '#app/utils/misc'
 import { 
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from '#app/components/ui/tooltip'
+import { getUserImgSrc } from '#app/utils/misc'
 
 type GroupCardProps = {
     group: Group & {
@@ -24,6 +24,7 @@ type GroupCardProps = {
         isLeader: boolean
         memberCount: number
         hasCapacity: boolean
+        isPrivate: boolean
         memberships: Array<{
             user: {
                 id: string
@@ -50,8 +51,9 @@ export default function GroupCard({
         <div className="flex flex-col space-y-4 rounded-lg border p-6 shadow-sm">
             <div className="flex items-center justify-between">
                 <div className="flex flex-col gap-2">
-                    <h3 className="text-xl font-semibold">{group.name}</h3>
-
+                    <Link to={`/groups/${group.id}`} className="hover:underline">
+                        <h3 className="text-xl font-semibold">{group.name}</h3>
+                    </Link>
                 </div>
                 {group.hasCapacity ? (
                     <Badge variant="outline">
@@ -122,18 +124,31 @@ export default function GroupCard({
                         name="_action"
                         value={group.isMember ? 'leave' : 'join'}
                     />
-                    <Button
-                        variant={group.isMember ? 'outline' : 'default'}
-                        className="w-full"
-                        type="submit"
-                        disabled={!group.hasCapacity && !group.isMember}
-                    >
-                        {group.isMember
-                            ? 'Leave Group'
-                            : group.hasCapacity
-                            ? 'Join Group'
-                            : 'Group Full'}
-                    </Button>
+                    {group.isPending ? (
+                        <Button
+                            variant="secondary"
+                            className="w-full"
+                            type="button"
+                            disabled
+                        >
+                            Request Pending
+                        </Button>
+                    ) : (
+                        <Button
+                            variant={group.isMember ? 'outline' : 'default'}
+                            className="w-full"
+                            type="submit"
+                            disabled={!group.hasCapacity && !group.isMember}
+                        >
+                            {group.isMember
+                                ? 'Leave Group'
+                                : group.isPrivate
+                                ? 'Request to Join'
+                                : group.hasCapacity
+                                ? 'Join Group'
+                                : 'Group Full'}
+                        </Button>
+                    )}
                 </Form>
 
                 {(group.isLeader || canModerate) && (
