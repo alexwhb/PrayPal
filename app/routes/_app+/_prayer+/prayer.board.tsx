@@ -1,9 +1,10 @@
-import { useCallback } from 'react'
-import { data, useSearchParams } from 'react-router'
+import { data } from 'react-router'
 import PrayerBoard from '#app/components/prayer/prayer-board.tsx'
+import { useBoardNavigation } from '#app/hooks/use-board-navigation.ts'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
+import { moderateItem } from '#app/utils/moderation.server.ts'
 import { type Route } from './+types/prayer.board.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -104,25 +105,18 @@ export async function action({ request }: Route.ActionArgs) {
 
 		return data({ success: true })
 	} else if (action === 'delete') {
-		// TODO invalidate our total cache value whenever we remove an element.
 		const moderatorAction = formData.get('moderatorAction') === '1'
+		const reason = formData.get('reason') as string || 'Moderation action'
 		
-		if (moderatorAction) {
-			await prisma.moderationLog.create({
-				data: {
-					moderatorId: userId,
-					itemId: prayerId as string,
-					itemType: 'PRAYER',
-					action: 'DELETE',
-					reason: formData.get('reason') as string || 'Moderation action'
-				}
-			})
-		}
-
-		await prisma.request.delete({ where: { id: prayerId as string } })
-		return data({ success: true })
+		return moderateItem({
+			userId,
+			itemId: prayerId as string,
+			itemType: 'PRAYER',
+			action: 'delete',
+			reason,
+			isModerator: moderatorAction
+		})
 	} else if (action === 'markAsAnswered') {
-
 		await prisma.request.update({
 			where: { id: prayerId as string },
 			data: {
@@ -132,50 +126,30 @@ export async function action({ request }: Route.ActionArgs) {
 				},
 			},
 		})
+		
+		return data({ success: true })
+	} else if (action === 'pending' || action === 'removed') {
+		const moderatorAction = formData.get('moderatorAction') === '1'
+		const reason = formData.get('reason') as string || 'Moderation action'
+		
+		return moderateItem({
+			userId,
+			itemId: prayerId as string,
+			itemType: 'PRAYER',
+			action: action as 'pending' | 'removed',
+			reason,
+			isModerator: moderatorAction
+		})
 	}
+	
+	return null
 }
 
 export default function PrayerBoardPage({
 	actionData,
 	loaderData,
 }: Route.ComponentProps) {
-	const [searchParams] = useSearchParams()
-
-	// Helper to generate URLs with updated search params
-	const generateUrl = useCallback(
-		(newParams: Record<string, string | number>) => {
-			const params = new URLSearchParams(searchParams)
-			Object.entries(newParams).forEach(([key, value]) => {
-				if (value === undefined || value === null || value === '') {
-					params.delete(key)
-				} else {
-					params.set(key, String(value))
-				}
-			})
-			return `?${params.toString()}`
-		},
-		[searchParams],
-	)
-
-	// Generate URLs for different actions
-	const getSortUrl = useCallback(() => {
-		// we toggle our sort.
-		const currentSort = searchParams.get('sort') === 'asc' ? 'asc' : 'desc'
-		const newSort = currentSort === 'asc' ? 'desc' : 'asc'
-		return generateUrl({ sort: newSort, page: 1 })
-	}, [generateUrl, searchParams])
-
-	const getFilterUrl = useCallback(
-		(newFilter: string) => {
-			return generateUrl({ filter: newFilter, page: 1 })
-		},
-		[generateUrl],
-	)
-
-	const getNextPageUrl = useCallback(() => {
-		const currentPage = parseInt(searchParams.get('page') || '1', 10)
-		return generateUrl({ page: currentPage + 1 })
-	}, [generateUrl, searchParams])
+	const { getSortUrl, getFilterUrl, getNextPageUrl } = useBoardNavigation()
 
 	return (
 		<PrayerBoard

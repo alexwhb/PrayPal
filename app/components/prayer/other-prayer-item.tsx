@@ -1,11 +1,10 @@
 import {
 	CalendarDays,
 	CheckCircle2,
-	HandIcon as PrayingHands, Trash 
+	HandIcon as PrayingHands,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Form, Link } from 'react-router'
-import { DeleteDialog } from '#app/components/shared/delete-dialog.tsx'
 import {
 	Avatar,
 	AvatarFallback,
@@ -29,10 +28,17 @@ import { cn } from '#app/lib/utils.ts'
 import { formatDate } from '#app/utils/formatter.ts'
 import { getUserImgSrc } from '#app/utils/misc.tsx' // This is for users that are not me.
 import { type Prayer } from './type.ts'
+import ContentModeration from '#app/components/content-moderation.tsx'
 
 // This is for users that are not me.
 
-export default function OtherPrayerItem({ prayer, canModerate }: { prayer: Prayer, canModerate?: boolean }) {
+export default function OtherPrayerItem({
+	prayer,
+	canModerate,
+}: {
+	prayer: Prayer
+	canModerate: boolean
+}) {
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
 	return (
@@ -46,9 +52,7 @@ export default function OtherPrayerItem({ prayer, canModerate }: { prayer: Praye
 									src={getUserImgSrc(prayer.user.image?.id)}
 									alt={prayer.user.name}
 								/>
-								<AvatarFallback>
-									{prayer.user.name.charAt(0)}
-								</AvatarFallback>
+								<AvatarFallback>{prayer.user.name.charAt(0)}</AvatarFallback>
 							</Avatar>
 						</Link>
 						<div>
@@ -130,28 +134,12 @@ export default function OtherPrayerItem({ prayer, canModerate }: { prayer: Praye
 					</div>
 				</Form>
 
-				{canModerate && (
-					<>
-						<Button
-							variant="destructive"
-							size="sm"
-							onClick={() => setIsDeleteDialogOpen(true)}
-						>
-							<Trash className="h-4 w-4 mr-2" />
-							Moderate
-						</Button>
-						<DeleteDialog
-							open={isDeleteDialogOpen}
-							onOpenChange={setIsDeleteDialogOpen}
-							additionalFormData={{
-								prayerId: prayer.id,
-								_action: 'delete',
-								moderatorAction: '1'
-							}}
-							isModerator={true}
-						/>
-					</>
-				)}
+				<ContentModeration
+					itemId={prayer.id}
+					itemType="prayer"
+					canModerate={canModerate}
+					isOwner={false}
+				/>
 			</CardFooter>
 		</Card>
 	)

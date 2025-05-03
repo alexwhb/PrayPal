@@ -14,6 +14,7 @@ import {
 } from '#app/components/ui/card'
 import { formatDate } from '#app/utils/formatter.ts'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
+import ContentModeration from '#app/components/content-moderation.tsx'
 
 function OwnerActions({ need }: { need: Need }) {
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -102,24 +103,11 @@ export function NeedItem({
 				) : (
 					<ContactAction needId={need.id} />
 				)}
-				{(isCurrentUser || need.canModerate) && (
-					<Button
-						variant="destructive"
-						size="sm"
-						onClick={() => setIsDeleteDialogOpen(true)}
-					>
-						<Trash className="h-4 w-4" />
-						{need.canModerate && !isCurrentUser ? 'Moderate' : 'Delete'}
-					</Button>
-				)}
-				<DeleteDialog
-					open={isDeleteDialogOpen}
-					onOpenChange={setIsDeleteDialogOpen}
-					displayTriggerButton={false}
-					additionalFormData={{
-						needId: need.id,
-						moderatorAction: (!isCurrentUser && need.canModerate) ? '1' : '0'
-					}}
+				<ContentModeration
+					itemId={need.id}
+					itemType="need"
+					canModerate={need.canModerate}
+					isOwner={isCurrentUser}
 				/>
 			</CardFooter>
 		</Card>

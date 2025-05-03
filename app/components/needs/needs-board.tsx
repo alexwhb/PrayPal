@@ -25,6 +25,7 @@ export default function NeedsBoard({
 		activeFilter,
 		userId: currentUserId,
 		hasNextPage,
+		canModerate,
 	} = loaderData
 
 	return (
@@ -44,7 +45,8 @@ export default function NeedsBoard({
 							key={need.id}
 							need={need}
 							actionData={actionData}
-							isCurrentUser={need.user.id === currentUserId} // In a real app, check if the current user is the author
+							isCurrentUser={need.user.id === currentUserId}
+							canModerate={canModerate}
 						/>
 					))
 				) : (
