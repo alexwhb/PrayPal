@@ -34,6 +34,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 				meetingTime: true,
 				location: true,
 				isOnline: true,
+				isPrivate: true,
 				capacity: true,
 				createdAt: true,
 				category: { select: { name: true } },
@@ -67,6 +68,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		select: {
 			groupId: true,
 			role: true,
+			status: true,
 		},
 	})
 
@@ -76,14 +78,16 @@ export async function loader({ request }: Route.LoaderArgs) {
 	// Transform the response with both queries' data
 	const transformedGroups = boardData.items.map((group) => {
 		const userMembership = userMembershipMap.get(group.id)
-		const isMember = !!userMembership
-		const isLeader = userMembership?.role === 'LEADER'
+		const isMember = !!userMembership && userMembership.status === 'ACTIVE'
+		const isLeader = userMembership?.role === 'LEADER' && userMembership.status === 'ACTIVE'
+		const isPending = !!userMembership && userMembership.status === 'PENDING'
 		const leader = group.memberships[0]?.user // Leader's user info
 
 		return {
 			...group,
 			isMember,
 			isLeader,
+			isPending,
 			memberCount: group._count.memberships,
 			hasCapacity: !group.capacity || group._count.memberships < group.capacity,
 			canModerate: boardData.user.roles.some((role) =>
@@ -238,7 +242,7 @@ export default function GroupsBoard({
 							group={group}
 							actionData={actionData}
 							canModerate={canModerate}
-							isCurrentUser={group.user.id === currentUserId}
+							isCurrentUser={group?.user?.id === currentUserId}
 						/>
 					))
 				) : (
