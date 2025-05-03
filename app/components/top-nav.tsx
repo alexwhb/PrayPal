@@ -69,7 +69,7 @@ export default function TopNav({ theme, user, notifications = [], unreadCount = 
 						>
 							<Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-300" />
 							{unreadCount > 0 && (
-								<span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500">
+								<span className="absolute top-[7px] right-[9px] h-2 w-2 rounded-full bg-red-500">
                   <span className="sr-only">{unreadCount} unread notifications</span>
                 </span>
 							)}
