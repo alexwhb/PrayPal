@@ -249,7 +249,6 @@ export function TagField({
     setTags(tags.filter(tag => tag !== tagToRemove))
   }
 
-console.log(errorId)
   return (
     <div className={className}>
       <Label htmlFor={id} {...labelProps} />
