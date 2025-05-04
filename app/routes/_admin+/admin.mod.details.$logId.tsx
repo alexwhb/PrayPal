@@ -1,4 +1,4 @@
-import { data, Link, useLoaderData } from 'react-router'
+import { data, Link, useLoaderData, Form } from 'react-router'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import {
@@ -7,6 +7,7 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
+	CardFooter,
 } from '#app/components/ui/card.tsx'
 import { Badge } from '#app/components/ui/badge.tsx'
 import { Button } from '#app/components/ui/button.tsx'
@@ -15,6 +16,9 @@ import { ModerationType, ModeratorAction } from '@prisma/client'
 import { Alert, AlertDescription } from '#app/components/ui/alert.tsx'
 import { AlertCircle } from 'lucide-react'
 import { Separator } from '#app/components/ui/separator.tsx'
+import { Label } from '#app/components/ui/label.tsx'
+import { Textarea } from '#app/components/ui/textarea.tsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#app/components/ui/select.tsx'
 
 export async function loader({ params, request }: { params: { logId: string }, request: Request }) {
 	const userId = await requireUserId(request)
@@ -152,6 +156,101 @@ export async function loader({ params, request }: { params: { logId: string }, r
 		moderatedItem,
 		isAdmin: user?.roles.some(role => role.name === 'admin') ?? false,
 	})
+}
+
+export async function action({ request, params }: { request: Request, params: { logId: string } }) {
+	const userId = await requireUserId(request)
+	const formData = await request.formData()
+	const action = formData.get('_action') as string
+	const itemId = formData.get('itemId') as string
+	const itemType = formData.get('itemType') as ModerationType
+	const reason = formData.get('reason') as string || 'Moderation action'
+	
+	// Check if user is a moderator or admin
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		include: { roles: true },
+	})
+
+	const isModOrAdmin = user?.roles.some(role =>
+		['admin', 'moderator'].includes(role.name)
+	) ?? false
+
+	if (!isModOrAdmin) {
+		throw new Response('Not authorized', { status: 403 })
+	}
+
+	// Create moderation log entry
+	await prisma.moderationLog.create({
+		data: {
+			moderatorId: userId,
+			itemId,
+			itemType,
+			action: action as ModeratorAction,
+			reason,
+		},
+	})
+
+	// Take action based on the item type and action
+	if (action === 'DELETE') {
+		if (itemType === 'PRAYER' || itemType === 'NEED') {
+			await prisma.request.delete({ where: { id: itemId } })
+		} else if (itemType === 'GROUP') {
+			await prisma.group.update({
+				where: { id: itemId },
+				data: { active: false }
+			})
+		} else if (itemType === 'SHARE_ITEM') {
+			await prisma.shareItem.delete({ where: { id: itemId } })
+		} else if (itemType === 'USER') {
+			await prisma.user.delete({ where: { id: itemId } })
+		} else if (itemType === 'MESSAGE') {
+			await prisma.message.delete({ where: { id: itemId } })
+		}
+	} else if (action === 'HIDE' || action === 'FLAG') {
+		if (itemType === 'PRAYER' || itemType === 'NEED') {
+			await prisma.request.update({
+				where: { id: itemId },
+				data: {
+					status: 'REMOVED',
+					flagged: action === 'FLAG'
+				}
+			})
+		} else if (itemType === 'SHARE_ITEM') {
+			await prisma.shareItem.update({
+				where: { id: itemId },
+				data: {
+					status: 'REMOVED',
+					flagged: action === 'FLAG'
+				}
+			})
+		}
+	} else if (action === 'RESTORE') {
+		if (itemType === 'PRAYER' || itemType === 'NEED') {
+			await prisma.request.update({
+				where: { id: itemId },
+				data: {
+					status: 'ACTIVE',
+					flagged: false
+				}
+			})
+		} else if (itemType === 'GROUP') {
+			await prisma.group.update({
+				where: { id: itemId },
+				data: { active: true }
+			})
+		} else if (itemType === 'SHARE_ITEM') {
+			await prisma.shareItem.update({
+				where: { id: itemId },
+				data: {
+					status: 'ACTIVE',
+					flagged: false
+				}
+			})
+		}
+	}
+
+	return data({ success: true })
 }
 
 export default function ModerationDetails() {
@@ -335,6 +434,57 @@ export default function ModerationDetails() {
 		return null
 	}
 
+	function renderActionForm() {
+		if (!moderatedItem) return null
+
+		return (
+			<Card className="mb-6">
+				<CardHeader>
+					<CardTitle>Take Action</CardTitle>
+					<CardDescription>
+						Change the status of this content
+					</CardDescription>
+				</CardHeader>
+				<Form method="post">
+					<CardContent>
+						<input type="hidden" name="itemId" value={moderationLog.itemId} />
+						<input type="hidden" name="itemType" value={moderationLog.itemType} />
+						
+						<div className="space-y-4">
+							<div className="space-y-2">
+								<Label htmlFor="action">Action</Label>
+								<Select name="_action" required>
+									<SelectTrigger id="action">
+										<SelectValue placeholder="Select an action" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="DELETE">Delete content</SelectItem>
+										<SelectItem value="HIDE">Hide content</SelectItem>
+										<SelectItem value="FLAG">Flag content</SelectItem>
+										<SelectItem value="RESTORE">Restore content</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="reason">Reason</Label>
+								<Textarea
+									id="reason"
+									name="reason"
+									placeholder="Reason for this action"
+									rows={3}
+								/>
+							</div>
+						</div>
+					</CardContent>
+					<CardFooter>
+						<Button type="submit">Submit</Button>
+					</CardFooter>
+				</Form>
+			</Card>
+		)
+	}
+
 	return (
 		<div className="container mx-auto py-8 max-w-3xl">
 			<div className="mb-4">
@@ -424,6 +574,8 @@ export default function ModerationDetails() {
 
 			<h2 className="mb-4 text-xl font-bold">Moderated Content</h2>
 			{renderModeratedItem()}
+
+			{renderActionForm()}
 
 			<div className="mt-8 flex justify-end">
 				<Link to="/admin/moderation">

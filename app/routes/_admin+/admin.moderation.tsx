@@ -383,7 +383,7 @@ export default function ModerationView() {
 											<TableCell>{formatDate(log.createdAt)}</TableCell>
 											<TableCell>
 												<Link
-													to={`/admin/moderation/details/${log.id}`}
+													to={`/admin/mod/details/${log.id}`}
 													className="text-sm font-medium text-primary hover:underline"
 												>
 													<Button size="sm" variant="outline">View Details</Button>
