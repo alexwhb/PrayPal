@@ -23,13 +23,13 @@ export type Notification = {
 
 interface LayoutProps {
 	children: ReactNode,
-	theme: Theme | null,
+	userPrefs: any,
 	user: User | null
 	notifications?: Array<Notification>
 	unreadCount?: number
 }
 
-export default function LayoutMainApp({ children, theme, user, notifications, unreadCount}: LayoutProps) {
+export default function LayoutMainApp({ children, userPrefs, user, notifications, unreadCount}: LayoutProps) {
 	const [mounted, setMounted] = useState(false)
 
 	useEffect(() => {
@@ -45,7 +45,7 @@ export default function LayoutMainApp({ children, theme, user, notifications, un
 			<Sidebar />
 			<div className="w-full flex flex-1 flex-col">
 				<header className="h-16 border-b border-gray-200 dark:border-[#1F1F23]">
-					<TopNav theme={theme} user={user} notifications={notifications} unreadCount={unreadCount}/>
+					<TopNav userPrefs={userPrefs} user={user} notifications={notifications} unreadCount={unreadCount}/>
 				</header>
 				<main className="flex-1 overflow-auto p-6 bg-white dark:bg-[#0F0F12]">{children}</main>
 			</div>

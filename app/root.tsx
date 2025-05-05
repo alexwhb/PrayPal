@@ -189,10 +189,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	)
 }
 
+export type UserPrefs = typeof loader['requestInfo']['userPrefs']
+
+
 function App() {
 	const data = useLoaderData<typeof loader>()
 	const theme = useTheme()
-	const user = useOptionalUser()
+	// const user = useOptionalUser()
 	// const [socket, setSocket] = useState<Socket | undefined>(undefined)
 
 	// useEffect(() => {
@@ -217,13 +220,13 @@ function App() {
 	// }, [socket, user?.id])
 
 	return (
-		<>
+		<Document nonce={useNonce()} theme={theme}>
 			{/*<SocketProvider socket={socket}>*/}
-				<Outlet />
+				<Outlet context={data.requestInfo.userPrefs} />
 			{/*</SocketProvider>*/}
 			<Toaster closeButton position="top-center" theme={theme} />
 			<EpicProgress />
-		</>
+		</Document>
 	)
 }
 
