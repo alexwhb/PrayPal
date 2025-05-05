@@ -1,4 +1,4 @@
-import { ReportReason } from '@prisma/client'
+import { ReportReason, ReportableType } from '@prisma/client'
 import { Flag, Trash, AlertTriangle } from 'lucide-react'
 import { useState } from 'react'
 import { Form } from 'react-router'
@@ -73,13 +73,13 @@ export default function ContentModeration({
   
   // Map content type to ReportableType enum value
   const getReportableType = () => {
-    const mapping: Record<ContentModerationType, string> = {
-      'share-item': 'SHARE_ITEM',
-      'prayer': 'PRAYER',
-      'need': 'NEED',
-      'group': 'GROUP',
-      'message': 'MESSAGE',
-      'user': 'USER',
+    const mapping: Record<ContentModerationType, ReportableType> = {
+      'share-item': ReportableType.SHARE_ITEM,
+      'prayer': ReportableType.REQUEST,
+      'need': ReportableType.REQUEST,
+      'group': ReportableType.GROUP,
+      'message': ReportableType.MESSAGE,
+      'user': ReportableType.USER,
     }
     return mapping[itemType]
   }
@@ -132,7 +132,7 @@ export default function ContentModeration({
           size="sm"
           onClick={() => handleOpenDialog('report')}
         >
-          <AlertTriangle className="h-4 w-4" />
+					<Flag className="h-4 w-4" />
           <span className="sr-only">Report</span>
         </Button>
       )}
