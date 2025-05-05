@@ -18,7 +18,7 @@ type RequiredUser = User & {
 }
 
 interface TopNavProps {
-	theme: Theme | null
+	userPrefs: any
 	user: RequiredUser
 	notifications?: Array<{
 		id: string
@@ -37,7 +37,7 @@ interface TopNavProps {
 	unreadCount?: number
 }
 
-export default function TopNav({ theme, user, notifications = [], unreadCount = 0 }: TopNavProps) {
+export default function TopNav({ userPrefs, user, notifications = [], unreadCount = 0 }: TopNavProps) {
 	const userImageSrc = getUserImgSrc(user.image?.id)
 	const highestRole = getHighestRole(user.roles)
 
@@ -143,7 +143,7 @@ export default function TopNav({ theme, user, notifications = [], unreadCount = 
 					</DropdownMenuContent>
 				</DropdownMenu>
 
-				<ThemeSwitch userPreference={theme} />
+				<ThemeSwitch userPreference={userPrefs.theme} />
 
 				<DropdownMenu>
 					<DropdownMenuTrigger className="focus:outline-none">
