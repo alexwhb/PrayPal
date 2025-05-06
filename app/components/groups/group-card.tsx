@@ -25,6 +25,7 @@ type GroupCardProps = {
         memberCount: number
         hasCapacity: boolean
         isPrivate: boolean
+			  isPending: boolean
         memberships: Array<{
             user: {
                 id: string
