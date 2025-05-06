@@ -6,6 +6,7 @@ import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { moderateItem } from '#app/utils/moderation.server.ts'
 import { type Route } from './+types/prayer.board.ts'
+import { ModerationType } from '@prisma/client'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request).catch(() => null)
@@ -111,7 +112,7 @@ export async function action({ request }: Route.ActionArgs) {
 		return moderateItem({
 			userId,
 			itemId: prayerId as string,
-			itemType: 'PRAYER',
+			itemType: ModerationType.PRAYER,
 			action: 'delete',
 			reason,
 			isModerator: moderatorAction
