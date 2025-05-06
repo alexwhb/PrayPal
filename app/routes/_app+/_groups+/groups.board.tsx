@@ -78,8 +78,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 	// Transform the response with both queries' data
 	const transformedGroups = boardData.items.map((group) => {
 		const userMembership = userMembershipMap.get(group.id)
-		const isMember = !!userMembership && userMembership.status === 'ACTIVE'
-		const isLeader = userMembership?.role === 'LEADER' && userMembership.status === 'ACTIVE'
+		// Update to check for both ACTIVE and APPROVED statuses
+		const isMember = !!userMembership && 
+						(userMembership.status === 'ACTIVE' || userMembership.status === 'APPROVED')
+		const isLeader = userMembership?.role === 'LEADER' && 
+						(userMembership.status === 'ACTIVE' || userMembership.status === 'APPROVED')
 		const isPending = !!userMembership && userMembership.status === 'PENDING'
 		const leader = group.memberships[0]?.user // Leader's user info
 
@@ -118,27 +121,70 @@ export async function action({ request }: Route.ActionArgs) {
 	const action = formData.get('_action')
 
 	if (action === 'join') {
-		// Check capacity before joining
+		console.log('Join action triggered for group:', groupId, 'by user:', userId)
+		
+		// Check capacity and get group details
 		const group = await prisma.group.findUnique({
 			where: { id: groupId as string },
-			include: {
-				_count: { select: { memberships: true } },
-			},
+			select: {
+				isPrivate: true,
+				capacity: true,
+				_count: { 
+					select: { 
+						memberships: true 
+					} 
+				}
+			}
 		})
 
-		if (group?.capacity && group._count.memberships >= group.capacity) {
+		console.log('Group details:', group)
+
+		if (!group) {
+			return data({ error: 'Group not found' }, { status: 404 })
+		}
+
+		if (group.capacity && group._count.memberships >= group.capacity) {
 			return data({ error: 'Group is at capacity' }, { status: 400 })
 		}
 
+		// Check if user already has a membership
+		const existingMembership = await prisma.groupMembership.findUnique({
+			where: {
+				userId_groupId: {
+					userId,
+					groupId: groupId as string,
+				}
+			}
+		})
+		
+		console.log('Existing membership:', existingMembership)
+		
+		// If user already has a membership, don't create a new one
+		if (existingMembership) {
+			console.log('User already has membership with status:', existingMembership.status)
+			return data({ 
+				success: true, 
+				message: existingMembership.status === 'PENDING' 
+					? 'Your request to join is already pending approval.' 
+					: existingMembership.status === 'APPROVED' || existingMembership.status === 'ACTIVE'
+						? 'You are already a member of this group.'
+						: 'Your membership status is being reviewed.'
+			})
+		}
+
+		console.log('Creating new membership with status:', group.isPrivate ? 'PENDING' : 'APPROVED')
+		
+		// Create a new membership with appropriate status - use APPROVED instead of ACTIVE
 		await prisma.groupMembership.create({
 			data: {
 				userId,
 				groupId: groupId as string,
 				role: 'MEMBER',
+				status: group.isPrivate ? 'PENDING' : 'APPROVED', // Changed from ACTIVE to APPROVED
 			},
 		})
 
-		return data({ success: true })
+		return data({ success: true, message: group.isPrivate ? 'Your request to join has been submitted.' : 'You have joined the group.' })
 	} else if (action === 'leave') {
 		await prisma.groupMembership.delete({
 			where: {
