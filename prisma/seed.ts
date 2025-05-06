@@ -621,7 +621,7 @@ async function seed() {
 			type: 'GROUP_JOIN_REQUEST',
 			title: 'New join request',
 			description: `${other.name} wants to join your Bible Study group`,
-			actionUrl: `/groups/${createdGroups[0].id}/manage?tab=requests`,
+			actionUrl: `/groups/manage/${createdGroups[0].id}/?tab=requests`,
 			read: false,
 		},
 		{
