@@ -8,10 +8,11 @@ import {
 	Users2,
 } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 
 export default function Sidebar() {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+	const location = useLocation()
 
 	function handleNavigation() {
 		setIsMobileMenuOpen(false)
@@ -26,13 +27,19 @@ export default function Sidebar() {
 		icon: any
 		children: React.ReactNode
 	}) {
+		const isActive = location.pathname.startsWith(href)
+		
 		return (
 			<Link
 				to={href}
-				className="flex items-center rounded-md px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-[#1F1F23] dark:hover:text-white"
+				className={`flex items-center rounded-md px-3 py-2 text-sm transition-colors ${
+					isActive 
+						? 'bg-gray-50 text-gray-900 dark:bg-[#1F1F23] dark:text-white' 
+						: 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-[#1F1F23] dark:hover:text-white'
+				}`}
 				prefetch="intent"
 			>
-				<Icon className="mr-3 h-4 w-4 flex-shrink-0" />
+				<Icon className={`mr-3 h-4 w-4 flex-shrink-0 ${isActive ? 'text-blue-500 dark:text-blue-400' : ''}`} />
 				{children}
 			</Link>
 		)
