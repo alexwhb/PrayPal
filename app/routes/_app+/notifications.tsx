@@ -1,10 +1,6 @@
-import { Bell, CheckCircle, MessageSquare, UserPlus } from 'lucide-react'
+import { type $Enums, type Notification } from '@prisma/client'
+import { Bell, MessageSquare, UserPlus, CheckCircle } from 'lucide-react'
 import { data, Link } from 'react-router'
-import {
-	Avatar,
-	AvatarFallback,
-	AvatarImage,
-} from '#app/components/ui/avatar.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Card, CardContent } from '#app/components/ui/card.tsx'
 import {
@@ -16,7 +12,6 @@ import {
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { formatDate } from '#app/utils/formatter.ts'
-import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { type Route } from './+types/notifications'
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -41,7 +36,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	// Mark all as read
 	await prisma.notification.updateMany({
 		where: { userId, read: false },
-		data: { read: true },
+		data: { read: true, readAt: new Date() },
 	})
 
 	return data({
@@ -58,7 +53,7 @@ export async function action({ request }: Route.ActionArgs) {
 	if (action === 'markAllAsRead') {
 		await prisma.notification.updateMany({
 			where: { userId, read: false },
-			data: { read: true },
+			data: { read: true, readAt: new Date() },
 		})
 
 		return data({ success: true })
@@ -76,15 +71,20 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 // Helper function to get notification icon based on type
-const getNotificationIcon = (type) => {
+const getNotificationIcon = (type: $Enums.NotificationType) => {
 	switch (type) {
-		case 'MESSAGE':
+		case 'MESSAGE_RECEIVED':
 			return <MessageSquare className="h-5 w-5 text-blue-500" />
-		case 'PRAYER':
-			return <CheckCircle className="h-5 w-5 text-green-500" />
-		case 'FRIEND_REQUEST':
-		case 'GROUP_INVITE':
+		case 'GROUP_JOIN_REQUEST':
+		case 'GROUP_APPROVED':
+		case 'GROUP_REJECTED':
 			return <UserPlus className="h-5 w-5 text-purple-500" />
+		case 'SHARE_ITEM_REQUEST':
+		case 'SHARE_ITEM_APPROVED':
+		case 'SHARE_ITEM_REJECTED':
+			return <CheckCircle className="h-5 w-5 text-green-500" />
+		case 'SYSTEM_ANNOUNCEMENT':
+		case 'OTHER':
 		default:
 			return <Bell className="h-5 w-5 text-gray-500" />
 	}
@@ -138,7 +138,8 @@ export default function NotificationsPage({
 	)
 }
 
-function NotificationList({ notifications }) {
+// Updated to match the actual Notification schema
+function NotificationList({ notifications }: { notifications: Array<Notification & { user: any }> }) {
 	if (notifications.length === 0) {
 		return (
 			<div className="rounded-lg border p-8 text-center">
@@ -156,28 +157,16 @@ function NotificationList({ notifications }) {
 				>
 					<CardContent className="p-4">
 						<div className="flex items-start gap-4">
-							{notification.sender ? (
-								<Avatar className="h-10 w-10">
-									<AvatarImage
-										src={getUserImgSrc(notification.sender.image?.id)}
-										alt={notification.sender.name}
-									/>
-									<AvatarFallback>
-										{notification.sender.name.charAt(0)}
-									</AvatarFallback>
-								</Avatar>
-							) : (
-								<div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-									{getNotificationIcon(notification.type)}
-								</div>
-							)}
+							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+								{getNotificationIcon(notification.type)}
+							</div>
 
 							<div className="flex-1">
 								<div className="flex items-start justify-between">
 									<div>
 										<h3 className="font-medium">{notification.title}</h3>
 										<p className="mt-1 text-sm text-muted-foreground">
-											{notification.message}
+											{notification.description}
 										</p>
 									</div>
 									<p className="text-xs text-muted-foreground">
