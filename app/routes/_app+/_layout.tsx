@@ -1,10 +1,9 @@
-import { Outlet } from 'react-router'
+import { Outlet, useOutletContext } from 'react-router'
 import LayoutMainApp from '#app/components/layout-main-app.tsx'
-import { useTheme } from '#app/routes/resources+/theme-switch.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { useOptionalUser } from '#app/utils/user'
-import { type Route } from './+types/_app+/_layout.ts'
+import { type Route } from './+types/_layout.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
@@ -29,11 +28,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function AppLayout({loaderData}: Route.ComponentProps) {
 	const { notifications, unreadCount } = loaderData
+	const userPrefs = useOutletContext<any>()
 	const user = useOptionalUser()
-	const theme = useTheme()
+	// const theme = useTheme()
 
 	return (
-		<LayoutMainApp theme={theme} user={user} notifications={notifications} unreadCount={unreadCount}>
+		<LayoutMainApp userPrefs={userPrefs} user={user} notifications={notifications} unreadCount={unreadCount}>
 			<Outlet />
 		</LayoutMainApp>
 	)
