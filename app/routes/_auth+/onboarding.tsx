@@ -115,7 +115,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export const meta: Route.MetaFunction = () => {
-	return [{ title: 'Setup Podcasty Account' }]
+	return [{ title: 'Setup PrayPal Account' }]
 }
 
 export default function OnboardingRoute({

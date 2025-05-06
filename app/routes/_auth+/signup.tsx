@@ -140,7 +140,7 @@ export function SignupEmail({
 		<E.Html lang="en" dir="ltr">
 			<E.Container>
 				<h1>
-					<E.Text>Welcome to Podcasty!</E.Text>
+					<E.Text>Welcome to PrayPal!</E.Text>
 				</h1>
 				<p>
 					<E.Text>
@@ -157,7 +157,7 @@ export function SignupEmail({
 }
 
 export const meta: Route.MetaFunction = () => {
-	return [{ title: 'Sign Up | Podcasty' }]
+	return [{ title: 'Sign Up | PrayPal' }]
 }
 
 export default function SignupRoute({ actionData }: Route.ComponentProps) {

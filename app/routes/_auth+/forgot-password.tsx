@@ -70,7 +70,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 	const response = await sendEmail({
 		to: user.email,
-		subject: `Podcasty Password Reset`,
+		subject: `PrayPal Password Reset`,
 		react: (
 			<ForgotPasswordEmail onboardingUrl={verifyUrl.toString()} otp={otp} />
 		),
@@ -97,7 +97,7 @@ function ForgotPasswordEmail({
 		<E.Html lang="en" dir="ltr">
 			<E.Container>
 				<h1>
-					<E.Text>Podcasty Password Reset</E.Text>
+					<E.Text>PrayPal Password Reset</E.Text>
 				</h1>
 				<p>
 					<E.Text>
@@ -114,7 +114,7 @@ function ForgotPasswordEmail({
 }
 
 export const meta: Route.MetaFunction = () => {
-	return [{ title: 'Password Recovery for Podcasty' }]
+	return [{ title: 'Password Recovery for PrayPal' }]
 }
 
 export default function ForgotPasswordRoute() {

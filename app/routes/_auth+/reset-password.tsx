@@ -62,7 +62,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export const meta: Route.MetaFunction = () => {
-	return [{ title: 'Reset Password | Podcasty' }]
+	return [{ title: 'Reset Password | PrayPal' }]
 }
 
 export default function ResetPasswordPage({
