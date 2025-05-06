@@ -229,7 +229,7 @@ async function seed() {
 			// connections: {
 			// 	create: { providerName: 'github', providerId: githubUser.profile.id },
 			// },
-			roles: { connect: [{ name: 'moderator' }, { name: 'user' }] },
+			roles: { connect: [{ name: 'user' }] },
 		},
 	})
 	userIds.push(kody.id) // Add Kody to the user list
@@ -498,10 +498,10 @@ async function seed() {
 	console.time(`📦 Creating share items...`)
 	const shareItems = []
 	for (const userId of userIds) {
-		const itemCount = faker.number.int({ min: 1, max: 5 })
+		const itemCount = faker.number.int({ min: 8, max: 20 })
 		for (let i = 0; i < itemCount; i++) {
 			const shareType = faker.helpers.arrayElement(Object.values(ShareType))
-			const claimed = faker.datatype.boolean()
+			const claimed = faker.datatype.boolean(0.2)
 			const claimedById = claimed
 				? faker.helpers.arrayElement(userIds.filter((id) => id !== userId))
 				: null
