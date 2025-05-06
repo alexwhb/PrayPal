@@ -29,7 +29,6 @@ import { getUserImgSrc  } from '#app/utils/misc.tsx'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { useOptionalUser, userHasRole } from '#app/utils/user.ts'
 import { type Route } from './+types/$username.ts'
-import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 
 type UserRequest = {
 	id: string
@@ -322,12 +321,17 @@ export default function ProfileRoute() {
 							</div>
 							<div className="flex flex-wrap gap-2">
 								{user.groupMemberships.map((membership) => (
-									<Badge 
+									<Link 
 										key={membership.group.id} 
-										variant="secondary"
+										to={`/groups/${membership.group.id}`}
 									>
-										{membership.group.name}
-									</Badge>
+										<Badge 
+											variant="secondary"
+											className="hover:bg-secondary/80 cursor-pointer"
+										>
+											{membership.group.name}
+										</Badge>
+									</Link>
 								))}
 							</div>
 						</div>
