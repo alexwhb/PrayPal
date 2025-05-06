@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import {
 	data,
 	Link,
@@ -13,7 +13,7 @@ import {
 import { HoneypotProvider } from 'remix-utils/honeypot/react'
 import { type Socket } from 'socket.io-client'
 import LayoutMainApp from '#app/components/layout.tsx'
-import { connect, SocketContext } from '#app/utils/socket'
+import { connect, disconnect, SocketContext } from '#app/utils/socket'
 import logoIcon from '../public/podcasty.svg'
 import { type Route } from './+types/root.ts'
 import appleTouchIconAssetUrl from './assets/favicons/apple-touch-icon.png'
@@ -189,41 +189,57 @@ export function Layout({ children }: { children: React.ReactNode }) {
 	)
 }
 
-export type UserPrefs = typeof loader['requestInfo']['userPrefs']
-
 
 function App() {
 	const data = useLoaderData<typeof loader>()
 	const theme = useTheme()
-	// const user = useOptionalUser()
-	// const [socket, setSocket] = useState<Socket | undefined>(undefined)
+	const user = useOptionalUser()
+	const socketRef = useRef<Socket | null>(null)
+	const [isConnected, setIsConnected] = useState(false)
+	const prevUserIdRef = useRef<string | null>(null)
 
-	// useEffect(() => {
-	// 	if (user?.id && !socket) {
-	// 		const newSocket = connect()
-	// 		newSocket.on('connect', () => {
-	// 			newSocket.emit('set-user-id', user.id)
-	// 			setSocket(newSocket)
-	// 		})
-	//
-	// 		return () => {
-	// 			if (newSocket.connected) {
-	// 				newSocket.disconnect()
-	// 			}
-	// 		}
-	// 	}
-	//
-	// 	if (!user?.id && socket) {
-	// 		socket.disconnect()
-	// 		setSocket(undefined)
-	// 	}
-	// }, [socket, user?.id])
-
+	useEffect(() => {
+		// Only handle socket connection when user ID changes
+		if (user?.id !== prevUserIdRef.current) {
+			prevUserIdRef.current = user?.id || null
+			
+			// Clean up existing socket if needed
+			if (socketRef.current) {
+				console.log("Disconnecting previous socket")
+				disconnect()
+				socketRef.current = null
+				setIsConnected(false)
+			}
+			
+			// Create new socket if user is logged in
+			if (user?.id) {
+				console.log("Creating persistent socket connection for user:", user.id)
+				const newSocket = connect()
+				socketRef.current = newSocket
+				
+				newSocket.on('connect', () => {
+					console.log("Socket connected, setting user ID:", user.id)
+					newSocket.emit('set-user-id', user.id)
+					setIsConnected(true)
+				})
+			}
+		}
+		
+		// Cleanup function runs when component unmounts
+		return () => {
+			if (socketRef.current) {
+				console.log("Root component unmounting, cleaning up socket")
+				disconnect()
+				socketRef.current = null
+			}
+		}
+	}, [user?.id])
+	
 	return (
 		<Document nonce={useNonce()} theme={theme}>
-			{/*<SocketProvider socket={socket}>*/}
+			<SocketProvider socket={socketRef.current}>
 				<Outlet context={data.requestInfo.userPrefs} />
-			{/*</SocketProvider>*/}
+			</SocketProvider>
 			<Toaster closeButton position="top-center" theme={theme} />
 			<EpicProgress />
 		</Document>

@@ -3,20 +3,28 @@ import io, { type Socket } from "socket.io-client"
 
 let socket: Socket | null = null
 let reconnectTimer: NodeJS.Timeout | null = null
+let currentUserId: string | null = null
 
-export function connect() {
-	if (socket?.connected) {
-		console.log("Reusing existing connected socket")
+export function connect(userId?: string) {
+	// If we already have a connected socket with the same user, reuse it
+	if (socket?.connected && userId === currentUserId) {
+		console.log("Reusing existing connected socket for user:", userId)
 		return socket
 	}
 
+	// Clean up existing socket if it exists
 	if (socket) {
-		console.log("Cleaning up existing disconnected socket")
+		console.log("Cleaning up existing socket")
 		socket.disconnect()
 		socket = null
 	}
 
-	console.log("Creating new socket connection")
+	// Store the current user ID
+	if (userId) {
+		currentUserId = userId
+	}
+
+	console.log("Creating new socket connection for user:", userId)
 	socket = io(
 		process.env.NODE_ENV === "production" 
 			? "https://your-app.fly.dev" 
@@ -30,6 +38,13 @@ export function connect() {
 		}
 	)
 
+	socket.on("connect", () => {
+		console.log("Socket connected")
+		if (userId) {
+			socket?.emit('set-user-id', userId)
+		}
+	})
+
 	socket.on("disconnect", (reason) => {
 		console.log("Socket disconnected:", reason)
 		if (reason === "io server disconnect") {
@@ -40,6 +55,15 @@ export function connect() {
 				socket?.connect()
 			}, 1000)
 		}
+	})
+
+	socket.on("user-typing", (data) => {
+		// Broadcast to all users in the conversation except the sender
+		socket.to(data.conversationId).emit("user-typing", {
+			userId: data.userId,
+			username: data.username,
+			conversationId: data.conversationId
+		})
 	})
 
 	return socket
