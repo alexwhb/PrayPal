@@ -1,19 +1,18 @@
 import { invariantResponse } from '@epic-web/invariant'
-import { Gift } from 'lucide-react'
-import { useCallback, useState } from 'react'
-import { data, useSearchParams } from 'react-router'
+import { useState } from 'react'
+import { data } from 'react-router'
 import BoardFooter from '#app/components/board/board-footer.tsx'
 import BoardHeader from '#app/components/board/board-header.tsx'
 import { DeleteDialog } from '#app/components/shared/delete-dialog.tsx'
 import ShareItem from '#app/components/shared/share-item.tsx'
 import { type ShareType } from '#app/components/shared/type.ts'
+import { useBoardNavigation } from '#app/hooks/use-board-navigation.ts'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { initiateConversation } from '#app/utils/messaging.server.ts'
 import { moderateItem } from '#app/utils/moderation.server.ts'
 import { type Route } from './+types/share.board.ts'
-import { useBoardNavigation } from '#app/hooks/use-board-navigation.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
@@ -30,6 +29,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 			where: {
 				status: 'ACTIVE',
 				shareType: type,
+				claimed: false, // Only show unclaimed items
 			},
 			getCategoryWhere: () => ({ type: 'SHARE', active: true }),
 			select: {
