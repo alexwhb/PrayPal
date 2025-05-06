@@ -1,16 +1,12 @@
 import { type Group } from '@prisma/client'
 import { CalendarIcon, MapPinIcon, MoreVerticalIcon } from 'lucide-react'
 import { Form, Link } from 'react-router'
+import ContentModeration from '#app/components/content-moderation.tsx'
 import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar'
 import { Badge } from '#app/components/ui/badge'
 import { Button } from '#app/components/ui/button'
+import { Card } from '#app/components/ui/card.tsx'
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '#app/components/ui/dropdown-menu'
-import { 
     Tooltip,
     TooltipContent,
     TooltipProvider,
@@ -42,14 +38,13 @@ type GroupCardProps = {
 export default function GroupCard({
     group,
     canModerate,
-    isCurrentUser,
 }: GroupCardProps) {
     const leaders = group.memberships
     const displayedLeaders = leaders.slice(0, 3)
     const remainingLeaders = Math.max(0, leaders.length - 3)
 
     return (
-        <div className="flex flex-col space-y-4 rounded-lg border p-6 shadow-sm">
+        <Card className="flex flex-col space-y-4 rounded-lg border p-6 shadow-sm">
             <div className="flex items-center justify-between">
                 <div className="flex flex-col gap-2">
                     <Link to={`/groups/${group.id}`} className="hover:underline">
@@ -151,30 +146,14 @@ export default function GroupCard({
                         </Button>
                     )}
                 </Form>
-
-                {(group.isLeader || canModerate) && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <MoreVerticalIcon className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                                <Link to={`/groups/${group.id}/edit`}>Edit Group</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                className="text-destructive"
-                                onSelect={() => {
-                                    // Handle delete confirmation
-                                }}
-                            >
-                                Delete Group
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
+							
+							<ContentModeration
+								itemId={group.id}
+								itemType="group"
+								canModerate={canModerate}
+								isOwner={group.isLeader}
+							/>
             </div>
-        </div>
+        </Card>
     )
 }
