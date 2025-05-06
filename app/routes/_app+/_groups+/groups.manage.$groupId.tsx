@@ -22,7 +22,6 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       isPrivate: true,
       memberships: {
         select: {
-          // id: true,
           userId: true,
           role: true,
           status: true,
@@ -51,10 +50,11 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     return redirect(`/groups/${groupId}`)
   }
 
-  const members = group.memberships.filter(m => m.status === 'ACTIVE')
-  const pendingRequests = group.isPrivate 
-    ? group.memberships.filter(m => m.status === 'PENDING')
-    : []
+  // Filter memberships by status
+  const members = group.memberships.filter(m => m.status === 'APPROVED')
+
+  // Get all pending requests regardless of whether the group is private
+  const pendingRequests = group.memberships.filter(m => m.status === 'PENDING')
 
   return data({
     group: {
@@ -72,63 +72,115 @@ export async function action({ request, params }: Route.ActionArgs) {
   const groupId = params.groupId
   const formData = await request.formData()
   const action = formData.get('_action')
-  const membershipId = formData.get('membershipId')
+  const targetUserId = formData.get('userId') as string
+  
+  console.log('Action:', action, 'Target User ID:', targetUserId)
   
   // Verify user is a leader
-  const userMembership = await prisma.groupMembership.findFirst({
+  const userMembership = await prisma.groupMembership.findUnique({
     where: {
-      groupId,
-      userId,
-      role: 'LEADER',
+      userId_groupId: {
+        userId,
+        groupId,
+      }
     },
   })
-  
-  if (!userMembership) {
+
+  if (!userMembership || userMembership.role !== 'LEADER') {
     return data({ error: 'Unauthorized' }, { status: 403 })
   }
-  
-  if (action === 'approve' && membershipId) {
+
+  if (action === 'approve' && targetUserId) {
+    console.log('Approving membership for user:', targetUserId)
+    
+    // Update membership status to APPROVED
     await prisma.groupMembership.update({
-      where: { id: membershipId as string },
-      data: { status: 'ACTIVE' },
+      where: {
+        userId_groupId: {
+          userId: targetUserId,
+          groupId,
+        }
+      },
+      data: { status: 'APPROVED' },
     })
     
-    // TODO: Create notification for approved user
+    // Create notification for approved user
+    await prisma.notification.create({
+      data: {
+        userId: targetUserId,
+        type: 'GROUP_APPROVED',
+        title: 'Group Join Request Approved',
+        description: `Your request to join the group has been approved.`,
+        actionUrl: `/groups/${groupId}`,
+      }
+    })
     
     return data({ success: true })
   }
   
-  if (action === 'reject' && membershipId) {
+  if (action === 'reject' && targetUserId) {
+    console.log('Rejecting membership for user:', targetUserId)
+    
+    // Delete the membership
     await prisma.groupMembership.delete({
-      where: { id: membershipId as string },
+      where: {
+        userId_groupId: {
+          userId: targetUserId,
+          groupId,
+        }
+      },
     })
     
-    // TODO: Create notification for rejected user
+    // Create notification for rejected user
+    await prisma.notification.create({
+      data: {
+        userId: targetUserId,
+        type: 'GROUP_REJECTED',
+        title: 'Group Join Request Rejected',
+        description: `Your request to join the group was not approved.`,
+        actionUrl: `/groups`,
+      }
+    })
     
     return data({ success: true })
   }
   
-  if (action === 'promote' && membershipId) {
+  if (action === 'promote' && targetUserId) {
     await prisma.groupMembership.update({
-      where: { id: membershipId as string },
+      where: {
+        userId_groupId: {
+          userId: targetUserId,
+          groupId,
+        }
+      },
       data: { role: 'LEADER' },
     })
     
     return data({ success: true })
   }
   
-  if (action === 'demote' && membershipId) {
+  if (action === 'demote' && targetUserId) {
     await prisma.groupMembership.update({
-      where: { id: membershipId as string },
+      where: {
+        userId_groupId: {
+          userId: targetUserId,
+          groupId,
+        }
+      },
       data: { role: 'MEMBER' },
     })
     
     return data({ success: true })
   }
   
-  if (action === 'remove' && membershipId) {
+  if (action === 'remove' && targetUserId) {
     await prisma.groupMembership.delete({
-      where: { id: membershipId as string },
+      where: {
+        userId_groupId: {
+          userId: targetUserId,
+          groupId,
+        }
+      },
     })
     
     return data({ success: true })
@@ -157,11 +209,9 @@ export default function GroupManagePage({ loaderData }: Route.ComponentProps) {
           <TabsTrigger value="members">
             Members ({members.length})
           </TabsTrigger>
-          {group.isPrivate && (
-            <TabsTrigger value="requests">
-              Join Requests {pendingRequests.length > 0 && `(${pendingRequests.length})`}
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="requests">
+            Join Requests ({pendingRequests.length})
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="members" className="space-y-4 mt-4">
@@ -172,7 +222,7 @@ export default function GroupManagePage({ loaderData }: Route.ComponentProps) {
             <CardContent>
               <div className="space-y-4">
                 {members.map(member => (
-                  <div key={member.id} className="flex items-center justify-between">
+                  <div key={member.userId} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar>
                         {member.user.image?.id ? (
@@ -202,7 +252,7 @@ export default function GroupManagePage({ loaderData }: Route.ComponentProps) {
                     <div className="flex gap-2">
                       {member.role === 'MEMBER' ? (
                         <form method="post">
-                          <input type="hidden" name="membershipId" value={member.id} />
+                          <input type="hidden" name="userId" value={member.userId} />
                           <input type="hidden" name="_action" value="promote" />
                           <Button size="sm" variant="outline" type="submit">
                             Make Leader
@@ -210,7 +260,7 @@ export default function GroupManagePage({ loaderData }: Route.ComponentProps) {
                         </form>
                       ) : (
                         <form method="post">
-                          <input type="hidden" name="membershipId" value={member.id} />
+                          <input type="hidden" name="userId" value={member.userId} />
                           <input type="hidden" name="_action" value="demote" />
                           <Button size="sm" variant="outline" type="submit">
                             Remove as Leader
@@ -219,7 +269,7 @@ export default function GroupManagePage({ loaderData }: Route.ComponentProps) {
                       )}
                       
                       <form method="post">
-                        <input type="hidden" name="membershipId" value={member.id} />
+                        <input type="hidden" name="userId" value={member.userId} />
                         <input type="hidden" name="_action" value="remove" />
                         <Button size="sm" variant="destructive" type="submit">
                           Remove
@@ -237,67 +287,65 @@ export default function GroupManagePage({ loaderData }: Route.ComponentProps) {
           </Card>
         </TabsContent>
         
-        {group.isPrivate && (
-          <TabsContent value="requests" className="space-y-4 mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pending Join Requests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {pendingRequests.map(request => (
-                    <div key={request.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          {request.user.image?.id ? (
-                            <AvatarImage
-                              src={getUserImgSrc(request.user.image.id)}
-                              alt={request.user.name || request.user.username}
-                            />
-                          ) : (
-                            <AvatarFallback>
-                              {(request.user.name || request.user.username)[0]}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
-                        <Link 
-                          to={`/users/${request.user.username}`}
-                          className="font-medium hover:underline"
-                        >
-                          {request.user.name || request.user.username}
-                        </Link>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <form method="post">
-                          <input type="hidden" name="membershipId" value={request.id} />
-                          <input type="hidden" name="_action" value="approve" />
-                          <Button size="sm" variant="default" type="submit">
-                            <Check className="h-4 w-4 mr-2" />
-                            Approve
-                          </Button>
-                        </form>
-                        
-                        <form method="post">
-                          <input type="hidden" name="membershipId" value={request.id} />
-                          <input type="hidden" name="_action" value="reject" />
-                          <Button size="sm" variant="destructive" type="submit">
-                            <X className="h-4 w-4 mr-2" />
-                            Reject
-                          </Button>
-                        </form>
-                      </div>
+        <TabsContent value="requests" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Join Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {pendingRequests.map(request => (
+                  <div key={request.userId} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        {request.user.image?.id ? (
+                          <AvatarImage
+                            src={getUserImgSrc(request.user.image.id)}
+                            alt={request.user.name || request.user.username}
+                          />
+                        ) : (
+                          <AvatarFallback>
+                            {(request.user.name || request.user.username)[0]}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <Link 
+                        to={`/users/${request.user.username}`}
+                        className="font-medium hover:underline"
+                      >
+                        {request.user.name || request.user.username}
+                      </Link>
                     </div>
-                  ))}
-                  
-                  {pendingRequests.length === 0 && (
-                    <p className="text-muted-foreground text-center py-4">No pending requests</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
+                    
+                    <div className="flex gap-2">
+                      <form method="post">
+                        <input type="hidden" name="userId" value={request.userId} />
+                        <input type="hidden" name="_action" value="approve" />
+                        <Button size="sm" variant="default" type="submit">
+                          <Check className="h-4 w-4 mr-2" />
+                          Approve
+                        </Button>
+                      </form>
+                      
+                      <form method="post">
+                        <input type="hidden" name="userId" value={request.userId} />
+                        <input type="hidden" name="_action" value="reject" />
+                        <Button size="sm" variant="destructive" type="submit">
+                          <X className="h-4 w-4 mr-2" />
+                          Reject
+                        </Button>
+                      </form>
+                    </div>
+                  </div>
+                ))}
+                
+                {pendingRequests.length === 0 && (
+                  <p className="text-muted-foreground text-center py-4">No pending requests</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   )
