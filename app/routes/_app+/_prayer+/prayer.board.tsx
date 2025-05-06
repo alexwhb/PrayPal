@@ -1,3 +1,4 @@
+import { ModerationType } from '@prisma/client'
 import { data } from 'react-router'
 import PrayerBoard from '#app/components/prayer/prayer-board.tsx'
 import { useBoardNavigation } from '#app/hooks/use-board-navigation.ts'
@@ -6,10 +7,9 @@ import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { moderateItem } from '#app/utils/moderation.server.ts'
 import { type Route } from './+types/prayer.board.ts'
-import { ModerationType } from '@prisma/client'
 
 export async function loader({ request }: Route.LoaderArgs) {
-	const userId = await requireUserId(request).catch(() => null)
+	const userId = await requireUserId(request)
 	const user = userId ? await prisma.user.findUnique({
 		where: { id: userId },
 		include: { roles: true },

@@ -5,6 +5,9 @@ import { prisma } from '#app/utils/db.server.ts'
 import { useOptionalUser } from '#app/utils/user'
 import { type Route } from './+types/_layout.ts'
 
+// TODO when we get to page transitions
+// ref: https://www.jacobparis.com/content/remix-animated-page-transitions
+
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
 
@@ -30,7 +33,6 @@ export default function AppLayout({loaderData}: Route.ComponentProps) {
 	const { notifications, unreadCount } = loaderData
 	const userPrefs = useOutletContext<any>()
 	const user = useOptionalUser()
-	// const theme = useTheme()
 
 	return (
 		<LayoutMainApp userPrefs={userPrefs} user={user} notifications={notifications} unreadCount={unreadCount}>

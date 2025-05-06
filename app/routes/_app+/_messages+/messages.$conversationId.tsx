@@ -1,12 +1,12 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { formatDistanceToNow } from 'date-fns'
 import { Send } from 'lucide-react'
 import { useRef, useEffect, useState } from 'react'
 import { data, useFetcher, useRevalidator } from 'react-router'
 import io from 'socket.io-client'
 import { z } from 'zod'
 import { TextareaField } from '#app/components/forms.tsx'
+import { MessageBubble } from '#app/components/messages/message-bubble.tsx'
 import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
@@ -136,7 +136,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function ConversationPage({loaderData, actionData}: Route.ComponentProps) {
-	const { messages, name, image, userId, conversationId, conversation } = loaderData
+	const { messages, name, userId, conversationId, conversation } = loaderData
 	const formRef = useRef<HTMLFormElement>(null)
 	const fetcher = useFetcher<typeof action>()
 	const socket = useSocket()
@@ -179,7 +179,7 @@ export default function ConversationPage({loaderData, actionData}: Route.Compone
 			console.log("Received message:", data)
 			if (data.conversationId === conversationId) {
 				console.log("Revalidating conversation:", conversationId)
-				revalidator.revalidate()
+				void revalidator.revalidate()
 			}
 		}
 
@@ -266,21 +266,11 @@ export default function ConversationPage({loaderData, actionData}: Route.Compone
 
 			<div className="flex-1 space-y-4 overflow-y-auto p-4">
 				{messages.map((message) => (
-					<div
+					<MessageBubble 
 						key={message.id}
-						className={`flex ${message.sender.id === userId ? 'justify-end' : 'justify-start'}`}
-					>
-						<div
-							className={`max-w-[80%] rounded-lg p-3 ${
-								message.sender.id === userId ? 'bg-primary text-primary-foreground' : 'bg-muted'
-							}`}
-						>
-							<p className="text-sm whitespace-pre-wrap">{message.content}</p>
-							<p className="mt-1 text-xs opacity-70">
-								{formatDistanceToNow(message.createdAt, { addSuffix: true })}
-							</p>
-						</div>
-					</div>
+						message={message}
+						userId={userId}
+					/>
 				))}
 				<div ref={messagesEndRef} />
 			</div>
