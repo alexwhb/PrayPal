@@ -1,11 +1,19 @@
 import { ArrowRight, Gift, Heart, Users, InfoIcon } from 'lucide-react'
-import { Link } from 'react-router'
+import { Link, redirect } from 'react-router'
+import { CTASection } from '#app/components/marketing/cta-section'
 import { Alert, AlertDescription } from '#app/components/ui/alert'
 import { Button } from '#app/components/ui/button'
-import { CTASection } from '#app/components/marketing/cta-section'
+import { getUserId } from '#app/utils/auth.server.ts'
 import { type Route } from './+types/index'
 
-export async function loader({ }: Route.LoaderArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
+	const userId = await getUserId(request)
+
+	// if we have a logged in user... redirect them to the app. 
+	if(userId) {
+		return redirect('/prayer/board')
+	}
+
 	return {
 		isInviteOnly: process.env.REGISTRATION_MODE === 'referral-only',
 	}

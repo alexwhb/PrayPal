@@ -196,7 +196,7 @@ export default function LoginPage({ actionData }: Route.ComponentProps) {
 }
 
 export const meta: Route.MetaFunction = () => {
-	return [{ title: 'Login to Podcasty' }]
+	return [{ title: 'Login to PrayPal' }]
 }
 
 export function ErrorBoundary() {
