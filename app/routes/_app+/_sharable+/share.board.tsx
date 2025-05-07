@@ -192,6 +192,10 @@ export default function ShareBoardPage({
 		})
 	}
 
+	const getNewActionUrl = () => {
+		return `../new?type=${loaderData.type.toLowerCase()}`
+	}
+
 	return (
 		<div className="space-y-6">
 			<BoardHeader
@@ -199,6 +203,7 @@ export default function ShareBoardPage({
 				activeFilter={loaderData.activeFilter}
 				getFilterUrl={getFilterUrl}
 				getSortUrl={getSortUrl}
+				getNewActionUrl={getNewActionUrl}
 				newActionToolTipString={isBorrowBoard ? "Share Equipment" : "Give Item"}
 				secondaryAction={
 					isBorrowBoard

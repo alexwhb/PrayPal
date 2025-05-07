@@ -1,19 +1,15 @@
-import { ArrowUpDown, PlusIcon, LucideIcon } from 'lucide-react'
+import { ArrowUpDown, PlusIcon, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router'
 import Filters from '#app/components/board/filters.tsx'
 import { Button } from '#app/components/ui/button.tsx'
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from '#app/components/ui/tooltip.tsx'
+
 
 type BoardHeaderProps = {
 	filters: Array<{ id: string; name: string }>
 	activeFilter: string
 	getFilterUrl: (filter: string) => string
 	getSortUrl: () => string
+	getNewActionUrl?: () => string
 	newActionToolTipString: string
 	secondaryAction?: {
 		label: string
@@ -28,6 +24,7 @@ export default function BoardHeader({
 	activeFilter,
 	getFilterUrl,
 	getSortUrl,
+	getNewActionUrl,
 	newActionToolTipString,
 	secondaryAction,
 }: BoardHeaderProps) {
@@ -61,7 +58,7 @@ export default function BoardHeader({
 				)}
 				<Button asChild>
 					<Link
-						to="../new"
+						to={getNewActionUrl ? getNewActionUrl() : '../new'}
 						className="flex items-center gap-2"
 						title={newActionToolTipString}
 					>

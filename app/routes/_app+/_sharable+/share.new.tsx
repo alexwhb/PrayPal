@@ -30,8 +30,6 @@ import { uploadHandler } from '#app/utils/file-uploads.server.ts'
 import { getImageSrc } from '#app/utils/misc.tsx'
 import { type Route } from './+types/share.new.ts'
 
-
-
 export const MAX_UPLOAD_SIZE = 10 * 1024 * 1024 // 10MB as an example
 
 
@@ -65,11 +63,19 @@ export const ShareItemSchema = z.object({
 
 export async function loader({ request }: Route.LoaderArgs) {
 	await requireUserId(request)
+
+	const url = new URL(request.url)
+	const shareTypeParam = url.searchParams.get('type')
+	const shareType =
+		shareTypeParam && ['GIVE', 'BORROW'].includes(shareTypeParam.toUpperCase())
+			? shareTypeParam.toUpperCase()
+			: 'BORROW'
+
 	const categories = await prisma.category.findMany({
 		where: { type: 'SHARE', active: true },
 		select: { id: true, name: true },
 	})
-	return data({ categories })
+	return data({ categories, defaultShareType: shareType })
 }
 
 function imageHasFile(image: { file?: File | null }): image is { file: File } {
@@ -174,10 +180,11 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function NewShareForm({
-	loaderData: { categories },
+	loaderData,
 	actionData,
 }: Route.ComponentProps) {
-	const [shareType, setShareType] = useState<'BORROW' | 'GIVE'>('BORROW')
+	const { categories, defaultShareType } = loaderData
+	const [shareType, setShareType] = useState<'BORROW' | 'GIVE'>(defaultShareType.toUpperCase() as 'BORROW' | 'GIVE')
 
 	const defaultValues = useMemo(
 		() => ({
@@ -186,7 +193,7 @@ export default function NewShareForm({
 			description: '',
 			location: '',
 			category: '',
-			shareType: 'BORROW',
+			shareType: shareType,
 			duration: '',
 			image: null,
 		}),

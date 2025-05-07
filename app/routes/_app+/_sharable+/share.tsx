@@ -4,8 +4,8 @@ import { type Route } from './+types/share'
 export async function loader({ request }: Route.LoaderArgs) {
 
 	// if this page is just /needs then redirect to /needs/board
-	if (new URL(request.url).pathname === '/needs') {
-		return redirect('/needs/board')
+	if (new URL(request.url).pathname === '/share') {
+		return redirect('/share/board')
 	}
 
 	return {}
