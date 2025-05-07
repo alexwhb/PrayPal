@@ -9,6 +9,15 @@ export function getUserImgSrc(imageId?: string | null) {
 	return imageId ? `/resources/user-images/${imageId}` : '/img/user.png'
 }
 
+export function getImageSrc(imageId: string | null, updatedAt?: Date | string | null) {
+	if(imageId === null) return 'https://placehold.co/600x400';
+	const timestamp = getNumericTimestamp(updatedAt);
+	if (!timestamp) {
+		return `/resources/image/${imageId}`;
+	}
+	return `/resources/image/${imageId}?t=${timestamp}`;
+}
+
 
 /**
  * Converts various timestamp formats to a numeric timestamp (milliseconds since epoch)

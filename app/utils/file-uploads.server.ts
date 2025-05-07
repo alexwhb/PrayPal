@@ -8,9 +8,8 @@ import { type FileUpload } from '@mjackson/form-data-parser'
  */
 export async function uploadHandler(file: FileUpload): Promise<File> {
 	const fileContent = await file.arrayBuffer() // Get file content as an ArrayBuffer
-	const fileInstance = new File([fileContent], file.name, {
+	return new File([fileContent], file.name, {
 		type: file.type,
 		lastModified: file.lastModified,
 	})
-	return fileInstance
 }
