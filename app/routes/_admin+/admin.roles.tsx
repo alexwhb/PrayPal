@@ -5,6 +5,8 @@ import { prisma } from '#app/utils/db.server.ts'
 
 import { type Route } from './+types/admin.roles.ts'
 import { useToast } from '#app/components/toaster.tsx'
+import { useState } from 'react'
+import { Toast } from '#app/utils/toast.server.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
   // Ensure only admins can access this page
@@ -161,11 +163,12 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function AdminRolesPage() {
   const { adminUsers, moderatorUsers } = useLoaderData<typeof loader>()
-  // const { toast } = useToast()
+	const [toast, setToast] = useState<Toast | null>(null)
+  useToast(toast)
   const fetcher = useFetcher()
   
   const handleRoleAssignment = (userId: string, role: string) => {
-    fetcher.submit(
+    void fetcher.submit(
       { userId, role },
       { method: 'post' }
     )
@@ -175,14 +178,15 @@ export default function AdminRolesPage() {
     const roleDisplay = isRemoval 
       ? role.replace('remove-', '') 
       : role
-    
-    // toast({
-    //   title: isRemoval ? 'Role Removed' : 'Role Assigned',
-    //   description: isRemoval
-    //     ? `User has been removed from the ${roleDisplay} role.`
-    //     : `User has been assigned the ${roleDisplay} role.`,
-    //   variant: 'default',
-    // })
+
+    setToast({
+			id: 'role-assignment',
+      title: isRemoval ? 'Role Removed' : 'Role Assigned',
+      description: isRemoval
+        ? `User has been removed from the ${roleDisplay} role.`
+        : `User has been assigned the ${roleDisplay} role.`,
+      type: 'success',
+    })
   }
   
   return (
