@@ -1,6 +1,7 @@
 import { type ModerationType, type ModeratorAction } from '@prisma/client'
 import { AlertCircle } from 'lucide-react'
 import { data, Link, useLoaderData, Form } from 'react-router'
+import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Alert, AlertDescription } from '#app/components/ui/alert.tsx'
 import { Badge } from '#app/components/ui/badge.tsx'
 import { Button } from '#app/components/ui/button.tsx'
@@ -157,7 +158,7 @@ export async function loader({ params, request }: { params: { logId: string }, r
 	})
 }
 
-export async function action({ request, params }: { request: Request, params: { logId: string } }) {
+export async function action({ request }: { request: Request, params: { logId: string } }) {
 	const userId = await requireUserId(request)
 	const formData = await request.formData()
 	const action = formData.get('_action') as string
@@ -261,7 +262,7 @@ export default function ModerationDetails() {
 		return colors[action] as "destructive" | "outline" | "default"
 	}
 
-	function renderModeratedItem() {
+	function RenderModeratedItem() {
 		if (!moderatedItem) {
 			return (
 				<Alert variant="destructive" className="mb-4">
@@ -407,7 +408,7 @@ export default function ModerationDetails() {
 		return null
 	}
 
-	function renderActionForm() {
+	function RenderActionForm() {
 		if (!moderatedItem) return null
 
 		return (
@@ -546,9 +547,9 @@ export default function ModerationDetails() {
 			)}
 
 			<h2 className="mb-4 text-xl font-bold">Moderated Content</h2>
-			{renderModeratedItem()}
+			<RenderModeratedItem />
 
-			{renderActionForm()}
+			<RenderActionForm />
 
 			<div className="mt-8 flex justify-end">
 				<Link to="/admin/moderation">
@@ -557,4 +558,8 @@ export default function ModerationDetails() {
 			</div>
 		</div>
 	)
+}
+
+export function ErrorBoundary() {
+	return <GeneralErrorBoundary />
 }

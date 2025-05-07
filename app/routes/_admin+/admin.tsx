@@ -17,6 +17,7 @@ import { logout, requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { useOptionalUser } from '#app/utils/user.ts'
 import { type Route } from './+types/admin.ts'
+import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
@@ -45,3 +46,5 @@ export default function Admin() {
 		</LayoutAdmin>
 	)
 }
+
+

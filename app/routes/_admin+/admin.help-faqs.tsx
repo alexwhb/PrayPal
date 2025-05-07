@@ -1,22 +1,12 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
+import { PlusIcon, Pencil, Trash2 } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
 import { data, redirect, Form, useLoaderData } from 'react-router'
 import { z } from 'zod'
-import { Field, TextareaField } from '#app/components/forms'
+import { Field, NumberField, TextareaField } from '#app/components/forms'
 import { Button } from '#app/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '#app/components/ui/card'
-import { prisma } from '#app/utils/db.server'
-import { requireUserWithRole } from '#app/utils/permissions.server'
-import { type Route } from './+types/admin.help-faqs.ts'
-import { PlusIcon, Pencil, Trash2 } from 'lucide-react'
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from '#app/components/ui/table'
 import {
 	Dialog,
 	DialogContent,
@@ -25,9 +15,24 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '#app/components/ui/dialog'
-import { useState } from 'react'
-import { Switch } from '#app/components/ui/switch'
 import { Label } from '#app/components/ui/label'
+import {
+	Select, SelectContent, SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#app/components/ui/select.tsx'
+import { Switch } from '#app/components/ui/switch'
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '#app/components/ui/table'
+import { prisma } from '#app/utils/db.server'
+import { requireUserWithRole } from '#app/utils/permissions.server'
+import { type Route } from './+types/admin.help-faqs.ts'
 
 export const FAQSchema = z.object({
 	id: z.string().optional(),
@@ -94,25 +99,151 @@ export async function action({ request }: Route.ActionArgs) {
 	return redirect('/admin/help-faqs')
 }
 
+// FAQDialog component - extracted from the main component
+function FAQDialog({
+    isOpen,
+    onOpenChange,
+    selectedFAQ,
+    categories,
+    onSubmit,
+}: {
+    isOpen: boolean
+    onOpenChange: (open: boolean) => void
+    selectedFAQ: any | null
+    categories: string[]
+    onSubmit: () => void
+}) {
+    const [order, setOrder] = useState<number | null>(selectedFAQ?.order || 0)
+    
+    // Update order when selectedFAQ changes
+    useEffect(() => {
+        setOrder(selectedFAQ?.order || 0)
+    }, [selectedFAQ])
+
+    const [form, fields] = useForm({
+        id: 'faq-form',
+        constraint: getZodConstraint(FAQSchema),
+        defaultValue: selectedFAQ || {
+            question: '',
+            answer: '',
+            category: '',
+            order: 0,
+            active: true,
+        },
+        onValidate({ formData }) {
+            return parseWithZod(formData, { schema: FAQSchema })
+        },
+    })
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                    <DialogTitle>{selectedFAQ ? 'Edit FAQ' : 'Add New FAQ'}</DialogTitle>
+                    <DialogDescription>
+                        {selectedFAQ
+                            ? 'Update the question and answer details below.'
+                            : 'Fill in the details to create a new FAQ entry.'}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <Form method="post" {...getFormProps(form)} onSubmit={onSubmit}>
+                    {selectedFAQ && <input type="hidden" name="id" value={selectedFAQ.id} />}
+
+                    <div className="grid gap-4 py-4">
+                        <Select 
+                            defaultValue={selectedFAQ?.category || ""}
+                            onValueChange={(value) => {
+                                // Update the hidden input with the selected value
+                                const input = document.createElement('input')
+                                input.name = fields.category.name
+                                input.value = value
+                                form.ref.current?.appendChild(input)
+                            }}
+                        >
+                            <SelectTrigger id="category">
+                                <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map(category => (
+                                    <SelectItem key={category} value={category}>
+                                        {category}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {/* Hidden input to store the category value for form submission */}
+                        <input 
+                            type="hidden" 
+                            name={fields.category.name} 
+                            defaultValue={selectedFAQ?.category || ""} 
+                        />
+
+                        <Field
+                            labelProps={{
+                                htmlFor: fields.question.id,
+                                children: 'Question',
+                            }}
+                            inputProps={{
+                                ...getInputProps(fields.question, { type: 'text' }),
+                                placeholder: 'Enter the question',
+                                defaultValue: selectedFAQ?.question || "",
+                            }}
+                            errors={fields.question.errors}
+                        />
+
+                        <TextareaField
+                            labelProps={{
+                                htmlFor: fields.answer.id,
+                                children: 'Answer',
+                            }}
+                            textareaProps={{
+                                ...getInputProps(fields.answer, { type: 'textarea' }),
+                                placeholder: 'Enter the answer',
+                                rows: 5,
+                                defaultValue: selectedFAQ?.answer || "",
+                            }}
+                            errors={fields.answer.errors}
+                        />
+
+                        <NumberField
+                            min={0}
+                            max={10000}
+                            labelProps={{ children: 'Display Order' }}
+                            onChange={setOrder}
+                            value={order}
+                            errors={fields.order.errors}
+                        />
+
+                        <div className="flex items-center space-x-2">
+                            <Switch
+                                id={fields.active.id}
+                                name={fields.active.name}
+                                defaultChecked={selectedFAQ?.active ?? true}
+                                {...getInputProps(fields.active, { type: 'checkbox' })}
+                            />
+                            <Label htmlFor={fields.active.id}>Active</Label>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit">
+                            {selectedFAQ ? 'Update FAQ' : 'Create FAQ'}
+                        </Button>
+                    </DialogFooter>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export default function AdminHelpFAQs() {
 	const { faqs, categories } = useLoaderData<typeof loader>()
 	const [selectedFAQ, setSelectedFAQ] = useState<null | (typeof faqs)[number]>(null)
 	const [isDialogOpen, setIsDialogOpen] = useState(false)
-
-	const [form, fields] = useForm({
-		id: 'faq-form',
-		constraint: getZodConstraint(FAQSchema),
-		defaultValue: selectedFAQ || {
-			question: '',
-			answer: '',
-			category: '',
-			order: 0,
-			active: true,
-		},
-		onValidate({ formData }) {
-			return parseWithZod(formData, { schema: FAQSchema })
-		},
-	})
 
 	function handleEdit(faq: (typeof faqs)[number]) {
 		setSelectedFAQ(faq)
@@ -185,98 +316,13 @@ export default function AdminHelpFAQs() {
 				</CardContent>
 			</Card>
 
-			<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-				<DialogContent className="sm:max-w-[600px]">
-					<DialogHeader>
-						<DialogTitle>{selectedFAQ ? 'Edit FAQ' : 'Add New FAQ'}</DialogTitle>
-						<DialogDescription>
-							{selectedFAQ
-								? 'Update the question and answer details below.'
-								: 'Fill in the details to create a new FAQ entry.'}
-						</DialogDescription>
-					</DialogHeader>
-
-					<Form method="post" {...getFormProps(form)} onSubmit={() => setIsDialogOpen(false)}>
-						{selectedFAQ && <input type="hidden" name="id" value={selectedFAQ.id} />}
-
-						<div className="grid gap-4 py-4">
-							<Field
-								labelProps={{
-									htmlFor: fields.category.id,
-									children: 'Category',
-								}}
-								inputProps={{
-									...getInputProps(fields.category, { type: 'text' }),
-									list: 'category-list',
-									placeholder: 'e.g. General, Account, Features',
-								}}
-								errors={fields.category.errors}
-							/>
-							<datalist id="category-list">
-								{categories.map(category => (
-									<option key={category} value={category} />
-								))}
-							</datalist>
-
-							<Field
-								labelProps={{
-									htmlFor: fields.question.id,
-									children: 'Question',
-								}}
-								inputProps={{
-									...getInputProps(fields.question, { type: 'text' }),
-									placeholder: 'Enter the question',
-								}}
-								errors={fields.question.errors}
-							/>
-
-							<TextareaField
-								labelProps={{
-									htmlFor: fields.answer.id,
-									children: 'Answer',
-								}}
-								textareaProps={{
-									...getInputProps(fields.answer, { type: 'textarea' }),
-									placeholder: 'Enter the answer',
-									rows: 5,
-								}}
-								errors={fields.answer.errors}
-							/>
-
-							<Field
-								labelProps={{
-									htmlFor: fields.order.id,
-									children: 'Display Order',
-								}}
-								inputProps={{
-									...getInputProps(fields.order, { type: 'number' }),
-									min: 0,
-								}}
-								errors={fields.order.errors}
-							/>
-
-							<div className="flex items-center space-x-2">
-								<Switch
-									id={fields.active.id}
-									name={fields.active.name}
-									defaultChecked={selectedFAQ?.active ?? true}
-									{...getInputProps(fields.active, { type: 'checkbox' })}
-								/>
-								<Label htmlFor={fields.active.id}>Active</Label>
-							</div>
-						</div>
-
-						<DialogFooter>
-							<Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-								Cancel
-							</Button>
-							<Button type="submit">
-								{selectedFAQ ? 'Update FAQ' : 'Create FAQ'}
-							</Button>
-						</DialogFooter>
-					</Form>
-				</DialogContent>
-			</Dialog>
+			<FAQDialog
+				isOpen={isDialogOpen}
+				onOpenChange={setIsDialogOpen}
+				selectedFAQ={selectedFAQ}
+				categories={categories}
+				onSubmit={() => setIsDialogOpen(false)}
+			/>
 		</div>
 	)
 }

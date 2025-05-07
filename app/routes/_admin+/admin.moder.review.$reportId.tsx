@@ -1,6 +1,7 @@
 import { type ModerationType, type ModeratorAction } from '@prisma/client'
 import { AlertCircle } from 'lucide-react'
 import { data, Form, Link, useLoaderData } from 'react-router'
+import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Alert, AlertDescription } from '#app/components/ui/alert.tsx'
 import { Badge } from '#app/components/ui/badge.tsx'
 import { Button } from '#app/components/ui/button.tsx'
@@ -8,9 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from '#app/components/ui/label.tsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#app/components/ui/select.tsx'
 import { Textarea } from '#app/components/ui/textarea.tsx'
-import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { formatDate } from '#app/utils/formatter.ts'
+import { requireUserWithRole } from '#app/utils/permissions.server.ts'
 import { type Route } from './+types/admin.moderation.ts'
 
 export async function loader({ params, request }: Route.LoaderArgs) {
@@ -243,4 +244,8 @@ export default function ReviewReport() {
 			)}
 		</div>
 	)
+}
+
+export function ErrorBoundary() {
+	return <GeneralErrorBoundary />
 }
