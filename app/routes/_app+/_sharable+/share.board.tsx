@@ -1,4 +1,5 @@
 import { invariantResponse } from '@epic-web/invariant'
+import { Gift } from 'lucide-react'
 import { useState } from 'react'
 import { data } from 'react-router'
 import BoardFooter from '#app/components/board/board-footer.tsx'
@@ -11,6 +12,7 @@ import { requireUserId } from '#app/utils/auth.server.ts'
 import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { initiateConversation } from '#app/utils/messaging.server.ts'
+import { getImageSrc, getUserImgSrc } from '#app/utils/misc.tsx'
 import { moderateItem } from '#app/utils/moderation.server.ts'
 import { type Route } from './+types/share.board.ts'
 
@@ -43,6 +45,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 					},
 				},
 				category: { select: { name: true } },
+				imageId: true,
 				title: true,
 				description: true,
 				location: true,
@@ -52,19 +55,19 @@ export async function loader({ request }: Route.LoaderArgs) {
 				duration: true,
 			},
 			transformResponse: (items, user) =>
-				items.map((item) => ({
+				items.map((item) => {
+					console.log(item.image)
+					return({
 					id: item.id,
 					userId: item.owner.id,
 					userDisplayName: item.owner.name ?? item.owner.username,
 					userName: item.owner.username,
-					userAvatar: item.owner.image?.id
-						? `/resources/user-images/${item.owner.image.id}`
-						: '',
+					userAvatar: getUserImgSrc(item.owner.image.id),
 					title: item.title,
 					description: item.description,
 					category: item.category.name,
 					location: item.location,
-					image: 'https://placehold.co/600x400',
+					image: item.imageId != null ? getImageSrc(item.imageId) :  'https://placehold.co/600x400',
 					postedDate: item.createdAt,
 					claimed: item.claimed,
 					shareType: item.shareType.toLowerCase(),
@@ -72,7 +75,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 					canModerate: user.roles.some((role) =>
 						['admin', 'moderator'].includes(role.name),
 					),
-				})),
+				})}),
 		},
 	)
 
@@ -159,7 +162,7 @@ export default function ShareBoardPage({
 	loaderData,
 }: Route.ComponentProps) {
 	const { getSortUrl, getFilterUrl, getNextPageUrl } = useBoardNavigation()
-
+	const isBorrowBoard = loaderData.type === 'BORROW'
 	const [dialogState, setDialogState] = useState<DialogState>({
 		isOpen: false,
 		itemId: null,
@@ -196,7 +199,22 @@ export default function ShareBoardPage({
 				activeFilter={loaderData.activeFilter}
 				getFilterUrl={getFilterUrl}
 				getSortUrl={getSortUrl}
-				newActionToolTipString="Share an Item"
+				newActionToolTipString={isBorrowBoard ? "Share Equipment" : "Give Item"}
+				secondaryAction={
+					isBorrowBoard
+						? {
+							label: "View Free Items",
+							href: "?type=give",
+							tooltip: "Switch to Free Items board",
+							icon: Gift
+						}
+						: {
+							label: "View Borrowable Items",
+							href: "?",
+							tooltip: "Switch to Borrowable Items board",
+							icon: Gift
+						}
+				}
 			/>
 
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

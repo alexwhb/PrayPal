@@ -1,7 +1,7 @@
-import { getFormProps, getInputProps, useForm } from '@conform-to/react'
+import { type FieldMetadata, getFieldsetProps, getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { parseFormData } from '@mjackson/form-data-parser'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { data, Form, Link, redirect } from 'react-router'
 import sharp from 'sharp'
 import { z } from 'zod'
@@ -14,6 +14,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '#app/components/ui/card'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { Label } from '#app/components/ui/label'
 import {
 	Select,
@@ -22,16 +23,20 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#app/components/ui/select'
+import { cn } from '#app/lib/utils.ts'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { uploadHandler } from '#app/utils/file-uploads.server.ts'
+import { getImageSrc } from '#app/utils/misc.tsx'
 import { type Route } from './+types/share.new.ts'
+
 
 
 export const MAX_UPLOAD_SIZE = 10 * 1024 * 1024 // 10MB as an example
 
+
 const ImageFieldsetSchema = z.object({
-	id: z.string().optional(),
+	// id: z.string().optional(),
 	file: z
 		.instanceof(File, { message: 'A valid image file is required if provided' })
 		.optional()
@@ -55,7 +60,7 @@ export const ShareItemSchema = z.object({
 	category: z.string().min(1, 'Category is required.'),
 	shareType: z.enum(['BORROW', 'GIVE']),
 	duration: z.string().optional(),
-	imageFile: ImageFieldsetSchema
+	image: ImageFieldsetSchema
 })
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -87,10 +92,10 @@ export async function action({ request }: Route.ActionArgs) {
 	const submission = await parseWithZod(formData, {
 		schema: ShareItemSchema.transform(async (data) => {
 			console.log('Parsed data before transform:', data)
-			console.log('Parsed data before transform:', data.imageFile)
+			console.log('Parsed data before transform:', data.image)
 			const image = {
-				file: data.imageFile?.file,
-				id: data.imageFile?.id,
+				file: data.image?.file,
+				id: data.image?.id,
 			}
 
 			if (imageHasFile(image)) {
@@ -105,7 +110,7 @@ export async function action({ request }: Route.ActionArgs) {
 					...data,
 					imageUpdate: {
 						id: image.id,
-						contentType: image.file.type,
+						contentType: 'image/webp',
 						blob: processedImage,
 					},
 				}
@@ -118,41 +123,7 @@ export async function action({ request }: Route.ActionArgs) {
 		}),
 		async: true,
 	})
-	//
-	//
-	// const submission = await parseWithZod(formData, {
-	// 	schema: ShareItemSchema.transform(async (data) => {
-	// 		let imageId = null
-	//
-	// 		if (data.imageFile && data.imageFile.size > 0) {
-	// 			// Process image - resize and convert to webp
-	// 			const imageBuffer = Buffer.from(await data.imageFile.arrayBuffer())
-	//
-	// 			const processedImage = await sharp(imageBuffer)
-	// 				.resize({ width: 800, withoutEnlargement: true })
-	// 				.webp({ quality: 80 })
-	// 				.toBuffer()
-	//
-	// 			// For now, we'll just store the original image
-	// 			const shareImage = await prisma.image.create({
-	// 				data: {
-	// 					contentType: data.imageFile.type,
-	// 					blob: processedImage,
-	// 					purpose: 'SHARE',
-	// 					userId,
-	// 				},
-	// 			})
-	//
-	// 			imageId = shareImage.id
-	// 		}
-	//
-	// 		return {
-	// 			...data,
-	// 			imageId,
-	// 		}
-	// 	}),
-	// 	async: true,
-	// })
+
 
 	if (submission.status !== 'success') {
 		return data(
@@ -173,7 +144,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 	let imageId = null
 	if(imageUpdate) {
-		imageId = await prisma.image.create({
+		const image = await prisma.image.create({
 			data: {
 				contentType: imageUpdate.contentType,
 				blob: imageUpdate.blob,
@@ -181,6 +152,8 @@ export async function action({ request }: Route.ActionArgs) {
 				userId,
 			},
 		})
+		imageId = image.id
+		console.log('imageId', imageId)
 	}
 
 	await prisma.shareItem.create({
@@ -191,9 +164,9 @@ export async function action({ request }: Route.ActionArgs) {
 			categoryId: category,
 			shareType,
 			duration,
+			imageId,
 			status: 'ACTIVE',
-			userId,
-			imageId
+			userId
 		},
 	})
 
@@ -205,21 +178,6 @@ export default function NewShareForm({
 	actionData,
 }: Route.ComponentProps) {
 	const [shareType, setShareType] = useState<'BORROW' | 'GIVE'>('BORROW')
-	const [imageSrc, setImageSrc] = useState<string | null>(null)
-	const imageRef = useRef<HTMLInputElement>(null)
-
-	const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const file = event.currentTarget.files?.[0]
-		if (file) {
-			const reader = new FileReader()
-			reader.onload = (e) => {
-				setImageSrc(e.target?.result?.toString() ?? null)
-			}
-			reader.readAsDataURL(file)
-		} else {
-			setImageSrc(null)
-		}
-	}
 
 	const defaultValues = useMemo(
 		() => ({
@@ -230,7 +188,7 @@ export default function NewShareForm({
 			category: '',
 			shareType: 'BORROW',
 			duration: '',
-			imageFile: null,
+			image: null,
 		}),
 		[],
 	)
@@ -239,7 +197,9 @@ export default function NewShareForm({
 		id: 'share-editor',
 		constraint: getZodConstraint(ShareItemSchema),
 		onValidate({ formData }) {
-			return parseWithZod(formData, { schema: ShareItemSchema })
+			const t =  parseWithZod(formData, { schema: ShareItemSchema })
+			console.log('t', t)
+			return t
 		},
 		lastResult: actionData?.result,
 		defaultValue: defaultValues,
@@ -251,7 +211,7 @@ export default function NewShareForm({
 			<CardHeader>
 				<CardTitle>Share an Item</CardTitle>
 			</CardHeader>
-			<Form method="post" {...getFormProps(form)}>
+			<Form method="post" {...getFormProps(form)} encType="multipart/form-data">
 				<CardContent className="space-y-4">
 					<Field
 						labelProps={{ children: 'Title' }}
@@ -336,64 +296,11 @@ export default function NewShareForm({
 						/>
 					)}
 
-					<div className="space-y-2">
-						<Label htmlFor={fields.imageFile.id}>Item Image (Optional)</Label>
-						<div className="flex flex-col gap-4">
-							<input
-								ref={imageRef}
-								id={fields.imageFile.id}
-								name={fields.imageFile.name}
-								type="file"
-								accept="image/jpeg,image/png"
-								onChange={handleImageChange}
-								className="hidden"
-							/>
-							<input
-								type="hidden"
-								name={fields.imageFile.id}
-								value="new-image"
-							/>
-
-							{imageSrc ? (
-								<div className="relative">
-									<img
-										src={imageSrc}
-										alt="Item preview"
-										className="max-h-64 rounded-md object-contain"
-									/>
-									<Button
-										type="button"
-										variant="destructive"
-										size="sm"
-										className="absolute right-2 top-2"
-										onClick={() => {
-											setImageSrc(null)
-											if (imageRef.current) {
-												imageRef.current.value = ''
-											}
-										}}
-									>
-										Remove
-									</Button>
-								</div>
-							) : (
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => imageRef.current?.click()}
-								>
-									Upload Image
-								</Button>
-							)}
-							<ErrorList
-								id={fields.imageFile.id}
-								errors={fields.imageFile.errors}
-							/>
-							<p className="text-xs text-muted-foreground">
-								Maximum file size: {MAX_UPLOAD_SIZE / (1024 * 1024)}MB. Accepted formats: JPEG, PNG.
-							</p>
-						</div>
+					<div>
+						<Label>Image</Label>
+						<ImageChooser meta={fields.image} form={form} />
 					</div>
+
 				</CardContent>
 				<CardFooter>
 					<div className="flex gap-4">
@@ -411,5 +318,103 @@ export default function NewShareForm({
 				</CardFooter>
 			</Form>
 		</Card>
+	)
+}
+
+
+
+
+
+function ImageChooser({
+												meta,
+												form,
+											}: {
+	meta: FieldMetadata<ImageFieldset>
+	form: any
+}) {
+	const fields = meta.getFieldset()
+	const existingImageId = fields.id.initialValue
+	const [previewImage, setPreviewImage] = useState<string | null>(
+		existingImageId ? getImageSrc(existingImageId) : null,
+	)
+
+	// console.log(existingImageId, fields.id, previewImage)
+
+	const handleRemoveImage = () => {
+		setPreviewImage(null)
+		form.update({ name: 'image.file', value: undefined })
+		form.update({ name: 'image.id', value: undefined }) // Signal removal of existing image
+	}
+
+	return (
+		<fieldset {...getFieldsetProps(meta)}>
+			<div className="flex gap-3">
+				<div className="w-32">
+					<div className="relative h-32 w-32">
+						{/* Always render the file input */}
+						<label
+							htmlFor={fields.file.id}
+							className={cn(
+								'group absolute h-32 w-32 rounded-lg',
+								previewImage
+									? 'opacity-0' // Hide the label visually when preview is shown
+									: 'cursor-pointer bg-accent opacity-40 hover:opacity-100',
+							)}
+						>
+							<div className="flex h-32 w-32 items-center justify-center rounded-lg border border-muted-foreground text-4xl text-muted-foreground">
+								<Icon name="plus" />
+							</div>
+							<input
+								aria-label="Image"
+								className="absolute left-0 top-0 h-32 w-32 cursor-pointer opacity-0"
+								onChange={(event) => {
+									const file = event.target.files?.[0]
+									if (file) {
+										const reader = new FileReader()
+										reader.onloadend = () =>
+											setPreviewImage(reader.result as string)
+										reader.readAsDataURL(file)
+									} else {
+										setPreviewImage(null)
+										form.update({ name: 'image.id', value: undefined })
+									}
+								}}
+								accept="image/*"
+								{...getInputProps(fields.file, { type: 'file' })}
+							/>
+						</label>
+
+						{/* Show a preview image if it exists */}
+						{previewImage && (
+							<div className="relative">
+								<img
+									src={previewImage}
+									alt="Preview"
+									className="h-32 w-32 rounded-lg object-cover"
+								/>
+								<button
+									type="button"
+									className="absolute -right-2 -top-2 rounded-full bg-destructive p-1"
+									onClick={handleRemoveImage}
+								>
+									<Icon name="cross-1" className="h-4 w-4 text-white" />
+								</button>
+							</div>
+						)}
+
+						{/* Hidden input for existing image ID only if it has a value */}
+						{previewImage && fields.id.value ? (
+							<input {...getInputProps(fields.id, { type: 'hidden' })} />
+						) : null}
+					</div>
+					<div className="min-h-[12px] px-4 pb-3 pt-1">
+						<ErrorList id={fields.file.errorId} errors={fields.file.errors} />
+					</div>
+				</div>
+			</div>
+			<div className="min-h-[12px] px-4 pb-3 pt-1">
+				<ErrorList id={meta.errorId} errors={meta.errors} />
+			</div>
+		</fieldset>
 	)
 }
