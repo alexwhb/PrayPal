@@ -1,6 +1,6 @@
-# Podcasty
+# PrayPal
 
-Podcasty is in the super early stages, but my goal is to build a simple and
+PrayPal is in the super early stages, but my goal is to build a simple and
 easy-to-use podcast self-hosting platform that allows you to upload episodes,
 import existing podcasts, and more. It serves as a custom backend for your
 podcast website. With it, you'll be able to spin up an OpenAI Whisper client and

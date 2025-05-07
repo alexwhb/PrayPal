@@ -64,7 +64,7 @@ export const links: Route.LinksFunction = () => {
 
 export const meta: Route.MetaFunction = ({ data }) => {
 	return [
-		{ title: data ? 'Podcasty' : 'Error | Podcasty' },
+		{ title: data ? 'PrayPal' : 'Error | PrayPal' },
 		{
 			name: 'description',
 			content: `Your one stop shop for hosting your own podcast`,

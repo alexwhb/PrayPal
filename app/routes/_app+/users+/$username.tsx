@@ -422,10 +422,10 @@ export default function ProfileRoute() {
 export const meta: Route.MetaFunction = ({ data, params }) => {
 	const displayName = data?.user.name ?? params.username
 	return [
-		{ title: `${displayName} | Podcasty` },
+		{ title: `${displayName} | PrayPal` },
 		{
 			name: 'description',
-			content: `Profile of ${displayName} on Podcasty`,
+			content: `Profile of ${displayName} on PrayPal`,
 		},
 	]
 }
