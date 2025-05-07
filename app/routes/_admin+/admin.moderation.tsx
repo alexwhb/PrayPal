@@ -1,32 +1,17 @@
 import { type ModerationType, type ModeratorAction } from '@prisma/client'
-import { data, Form, Link, useLoaderData } from 'react-router'
+import { data, useLoaderData } from 'react-router'
 import { Badge } from '#app/components/ui/badge.tsx'
-import { Button } from '#app/components/ui/button.tsx'
 import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from '#app/components/ui/card.tsx'
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from '#app/components/ui/table.tsx'
-import {
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
 } from '#app/components/ui/tabs.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { formatDate } from '#app/utils/formatter.ts'
-
+import { PendingReportsTab } from './components/moderation/pending-reports-tab.tsx'
+import { ModerationHistoryTab } from './components/moderation/moderation-history-tab.tsx'
 
 export async function loader({ request }: { request: Request }) {
 	const userId = await requireUserId(request)
@@ -37,9 +22,9 @@ export async function loader({ request }: { request: Request }) {
 		include: { roles: true },
 	})
 
-	const isModOrAdmin = user?.roles.some(role =>
-		['admin', 'moderator'].includes(role.name)
-	) ?? false
+	const isModOrAdmin =
+		user?.roles.some((role) => ['admin', 'moderator'].includes(role.name)) ??
+		false
 
 	if (!isModOrAdmin) {
 		throw new Response('Not authorized', { status: 403 })
@@ -84,7 +69,7 @@ export async function loader({ request }: { request: Request }) {
 	return data({
 		moderationLogs,
 		pendingReports,
-		isAdmin: user?.roles.some(role => role.name === 'admin') ?? false,
+		isAdmin: user?.roles.some((role) => role.name === 'admin') ?? false,
 	})
 }
 
@@ -97,9 +82,9 @@ export async function action({ request }: { request: Request }) {
 		include: { roles: true },
 	})
 
-	const isModOrAdmin = user?.roles.some(role =>
-		['admin', 'moderator'].includes(role.name)
-	) ?? false
+	const isModOrAdmin =
+		user?.roles.some((role) => ['admin', 'moderator'].includes(role.name)) ??
+		false
 
 	if (!isModOrAdmin) {
 		throw new Response('Not authorized', { status: 403 })
@@ -149,7 +134,7 @@ export async function action({ request }: { request: Request }) {
 			} else if (itemType === 'GROUP') {
 				await prisma.group.update({
 					where: { id: itemId },
-					data: { active: false }
+					data: { active: false },
 				})
 			} else if (itemType === 'SHARE_ITEM') {
 				await prisma.shareItem.delete({ where: { id: itemId } })
@@ -162,16 +147,14 @@ export async function action({ request }: { request: Request }) {
 					where: { id: itemId },
 					data: {
 						status: 'REMOVED',
-						flagged: moderatorAction === 'FLAG'
-					}
+					},
 				})
 			} else if (itemType === 'SHARE_ITEM') {
 				await prisma.shareItem.update({
 					where: { id: itemId },
 					data: {
 						status: 'REMOVED',
-						flagged: moderatorAction === 'FLAG'
-					}
+					},
 				})
 			}
 		} else if (moderatorAction === 'RESTORE') {
@@ -180,21 +163,19 @@ export async function action({ request }: { request: Request }) {
 					where: { id: itemId },
 					data: {
 						status: 'ACTIVE',
-						flagged: false
-					}
+					},
 				})
 			} else if (itemType === 'GROUP') {
 				await prisma.group.update({
 					where: { id: itemId },
-					data: { active: true }
+					data: { active: true },
 				})
 			} else if (itemType === 'SHARE_ITEM') {
 				await prisma.shareItem.update({
 					where: { id: itemId },
 					data: {
 						status: 'ACTIVE',
-						flagged: false
-					}
+					},
 				})
 			}
 		}
@@ -243,6 +224,8 @@ function getActionLabel(action: ModeratorAction) {
 	return labels[action] || action
 }
 
+export { getItemTypeLabel, getActionLabel }
+
 export default function ModerationView() {
 	const { moderationLogs, pendingReports, isAdmin } = useLoaderData<typeof loader>()
 
@@ -252,149 +235,18 @@ export default function ModerationView() {
 
 			<Tabs defaultValue="pending">
 				<TabsList className="mb-4">
-					<TabsTrigger value="pending">Pending Reports ({pendingReports.length})</TabsTrigger>
+					<TabsTrigger value="pending">
+						Pending Reports ({pendingReports.length})
+					</TabsTrigger>
 					<TabsTrigger value="history">Moderation History</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="pending">
-					<Card>
-						<CardHeader>
-							<CardTitle>Pending Reports</CardTitle>
-							<CardDescription>
-								Review and take action on reported content
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{pendingReports.length === 0 ? (
-								<p className="text-center text-muted-foreground py-4">
-									No pending reports to review
-								</p>
-							) : (
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Type</TableHead>
-											<TableHead>Reported By</TableHead>
-											<TableHead>Reason</TableHead>
-											<TableHead>Date</TableHead>
-											<TableHead>Actions</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{pendingReports.map(report => (
-											<TableRow key={report.id}>
-												<TableCell>
-													<Badge variant="outline">
-														{getItemTypeLabel(report.itemType as ModerationType)}
-													</Badge>
-												</TableCell>
-												<TableCell>
-													<Link
-														to={`/users/${report.reportedBy.username}`}
-														className="hover:underline"
-													>
-														{report.reportedBy.name}
-													</Link>
-												</TableCell>
-												<TableCell>
-													<div>
-														<Badge>{report.reason}</Badge>
-														{report.description && (
-															<p className="text-sm text-muted-foreground mt-1">
-																{report.description}
-															</p>
-														)}
-													</div>
-												</TableCell>
-												<TableCell>{formatDate(report.createdAt)}</TableCell>
-												<TableCell>
-													<div className="flex gap-2">
-														<Link
-															to={`/admin/moderation/review/${report.id}`}
-															className="text-sm font-medium text-primary hover:underline"
-														>
-															<Button size="sm">Review</Button>
-														</Link>
-														<Form method="post">
-															<input type="hidden" name="_action" value="dismissReport" />
-															<input type="hidden" name="reportId" value={report.id} />
-															<Button size="sm" variant="outline">Dismiss</Button>
-														</Form>
-													</div>
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							)}
-						</CardContent>
-					</Card>
+					<PendingReportsTab pendingReports={pendingReports} />
 				</TabsContent>
 
 				<TabsContent value="history">
-					<Card>
-						<CardHeader>
-							<CardTitle>Moderation History</CardTitle>
-							<CardDescription>
-								View past moderation actions
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Moderator</TableHead>
-										<TableHead>Action</TableHead>
-										<TableHead>Item Type</TableHead>
-										<TableHead>Reason</TableHead>
-										<TableHead>Date</TableHead>
-										<TableHead>Details</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{moderationLogs.map(log => (
-										<TableRow key={log.id}>
-											<TableCell>
-												<Link
-													to={`/users/${log.moderator.username}`}
-													className="hover:underline"
-												>
-													{log.moderator.name}
-												</Link>
-											</TableCell>
-											<TableCell>
-												<Badge
-													variant={
-														log.action === 'DELETE' ? 'destructive' :
-															log.action === 'RESTORE' ? 'default' : 'outline'
-													}
-												>
-													{getActionLabel(log.action)}
-												</Badge>
-											</TableCell>
-											<TableCell>
-												<Badge variant="outline">
-													{getItemTypeLabel(log.itemType)}
-												</Badge>
-											</TableCell>
-											<TableCell className="max-w-xs truncate">
-												{log.reason || 'No reason provided'}
-											</TableCell>
-											<TableCell>{formatDate(log.createdAt)}</TableCell>
-											<TableCell>
-												<Link
-													to={`/admin/mod/details/${log.id}`}
-													className="text-sm font-medium text-primary hover:underline"
-												>
-													<Button size="sm" variant="outline">View Details</Button>
-												</Link>
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</CardContent>
-					</Card>
+					<ModerationHistoryTab moderationLogs={moderationLogs} />
 				</TabsContent>
 			</Tabs>
 		</div>

@@ -1,6 +1,9 @@
+import { type ModerationType, type ModeratorAction } from '@prisma/client'
+import { AlertCircle } from 'lucide-react'
 import { data, Link, useLoaderData, Form } from 'react-router'
-import { requireUserId } from '#app/utils/auth.server.ts'
-import { prisma } from '#app/utils/db.server.ts'
+import { Alert, AlertDescription } from '#app/components/ui/alert.tsx'
+import { Badge } from '#app/components/ui/badge.tsx'
+import { Button } from '#app/components/ui/button.tsx'
 import {
 	Card,
 	CardContent,
@@ -9,16 +12,12 @@ import {
 	CardTitle,
 	CardFooter,
 } from '#app/components/ui/card.tsx'
-import { Badge } from '#app/components/ui/badge.tsx'
-import { Button } from '#app/components/ui/button.tsx'
-import { formatDate } from '#app/utils/formatter.ts'
-import { ModerationType, ModeratorAction } from '@prisma/client'
-import { Alert, AlertDescription } from '#app/components/ui/alert.tsx'
-import { AlertCircle } from 'lucide-react'
-import { Separator } from '#app/components/ui/separator.tsx'
 import { Label } from '#app/components/ui/label.tsx'
-import { Textarea } from '#app/components/ui/textarea.tsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#app/components/ui/select.tsx'
+import { Textarea } from '#app/components/ui/textarea.tsx'
+import { requireUserId } from '#app/utils/auth.server.ts'
+import { prisma } from '#app/utils/db.server.ts'
+import { formatDate } from '#app/utils/formatter.ts'
 
 export async function loader({ params, request }: { params: { logId: string }, request: Request }) {
 	const userId = await requireUserId(request)
@@ -165,7 +164,7 @@ export async function action({ request, params }: { request: Request, params: { 
 	const itemId = formData.get('itemId') as string
 	const itemType = formData.get('itemType') as ModerationType
 	const reason = formData.get('reason') as string || 'Moderation action'
-	
+
 	// Check if user is a moderator or admin
 	const user = await prisma.user.findUnique({
 		where: { id: userId },
@@ -191,63 +190,37 @@ export async function action({ request, params }: { request: Request, params: { 
 		},
 	})
 
-	// Take action based on the item type and action
-	if (action === 'DELETE') {
-		if (itemType === 'PRAYER' || itemType === 'NEED') {
-			await prisma.request.delete({ where: { id: itemId } })
-		} else if (itemType === 'GROUP') {
-			await prisma.group.update({
-				where: { id: itemId },
-				data: { active: false }
-			})
-		} else if (itemType === 'SHARE_ITEM') {
-			await prisma.shareItem.delete({ where: { id: itemId } })
-		} else if (itemType === 'USER') {
-			await prisma.user.delete({ where: { id: itemId } })
-		} else if (itemType === 'MESSAGE') {
-			await prisma.message.delete({ where: { id: itemId } })
-		}
-	} else if (action === 'HIDE' || action === 'FLAG') {
-		if (itemType === 'PRAYER' || itemType === 'NEED') {
-			await prisma.request.update({
-				where: { id: itemId },
-				data: {
-					status: 'REMOVED',
-					flagged: action === 'FLAG'
-				}
-			})
-		} else if (itemType === 'SHARE_ITEM') {
-			await prisma.shareItem.update({
-				where: { id: itemId },
-				data: {
-					status: 'REMOVED',
-					flagged: action === 'FLAG'
-				}
-			})
-		}
-	} else if (action === 'RESTORE') {
-		if (itemType === 'PRAYER' || itemType === 'NEED') {
-			await prisma.request.update({
-				where: { id: itemId },
-				data: {
-					status: 'ACTIVE',
-					flagged: false
-				}
-			})
-		} else if (itemType === 'GROUP') {
-			await prisma.group.update({
-				where: { id: itemId },
-				data: { active: true }
-			})
-		} else if (itemType === 'SHARE_ITEM') {
-			await prisma.shareItem.update({
-				where: { id: itemId },
-				data: {
-					status: 'ACTIVE',
-					flagged: false
-				}
-			})
-		}
+	const ACTION_HANDLERS = {
+		DELETE: {
+			PRAYER: (id: string) => prisma.request.delete({ where: { id } }),
+			NEED: (id: string) => prisma.request.delete({ where: { id } }),
+			GROUP: (id: string) => prisma.group.update({ where: { id }, data: { active: false } }),
+			SHARE_ITEM: (id: string) => prisma.shareItem.delete({ where: { id } }),
+			USER: (id: string) => prisma.user.delete({ where: { id } }),
+			MESSAGE: (id: string) => prisma.message.delete({ where: { id } }),
+		},
+		HIDE: {
+			PRAYER: (id: string) => prisma.request.update({ where: { id }, data: { status: 'REMOVED' } }),
+			NEED: (id: string) => prisma.request.update({ where: { id }, data: { status: 'REMOVED' } }),
+			SHARE_ITEM: (id: string) => prisma.shareItem.update({ where: { id }, data: { status: 'REMOVED' } }),
+		},
+		FLAG: {
+			PRAYER: (id: string) => prisma.request.update({ where: { id }, data: { status: 'REMOVED' } }),
+			NEED: (id: string) => prisma.request.update({ where: { id }, data: { status: 'REMOVED' } }),
+			SHARE_ITEM: (id: string) => prisma.shareItem.update({ where: { id }, data: { status: 'REMOVED' } }),
+		},
+		RESTORE: {
+			PRAYER: (id: string) => prisma.request.update({ where: { id }, data: { status: 'ACTIVE' } }),
+			NEED: (id: string) => prisma.request.update({ where: { id }, data: { status: 'ACTIVE' } }),
+			GROUP: (id: string) => prisma.group.update({ where: { id }, data: { active: true } }),
+			SHARE_ITEM: (id: string) => prisma.shareItem.update({ where: { id }, data: { status: 'ACTIVE' } }),
+		},
+	} as const
+
+	// Execute the action
+	const handler = ACTION_HANDLERS[action]?.[itemType]
+	if (handler) {
+		await handler(itemId)
 	}
 
 	return data({ success: true })
@@ -449,7 +422,7 @@ export default function ModerationDetails() {
 					<CardContent>
 						<input type="hidden" name="itemId" value={moderationLog.itemId} />
 						<input type="hidden" name="itemType" value={moderationLog.itemType} />
-						
+
 						<div className="space-y-4">
 							<div className="space-y-2">
 								<Label htmlFor="action">Action</Label>
