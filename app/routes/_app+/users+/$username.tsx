@@ -1,23 +1,15 @@
 import { invariantResponse } from '@epic-web/invariant'
-import { formatDistanceToNow } from 'date-fns'
 import { ArrowLeft, CalendarDays, MessageCircle, Trash, Users } from 'lucide-react'
 import { useState } from 'react'
-import {
-	data,
-	Form,
-	Link,
-	type LoaderFunctionArgs, redirect, useLoaderData,
-} from 'react-router'
+import { data, Form, Link, Outlet, redirect } from 'react-router'
 
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { DeleteDialog } from '#app/components/shared/delete-dialog.tsx'
 import { Badge } from '#app/components/ui/badge.tsx'
 import { Button } from '#app/components/ui/button.tsx'
-import { Card, CardContent, CardHeader } from '#app/components/ui/card.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import {
 	Tabs,
-	TabsContent,
 	TabsList,
 	TabsTrigger,
 } from '#app/components/ui/tabs.tsx'
@@ -27,118 +19,18 @@ import { formatDate } from '#app/utils/formatter.ts'
 import { createOrGetConversation } from '#app/utils/messaging.server.ts'
 import { getUserImgSrc  } from '#app/utils/misc.tsx'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
-import { useOptionalUser, userHasRole } from '#app/utils/user.ts'
+import { useOptionalUser } from '#app/utils/user.ts'
 import { type Route } from './+types/$username.ts'
 
-type UserRequest = {
-	id: string
-	type: string
-	description: string
-	category: { name: string }
-	createdAt: Date
-	fulfilled: boolean
-	response?: { message: string } | null
-}
 
-function ActivityTab() {
-	return (
-		<Card>
-			<CardContent className="p-6 text-center text-muted-foreground">
-				Activity feed will be shown here in a future update.
-			</CardContent>
-		</Card>
-	)
-}
-
-function NeedsTab({ requests, userDisplayName }: { requests: UserRequest[], userDisplayName: string }) {
-	const needs = requests.filter(r => r.type === 'NEED')
-	
-	if (needs.length === 0) {
-		return (
-			<Card>
-				<CardContent className="p-6 text-center text-muted-foreground">
-					{userDisplayName} hasn't posted any needs yet.
-				</CardContent>
-			</Card>
-		)
-	}
-
-	return (
-		<div className="space-y-4">
-			{needs.map(need => (
-				<Card key={need.id}>
-					<CardHeader className="pb-2">
-						<div className="flex items-start justify-between">
-							<div className="flex items-center gap-2">
-								<MessageCircle className="h-4 w-4 text-rose-500" />
-								<Badge variant="secondary">{need.category.name}</Badge>
-							</div>
-							<div className="text-xs text-muted-foreground">
-								{formatDistanceToNow(need.createdAt, { addSuffix: true })}
-							</div>
-						</div>
-					</CardHeader>
-					<CardContent>
-						<p className="text-sm">{need.description}</p>
-						{need.fulfilled && (
-							<div className="mt-2 text-sm font-medium text-green-600">
-								This need has been fulfilled
-							</div>
-						)}
-					</CardContent>
-				</Card>
-			))}
-		</div>
-	)
-}
-
-function PrayersTab({ requests, userDisplayName }: { requests: UserRequest[], userDisplayName: string }) {
-	if (requests.length === 0) {
-		return (
-			<Card>
-				<CardContent className="p-6 text-center text-muted-foreground">
-					{userDisplayName} hasn't posted any prayer requests yet.
-				</CardContent>
-			</Card>
-		)
-	}
-
-	return (
-		<div className="space-y-4">
-			{requests.map(prayer => (
-				<Card key={prayer.id}>
-					<CardHeader className="pb-2">
-						<div className="flex items-start justify-between">
-							<div className="flex items-center gap-2">
-								<MessageCircle className="h-4 w-4 text-blue-500" />
-								<Badge variant="secondary">{prayer.category.name}</Badge>
-							</div>
-							<div className="text-xs text-muted-foreground">
-								{formatDistanceToNow(prayer.createdAt, { addSuffix: true })}
-							</div>
-						</div>
-					</CardHeader>
-					<CardContent>
-						<p className="text-sm">{prayer.description}</p>
-						{prayer.fulfilled && prayer.response?.message && (
-							<div className="mt-2 rounded-md border border-green-100 bg-green-50 p-3">
-								<p className="mb-1 text-sm font-medium text-green-800">
-									Prayer Answered:
-								</p>
-								<p className="text-sm text-green-700">
-									{prayer.response.message}
-								</p>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-			))}
-		</div>
-	)
-}
-
-export async function loader({ params, request }: LoaderFunctionArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
+
+	// redirect to payer tab if we are just at /users/:username
+	const url = new URL(request.url)
+	if (url.pathname === `/users/${params.username}`) {
+		return redirect(`/users/${params.username}/prayers`)
+	}
 
 	const loggedInUser = await prisma.user.findFirst({
 		select: {
@@ -152,8 +44,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	console.log('loggedInUser', loggedInUser)
 	const roles =  ['admin', 'moderator']
 	const canModerate =  loggedInUser?.roles.some((r) => roles.includes(r.name) ) ?? false
-
-
+	
 	const user = await prisma.user.findFirst({
 		select: {
 			id: true,
@@ -197,9 +88,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 	if (!user) {
 		throw new Response('Not Found', { status: 404 })
 	}
-
-
-console.log('canModerate', canModerate)
 
 	return data({
 		user,
@@ -274,18 +162,16 @@ export async function action({ request }: Route.ActionArgs) {
 	}
 }
 
-export default function ProfileRoute() {
-	const data = useLoaderData<typeof loader>()
-	const user = data.user
+export default function ProfileRoute({loaderData}: Route.ComponentProps) {
+	const { user, userJoinedDisplay, canModerate }  = loaderData
+	// const user = data.user
 	const userDisplayName = user.name ?? user.username
 	const loggedInUser = useOptionalUser()
 	const isLoggedInUser = user.id === loggedInUser?.id
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-	// const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false)
-	// const referralFetcher = useFetcher()
 
 	return (
-		<div className="mx-auto max-w-3xl px-4">
+		<div className="mx-auto px-4">
 			<div className="mb-6">
 				<Link
 					to="/users"
@@ -310,7 +196,7 @@ export default function ProfileRoute() {
 
 					<div className="mb-4 flex items-center justify-center text-muted-foreground md:justify-start">
 						<CalendarDays className="mr-2 h-4 w-4" />
-						<span>Member since {data.userJoinedDisplay}</span>
+						<span>Member since {userJoinedDisplay}</span>
 					</div>
 
 					{user.groupMemberships.length > 0 && (
@@ -362,7 +248,7 @@ export default function ProfileRoute() {
 												Message
 											</Button>
 										</Form>
-										{data.canModerate && (
+										{canModerate && (
 											<Button
 												variant="destructive"
 												onClick={() => setIsDeleteDialogOpen(true)}
@@ -379,30 +265,23 @@ export default function ProfileRoute() {
 				</div>
 			</div>
 
-			<Tabs defaultValue="activity">
+			<Tabs defaultValue="prayers">
 				<TabsList className="grid w-full grid-cols-3">
-					<TabsTrigger value="activity">Activity</TabsTrigger>
-					<TabsTrigger value="needs">Needs</TabsTrigger>
-					<TabsTrigger value="prayers">Prayer Requests</TabsTrigger>
+					<TabsTrigger value="prayers" asChild>
+						<Link to={`/users/${user.username}/prayers`}>Prayer Requests</Link>
+					</TabsTrigger>
+					<TabsTrigger value="needs" asChild>
+						<Link to={`/users/${user.username}/needs`}>Needs</Link>
+					</TabsTrigger>
+					<TabsTrigger value="shares" asChild>
+						<Link to={`/users/${user.username}/shares`}>Shared Items</Link>
+					</TabsTrigger>
+
 				</TabsList>
 
-				<TabsContent value="activity">
-					<ActivityTab />
-				</TabsContent>
-
-				<TabsContent value="needs">
-					<NeedsTab 
-						requests={user.requests}
-						userDisplayName={userDisplayName}
-					/>
-				</TabsContent>
-
-				<TabsContent value="prayers">
-					<PrayersTab 
-						requests={user.requests}
-						userDisplayName={userDisplayName}
-					/>
-				</TabsContent>
+				<div className="mt-6">
+					<Outlet />
+				</div>
 			</Tabs>
 
 			<DeleteDialog
@@ -412,7 +291,7 @@ export default function ProfileRoute() {
 					userId: user.id,
 					_action: 'deleteUser',
 				}}
-				isModerate={true}
+				isModerate={canModerate}
 			/>
 		</div>
 	)
