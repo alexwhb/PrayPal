@@ -1,6 +1,6 @@
 import { format, subDays } from 'date-fns'
 import { useCallback } from 'react'
-import { data, Link, useLoaderData, useNavigate } from 'react-router'
+import { data, useLoaderData, useNavigate } from 'react-router'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#app/components/ui/tabs.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { type Route } from './+types/admin.dashboard.ts'
@@ -24,7 +24,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	// Get total user count
 	const totalUsers = await prisma.user.count()
 
-	// Get new users in date range
+	// Get new users in the date range
 	const newUsers = await prisma.user.count({
 		where: {
 			createdAt: {
@@ -237,7 +237,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 							}
 						}
 					},
-					messagesSent: {
+					sentMessages: { // Changed from messagesSent to sentMessages
 						where: {
 							createdAt: {
 								gte: startDate,
@@ -262,7 +262,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	// Calculate engagement metrics
 	const activeUsers = userEngagement.filter(user =>
 		user._count.requests > 0 ||
-		user._count.messagesSent > 0 ||
+		user._count.sentMessages > 0 || // Changed from messagesSent to sentMessages
 		user._count.groupMemberships > 0
 	).length
 
