@@ -50,8 +50,10 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 
   // Check if user is an active member of this group
   const userMembership = group.memberships.find(m => m.userId === userId)
-  const isMember = !!userMembership && userMembership.status === 'ACTIVE'
-  const isLeader = userMembership?.role === 'LEADER' && userMembership.status === 'ACTIVE'
+  const isMember = !!userMembership && 
+                  (userMembership.status === 'ACTIVE' || userMembership.status === 'APPROVED')
+  const isLeader = userMembership?.role === 'LEADER' && 
+                  (userMembership.status === 'ACTIVE' || userMembership.status === 'APPROVED')
   const isPending = !!userMembership && userMembership.status === 'PENDING'
 
   // Check if user has moderation privileges
