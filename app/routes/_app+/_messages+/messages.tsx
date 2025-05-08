@@ -20,7 +20,7 @@ export async function loader({ request, params}: Route.LoaderArgs) {
 		},
 		select: {
 			id: true,
-			group: { select: { name: true } },
+			name: true, // Include the name field
 			participants: {
 				select: { id: true, name: true, username: true, image: { select: { id: true } } },
 				where: { id: { not: userId } },
@@ -46,7 +46,11 @@ export async function loader({ request, params}: Route.LoaderArgs) {
 		const unread = lastMessage && lastMessage.senderId !== userId && !seenMessageIds.has(lastMessage.id)
 
 		let name, image
-		if (conv.group) {
+		// Use conversation name if available
+		if (conv.name) {
+			name = conv.name
+			image = '' // Default image for named conversations
+		} else if (conv.group) {
 			name = conv.group.name
 			image = '' // Default group image
 		} else if (conv.participants.length === 1) {

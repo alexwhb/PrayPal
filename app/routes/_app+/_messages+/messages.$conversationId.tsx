@@ -1,8 +1,8 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { Send } from 'lucide-react'
-import { useRef, useEffect, useState } from 'react'
-import { data, useFetcher, useRevalidator } from 'react-router'
+import { useRef, useEffect, useState, useCallback } from 'react'
+import { data, useFetcher, useRevalidator, useLoaderData } from 'react-router'
 import io from 'socket.io-client'
 import { z } from 'zod'
 import { TextareaField } from '#app/components/forms.tsx'
@@ -15,24 +15,37 @@ import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { useSocket } from '#app/utils/socket.tsx'
 import { type Route } from './+types/messages.$conversationId.ts'
 
+const MESSAGES_PER_PAGE = 50
+
 export async function loader({ request, params }: Route.LoaderArgs) {
 	const conversationId = params.conversationId
 	const userId = await requireUserId(request)
+	const url = new URL(request.url)
+	const page = Number(url.searchParams.get('page') || '1')
 
 	const conversation = await prisma.conversation.findUnique({
 		where: { id: conversationId },
 		include: {
-			group: { select: { name: true } },
 			participants: {
 				select: { id: true, name: true, username: true, image: { select: { id: true } } },
 			},
 			messages: {
-				orderBy: { createdAt: 'asc' },
+				orderBy: { createdAt: 'desc' },
+				take: MESSAGES_PER_PAGE,
+				skip: (page - 1) * MESSAGES_PER_PAGE,
 				select: {
 					id: true,
 					content: true,
 					createdAt: true,
 					sender: { select: { id: true, username: true, name: true, image: { select: { id: true } } } },
+					attachment: {
+						select: {
+							id: true,
+							type: true,
+							referenceId: true,
+							metadata: true
+						}
+					}
 				},
 			},
 		},
@@ -40,9 +53,17 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
 	if (!conversation) throw new Response('Conversation not found', { status: 404 })
 
-	const isGroup = !!conversation.group || conversation.participants.length > 1
+	// Get total message count for pagination
+	const totalMessages = await prisma.message.count({
+		where: { conversationId }
+	})
+
+	// Use conversation name if available, otherwise generate from participants
 	let name, image
-	if (conversation.group) {
+	if (conversation.name) {
+		name = conversation.name
+		image = ''
+	} else if (conversation.group) {
 		name = conversation.group.name
 		image = ''
 	} else if (conversation.participants.length === 1) {
@@ -55,7 +76,22 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		image = ''
 	}
 
-	return data({ conversation, messages: conversation.messages, name, image, userId, conversationId })
+	// Reverse messages to display in ascending order
+	const messages = [...conversation.messages].reverse()
+
+	return data({
+		conversation,
+		messages,
+		name,
+		image,
+		userId,
+		conversationId,
+		pagination: {
+			page,
+			totalMessages,
+			hasMore: page * MESSAGES_PER_PAGE < totalMessages
+		}
+	})
 }
 
 export const MessageSchema = z.object({
