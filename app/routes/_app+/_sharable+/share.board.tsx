@@ -134,16 +134,37 @@ export async function action({ request }: Route.ActionArgs) {
 	if (action === 'requestItem') {
 		const item = await prisma.shareItem.findUnique({
 			where: { id: itemId as string },
-			select: { userId: true, title: true },
+			select: { 
+				userId: true, 
+				title: true,
+				imageId: true,
+				category: { select: { name: true } },
+				shareType: true
+			},
 		})
 
 		if (!item) return null
+
+		// Create a message attachment record
+		const attachment = await prisma.messageAttachment.create({
+			data: {
+				type: 'SHARE_ITEM',
+				referenceId: itemId as string,
+				metadata: {
+					title: item.title,
+					imageId: item.imageId,
+					category: item.category.name,
+					shareType: item.shareType
+				}
+			}
+		})
 
 		return initiateConversation({
 			initiatorId: userId,
 			participantIds: [item.userId],
 			checkExisting: true,
 			initialMessage: `Hi! I'm interested in your shared item: "${item.title}"`,
+			attachmentId: attachment.id
 		})
 	}
 
