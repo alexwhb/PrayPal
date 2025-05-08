@@ -146,7 +146,7 @@ async function seed() {
 							}),
 							// Create some need requests
 							...Array.from({
-								length: faker.number.int({ min: 0, max: 3 }),
+								length: faker.number.int({ min: 5, max: 15 }),
 							}).map(() => ({
 								type: RequestType.NEED,
 								categoryId: faker.helpers.arrayElement(needCategoryRecords).id,
@@ -438,7 +438,6 @@ async function seed() {
 		const messageFromKody = await prisma.message.create({
 			data: {
 				senderId: kody.id,
-				recipientId: recipientId,
 				content: faker.lorem.sentence(),
 				conversationId: conversation.id,
 			},
@@ -454,7 +453,6 @@ async function seed() {
 		const messageFromRecipient = await prisma.message.create({
 			data: {
 				senderId: recipientId,
-				recipientId: kody.id,
 				content: faker.lorem.sentence(),
 				conversationId: conversation.id,
 			},

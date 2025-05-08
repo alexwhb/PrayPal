@@ -38,11 +38,7 @@ model User {
   createdReferrals ReferralLink[] @relation("CreatedReferrals")
   usedReferral     ReferralLink?  @relation("UsedReferral")
 
-  messagesSent      Message[]         @relation("Sender")
-  messagesReceived  Message[]         @relation("RecipientUser")
-  conversations     Conversation[]    @relation("ConversationParticipants")
-  groupMemberships  GroupMembership[]
-  conversationId    String?
+  sentMessages      Message[]         @relation("SentMessages")
   MessageSeen       MessageSeen[]
   moderationActions ModerationLog[]
   ownedItems        ShareItem[]       @relation("ShareItemOwner")
@@ -51,6 +47,8 @@ model User {
   reports           Report[]          @relation("UserReports")
   resolvedReports   Report[]          @relation("ModeratorResolutions")
   Feedback          Feedback[]
+  conversations     Conversation[]    @relation("ConversationParticipants")
+  groupMemberships  GroupMembership[]
 
   // Add notifications relation
   notifications Notification[]
@@ -223,8 +221,9 @@ model Conversation {
   id            String    @id @default(cuid())
   participants  User[]    @relation("ConversationParticipants")
   lastMessageId String?   @unique
-  lastMessage   Message?  @relation("ConversationLastMessage", fields: [lastMessageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  messages      Message[] @relation("MessageConversation")
+  lastMessage   Message?  @relation("LastMessage", fields: [lastMessageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  messages      Message[]
+  name          String? // this is a custom name for the conversation set by the person who creeated it.  
   groupId       String?
   group         Group?    @relation("GroupConversations", fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdAt     DateTime  @default(now())
@@ -234,28 +233,45 @@ model Conversation {
   @@index([groupId])
 }
 
+model MessageAttachment {
+  id          String   @id @default(cuid())
+  type        String // SHARE_ITEM, NEED_REQUEST, PRAYER_REQUEST, etc.
+  referenceId String // ID of the referenced item
+  metadata    Json // Flexible metadata for the attachment
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  messages Message[]
+}
+
 model Message {
-  id                      String        @id @default(cuid())
-  sender                  User          @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  senderId                String
-  recipient               User?         @relation("RecipientUser", fields: [recipientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  recipientId             String?
-  groupId                 String?
-  group                   Group?        @relation("GroupMessages", fields: [groupId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  content                 String
-  seen                    Boolean       @default(false)
-  createdAt               DateTime      @default(now())
-  updatedAt               DateTime      @updatedAt
-  conversation            Conversation? @relation("MessageConversation", fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  conversationId          String?
-  lastMessageConversation Conversation? @relation("ConversationLastMessage")
-  messageSeen             MessageSeen[]
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sender         User          @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId       String
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+  messageSeen    MessageSeen[]
+
+  // Group relation
+  group   Group?  @relation("GroupMessages", fields: [groupId], references: [id], onDelete: Cascade)
+  groupId String?
+
+  // Last message relation
+  lastMessageOf Conversation? @relation("LastMessage")
+
+  // Add attachment relation
+  attachment   MessageAttachment? @relation(fields: [attachmentId], references: [id])
+  attachmentId String?
 
   @@index([senderId])
-  @@index([recipientId])
-  @@index([groupId])
   @@index([conversationId])
-  @@index([createdAt])
+  @@index([groupId])
 }
 
 model MessageSeen {
