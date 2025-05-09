@@ -6,6 +6,7 @@ import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { moderateItem } from '#app/utils/moderation.server.ts'
 import { type Route } from './+types/needs.board.ts'
+import { initiateConversation } from '#app/utils/messaging.server.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
@@ -91,6 +92,18 @@ export async function action({ request }: Route.ActionArgs) {
 			action: action as 'pending' | 'removed',
 			reason,
 			isModerator: moderatorAction
+		})
+	} else if (action === 'contact') {
+		const need = await prisma.request.findUnique({
+			where: { id: needId as string },
+			select: { userId: true },
+		})
+
+		if (!need) return null
+
+		return initiateConversation({
+			initiatorId: userId,
+			participantIds: [need.userId],
 		})
 	}
 	
