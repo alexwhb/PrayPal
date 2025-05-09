@@ -570,43 +570,6 @@ async function seed() {
 	});
 	console.timeEnd(`❓ Creating help FAQs...`)
 
-	// Add feedback entries
-	console.time(`📝 Creating feedback entries...`)
-	const feedbackEntries = [
-		{
-			type: FeedbackType.FEATURE,
-			title: "Add calendar integration for group meetings",
-			description: "It would be helpful to have calendar integration so group meetings can be added to my personal calendar automatically.",
-			status: FeedbackStatus.OPEN,
-			userId: kody.id,
-		},
-		{
-			type: FeedbackType.BUG,
-			title: "Unable to upload profile picture",
-			description: "When I try to upload a new profile picture, I get an error message saying 'File too large' even for small images.",
-			status: FeedbackStatus.IN_PROGRESS,
-			userId: kody.id,
-		},
-		{
-			type: FeedbackType.QUESTION,
-			title: "How to delete my account?",
-			description: "I couldn't find an option to delete my account. Is this possible or do I need to contact an administrator?",
-			status: FeedbackStatus.CLOSED,
-			userId: other.id,
-		},
-		{
-			type: FeedbackType.FEATURE,
-			title: "Dark mode support",
-			description: "Please add dark mode to reduce eye strain when using the app at night.",
-			status: FeedbackStatus.IMPLEMENTED,
-			userId: userIds[2],
-		},
-	];
-
-	await prisma.feedback.createMany({
-		data: feedbackEntries,
-	});
-	console.timeEnd(`📝 Creating feedback entries...`)
 
 	// After creating feedback entries, add notifications
 	console.time(`🔔 Creating notifications...`)

@@ -1,236 +1,189 @@
-import { getFormProps, getInputProps, getTextareaProps, useForm } from '@conform-to/react'
-import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { Form, useLoaderData, data, redirect  } from 'react-router'
-import { z } from 'zod'
-import { Field, TextareaField } from '#app/components/forms'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '#app/components/ui/accordion'
+import { Coffee, Heart } from 'lucide-react'
+import { data, Link } from 'react-router'
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from '#app/components/ui/accordion'
 import { Button } from '#app/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#app/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '#app/components/ui/tabs'
-import { requireUserId } from '#app/utils/auth.server'
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from '#app/components/ui/card'
+import { Separator } from '#app/components/ui/separator'
 import { prisma } from '#app/utils/db.server'
 import { type Route } from './+types/help'
 
-export const FeedbackSchema = z.object({
-  type: z.enum(['BUG', 'QUESTION', 'FEATURE']),
-  title: z.string().min(5, 'Title must be at least 5 characters').max(100),
-  description: z.string().min(10, 'Description must be at least 10 characters').max(1000),
-})
+export async function loader() {
+	const faqs = await prisma.helpFAQ.findMany({
+		where: { active: true },
+		orderBy: [{ category: 'asc' }, { order: 'asc' }],
+	})
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const userId = await requireUserId(request)
-  
-  const faqs = await prisma.helpFAQ.findMany({
-    where: { active: true },
-    orderBy: [{ category: 'asc' }, { order: 'asc' }],
-  })
-  
-  const userFeedback = await prisma.feedback.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
-  })
-  
-  // Group FAQs by category
-  const faqsByCategory = faqs.reduce((acc, faq) => {
-    if (!acc[faq.category]) {
-      acc[faq.category] = []
-    }
-    acc[faq.category].push(faq)
-    return acc
-  }, {} as Record<string, typeof faqs>)
-  
-  return data({ faqsByCategory, userFeedback })
+	// Group FAQs by category
+	const faqsByCategory = faqs.reduce(
+		(acc, faq) => {
+			if (!acc[faq.category]) {
+				acc[faq.category] = []
+			}
+			acc[faq.category].push(faq)
+			return acc
+		},
+		{} as Record<string, typeof faqs>,
+	)
+
+	return data({ faqsByCategory })
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  const userId = await requireUserId(request)
-  const formData = await request.formData()
-  
-  const submission = parseWithZod(formData, {
-    schema: FeedbackSchema,
-  })
-  
-  if (submission.status !== 'success') {
-    return data(
-      { result: submission.reply() },
-      { status: submission.status === 'error' ? 400 : 200 },
-    )
-  }
-  
-  const { type, title, description } = submission.value
-  
-  await prisma.feedback.create({
-    data: {
-      type,
-      title,
-      description,
-      userId,
-    },
-  })
-  
-  return redirect('/help?tab=feedback')
-}
+export default function HelpPage({ loaderData }: Route.ComponentProps) {
+	const { faqsByCategory } = loaderData
 
-export default function HelpPage() {
-  const { faqsByCategory, userFeedback } = useLoaderData<typeof loader>()
-  
-  const [form, fields] = useForm({
-    id: 'feedback-form',
-    constraint: getZodConstraint(FeedbackSchema),
-    defaultValue: {
-      type: 'QUESTION',
-      title: '',
-      description: '',
-    },
-    onValidate({ formData }) {
-      return parseWithZod(formData, { schema: FeedbackSchema })
-    },
-  })
-  
-  return (
-    <div className="container py-8">
-      <h1 className="mb-8 text-center text-3xl font-bold">Help Center</h1>
-      
-      <Tabs defaultValue="faq" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="faq">FAQ</TabsTrigger>
-          <TabsTrigger value="feedback">Feedback</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="faq" className="mt-6">
-          {Object.entries(faqsByCategory).map(([category, faqs]) => (
-            <div key={category} className="mb-8">
-              <h2 className="mb-4 text-xl font-semibold">{category}</h2>
-              <Accordion type="single" collapsible className="w-full">
-                {faqs.map(faq => (
-                  <AccordionItem key={faq.id} value={faq.id}>
-                    <AccordionTrigger className="text-left">
-                      {faq.question}
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="prose prose-sm max-w-none dark:prose-invert">
-                        {faq.answer}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          ))}
-        </TabsContent>
-        
-        <TabsContent value="feedback" className="mt-6">
-          <div className="grid gap-8 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Submit Feedback</CardTitle>
-                <CardDescription>
-                  Report bugs, ask questions, or request new features
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form method="post" {...getFormProps(form)}>
-                  <div className="space-y-4">
-										{/*TODO update this to be a normal select. */}
-                    <Field
-                      labelProps={{
-                        children: 'Feedback Type',
-                      }}
-                      inputProps={{
-                        ...getInputProps(fields.type, { type: 'select' }),
-                      }}
-                    >
-                      <select
-                        {...getInputProps(fields.type, { type: 'select' })}
-                        className="w-full rounded-md border border-input bg-background px-3 py-2"
-                      >
-                        <option value="BUG">Bug Report</option>
-                        <option value="QUESTION">Question</option>
-                        <option value="FEATURE">Feature Request</option>
-                      </select>
-                    </Field>
-                    
-                    <Field
-                      labelProps={{
-                        htmlFor: fields.title.id,
-                        children: 'Title',
-                      }}
-                      inputProps={{
-                        ...getInputProps(fields.title, { type: 'text' }),
-                        placeholder: 'Brief summary of your feedback',
-                      }}
-                      errors={fields.title.errors}
-                    />
-                    
-                    <TextareaField
-                      labelProps={{
-                        htmlFor: fields.description.id,
-                        children: 'Description',
-                      }}
-                      textareaProps={{
-                        ...getTextareaProps(fields.description),
-                        placeholder: 'Please provide details...',
-                        rows: 5,
-                      }}
-                      errors={fields.description.errors}
-                    />
-                  </div>
-                  
-                  <Button type="submit" className="mt-4 w-full">
-                    Submit Feedback
-                  </Button>
-                </Form>
-              </CardContent>
-            </Card>
-            
-            <div>
-              <h3 className="mb-4 text-lg font-medium">Your Previous Feedback</h3>
-              {userFeedback.length > 0 ? (
-                <div className="space-y-4">
-                  {userFeedback.map(feedback => (
-                    <Card key={feedback.id}>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-base">{feedback.title}</CardTitle>
-                          <span className={`rounded-full px-2 py-1 text-xs ${
-                            feedback.status === 'OPEN' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
-                            feedback.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' :
-                            feedback.status === 'IMPLEMENTED' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
-                            'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-                          }`}>
-                            {feedback.status.replace('_', ' ')}
-                          </span>
-                        </div>
-                        <CardDescription className="flex items-center gap-2">
-                          <span className={`rounded-full px-2 py-0.5 text-xs ${
-                            feedback.type === 'BUG' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' :
-                            feedback.type === 'FEATURE' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' :
-                            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-                          }`}>
-                            {feedback.type}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(feedback.createdAt).toLocaleDateString()}
-                          </span>
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground line-clamp-3">
-                          {feedback.description}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">
-                  You haven't submitted any feedback yet.
-                </p>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+	return (
+		<div className="container mx-auto max-w-4xl py-8">
+			<h1 className="mb-8 text-center text-3xl font-bold">Help Center</h1>
+
+			{/* FAQ Section */}
+			<section className="mb-16">
+				<h2 className="mb-6 text-2xl font-semibold">
+					Frequently Asked Questions
+				</h2>
+
+				{Object.entries(faqsByCategory).map(([category, faqs]) => (
+					<div key={category} className="mb-8">
+						<h3 className="mb-4 text-xl font-semibold">{category}</h3>
+						<Accordion type="single" collapsible className="w-full">
+							{faqs.map((faq) => (
+								<AccordionItem key={faq.id} value={faq.id}>
+									<AccordionTrigger className="text-left">
+										{faq.question}
+									</AccordionTrigger>
+									<AccordionContent>
+										<div className="prose prose-sm dark:prose-invert max-w-none">
+											{faq.answer}
+										</div>
+									</AccordionContent>
+								</AccordionItem>
+							))}
+						</Accordion>
+					</div>
+				))}
+			</section>
+
+			{/* Feedback Section */}
+			<section className="mb-8">
+				<Card>
+					<CardHeader>
+						<CardTitle>Need More Help?</CardTitle>
+						<CardDescription>
+							Have a question, found a bug, or want to suggest a feature?
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<p>
+							This project is open source and maintained by the community. If
+							you've found a bug, have a feature request, or need help with
+							something not covered in the FAQs, please consider opening an
+							issue on GitHub.
+						</p>
+
+						<div className="space-y-2">
+							<h4 className="font-medium">How to report an issue:</h4>
+							<ol className="list-decimal space-y-1 pl-5">
+								<li>Visit our GitHub repository</li>
+								<li>Click on the "Issues" tab</li>
+								<li>Click "New Issue" and select the appropriate template</li>
+								<li>
+									Fill in the details with as much information as possible
+								</li>
+								<li>Submit the issue</li>
+							</ol>
+						</div>
+
+						<div className="flex flex-col gap-4 pt-4 sm:flex-row">
+							<Button asChild className="flex-1">
+								<a
+									href="https://github.com/your-org/your-repo/issues/new/choose"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									Report a Bug
+								</a>
+							</Button>
+							<Button asChild variant="outline" className="flex-1">
+								<a
+									href="https://github.com/your-org/your-repo/issues/new?template=feature_request.md"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									Request a Feature
+								</a>
+							</Button>
+						</div>
+					</CardContent>
+				</Card>
+			</section>
+
+			{/* Community Support Section */}
+			<section className="mb-12">
+				<Card>
+					<CardHeader>
+						<CardTitle>Community Support</CardTitle>
+						<CardDescription>
+							Connect with other users and get help from the community
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<p>
+							Our community is active and helpful. You can also find support
+							through these channels:
+						</p>
+
+						<div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+							<Button asChild variant="outline">
+								<Link to="/prayer/board">Prayer Board</Link>
+							</Button>
+							<Button asChild variant="outline">
+								<Link to="/needs/board">Community Needs</Link>
+							</Button>
+						</div>
+					</CardContent>
+				</Card>
+			</section>
+
+			{/* Support the Project Section */}
+			<Separator className="my-8" />
+
+			<section className="text-center">
+				<h2 className="mb-4 text-xl font-semibold">Support the Project</h2>
+				<p className="mx-auto mb-6 max-w-2xl text-muted-foreground">
+					PrayPal is a free, open-source project maintained by Alex Black. If
+					you find it useful, please consider supporting the development with a
+					donation.
+				</p>
+
+				<div className="flex justify-center">
+					<Button asChild variant="default" className="gap-2">
+						<a
+							href="https://www.buymeacoffee.com/alex.black"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="flex items-center"
+						>
+							<Coffee className="h-4 w-4" />
+							<span>Buy Me a Coffee</span>
+						</a>
+					</Button>
+				</div>
+
+				<div className="mt-8 flex items-center justify-center text-sm text-muted-foreground">
+					<Heart className="mr-2 h-4 w-4 text-red-500" />
+					<span>Thank you for your support!</span>
+				</div>
+			</section>
+		</div>
+	)
 }
