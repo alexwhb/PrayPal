@@ -1,5 +1,6 @@
 import {
 	BarChart2,
+	Coffee,
 	Gift,
 	HelpCircle,
 	Home,
@@ -101,6 +102,9 @@ export default function Sidebar() {
 									</NavItem>
 									<NavItem href="/groups/board" icon={Users2}>
 										Groups
+									</NavItem>
+									<NavItem href="/mixer" icon={Coffee}>
+										Mixer
 									</NavItem>
 								</div>
 							</div>
