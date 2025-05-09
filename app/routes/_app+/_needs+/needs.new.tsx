@@ -62,7 +62,6 @@ export async function action({ request }: LoaderFunctionArgs) {
 			description: description,
 			fulfilled: false,
 			status: 'ACTIVE',
-			flagged: false,
 			userId: userId,
 		},
 	})
