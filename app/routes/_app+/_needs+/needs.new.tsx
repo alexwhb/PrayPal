@@ -125,9 +125,10 @@ export default function NewNeedForm({
 					</div>
 
 					<TextareaField
-						labelProps={{ htmlFor: 'description', children: 'Prayer Request' }}
+						labelProps={{ htmlFor: 'description', children: 'Need Description' }}
 						textareaProps={{
 							...getInputProps(fields.description, { type: 'text' }),
+							placeholder: 'Enter a description of your need',
 							maxLength: 400, // Set maximum characters allowed
 						}}
 						errors={fields?.description?.errors}
