@@ -257,6 +257,7 @@ export default function NewGroupForm({
 				textareaProps={{
 					...getInputProps(fields.description, { type: 'text' }),
 					maxLength: 400, // Set maximum characters allowed
+					placeholder: 'Enter group description.',
 				}}
 				errors={fields.description.errors}
 				className="relative"
