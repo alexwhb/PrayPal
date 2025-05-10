@@ -12,7 +12,7 @@ export async function action({ request }: Route.ActionArgs) {
 	const action = formData.get('_action')
 
 	if (action === 'togglePraying') {
-		// First fetch the current request
+		// First, fetch the current request
 		const request = await prisma.request.findUnique({
 			where: { id: prayerId as string },
 			select: { response: true },
