@@ -117,24 +117,33 @@ export async function action({ request }: Route.ActionArgs) {
 		description,
 		frequency,
 		meetingTime,
+		customFrequency,
 		location,
+		isPrivate,
 		isOnline,
+		videoUrl,
 		capacity,
 		categoryId,
 		admins = [],
-		videoUrl,
 	} = submission.value
+	
+	// Store custom dates as JSON if using CUSTOM frequency
+	const customEventDatesJson = frequency === 'CUSTOM' && customFrequency?.length 
+		? JSON.stringify(customFrequency.map(date => date.toISOString()))
+		: null;
+	
 	await prisma.group.create({
 		data: {
 			name,
 			description,
 			frequency,
-			meetingTime: new Date(meetingTime),
-			location,
+			meetingTime: frequency !== 'CUSTOM' ? new Date(meetingTime) : null,
+			customEventDatesJson,
+			location: isOnline ? videoUrl : location,
+			isPrivate,
 			isOnline,
 			capacity,
 			categoryId,
-			videoUrl,
 			memberships: {
 				create: [
 					{ userId, role: 'LEADER' },
@@ -318,7 +327,7 @@ export default function NewGroupForm({
 					<div className="space-y-0.5">
 						<Label htmlFor={fields.isPrivate.id}>Private Group</Label>
 						<p className="text-sm text-muted-foreground">
-							Require approval for new members to join
+							Require approval for new members to join, and details are hidden from non-members (such as location)
 						</p>
 					</div>
 					<SwitchConform meta={fields.isPrivate} />
