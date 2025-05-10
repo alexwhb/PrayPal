@@ -257,6 +257,7 @@ model Message {
   conversationId String
   messageSeen    MessageSeen[]
 
+  // TODO IDK if connecting a group directly to the message is the right way to go. seems like it should be connected through the conversation.
   // Group relation
   group   Group?  @relation("GroupMessages", fields: [groupId], references: [id], onDelete: Cascade)
   groupId String?
@@ -292,8 +293,8 @@ enum GroupFrequency {
   ONCE
   DAILY
   WEEKLY
-  BIWEEKLY
   MONTHLY
+  YEARLY
   CUSTOM
 }
 
@@ -302,7 +303,7 @@ model Group {
   name        String
   description String?
   frequency   GroupFrequency @default(WEEKLY)
-  meetingTime DateTime
+  meetingTime DateTime?
   location    String?
   isPrivate   Boolean        @default(true) // this determines if an admin has to approve a user to join.
   isOnline    Boolean        @default(false)
@@ -316,6 +317,8 @@ model Group {
   memberships   GroupMembership[]
   conversations Conversation[]    @relation("GroupConversations")
   messages      Message[]         @relation("GroupMessages")
+
+  customEventDatesJson String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
