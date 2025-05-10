@@ -1,4 +1,3 @@
-import { invariantResponse } from '@epic-web/invariant'
 import { Gift } from 'lucide-react'
 import { useState } from 'react'
 import { data } from 'react-router'
@@ -11,16 +10,14 @@ import { useBoardNavigation } from '#app/hooks/use-board-navigation.ts'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
-import { initiateConversation } from '#app/utils/messaging.server.ts'
 import { getImageSrc, getUserImgSrc } from '#app/utils/misc.tsx'
-import { moderateItem } from '#app/utils/moderation.server.ts'
 import { type Route } from './+types/share.board.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
 	const url = new URL(request.url)
 	const sort = url.searchParams.get('sort') === 'asc' ? 'asc' : 'desc'
-	const type : 'GIVE' | 'BORROW' =
+	const type: 'GIVE' | 'BORROW' =
 		url.searchParams.get('type')?.toUpperCase() === 'GIVE' ? 'GIVE' : 'BORROW'
 
 	const boardData = await loadBoardData(
@@ -57,25 +54,29 @@ export async function loader({ request }: Route.LoaderArgs) {
 			transformResponse: (items, user) =>
 				items.map((item) => {
 					console.log(item.image)
-					return({
-					id: item.id,
-					userId: item.owner.id,
-					userDisplayName: item.owner.name ?? item.owner.username,
-					userName: item.owner.username,
-					userAvatar: getUserImgSrc(item.owner.image.id),
-					title: item.title,
-					description: item.description,
-					category: item.category.name,
-					location: item.location,
-					image: item.imageId != null ? getImageSrc(item.imageId) :  'https://placehold.co/600x400',
-					postedDate: item.createdAt,
-					claimed: item.claimed,
-					shareType: item.shareType.toLowerCase(),
-					duration: item.duration,
-					canModerate: user.roles.some((role) =>
-						['admin', 'moderator'].includes(role.name),
-					),
-				})}),
+					return {
+						id: item.id,
+						userId: item.owner.id,
+						userDisplayName: item.owner.name ?? item.owner.username,
+						userName: item.owner.username,
+						userAvatar: getUserImgSrc(item.owner.image.id),
+						title: item.title,
+						description: item.description,
+						category: item.category.name,
+						location: item.location,
+						image:
+							item.imageId != null
+								? getImageSrc(item.imageId)
+								: 'https://placehold.co/600x400',
+						postedDate: item.createdAt,
+						claimed: item.claimed,
+						shareType: item.shareType.toLowerCase(),
+						duration: item.duration,
+						canModerate: user.roles.some((role) =>
+							['admin', 'moderator'].includes(role.name),
+						),
+					}
+				}),
 		},
 	)
 
@@ -90,85 +91,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 		sort,
 		type,
 	})
-}
-
-export async function action({ request }: Route.ActionArgs) {
-	const userId = await requireUserId(request)
-	const formData = await request.formData()
-	const itemId = formData.get('itemId')
-	const action = formData.get('_action')
-
-	if (action === 'delete' || action === 'pending' || action === 'removed') {
-		const moderatorAction = formData.get('moderatorAction') === '1'
-		const reason = formData.get('reason') as string || 'Moderation action'
-
-		return moderateItem({
-			userId,
-			itemId: itemId as string,
-			itemType: 'SHARE_ITEM',
-			action: action as 'delete' | 'pending' | 'removed',
-			reason,
-			isModerator: moderatorAction
-		})
-	}
-
-	if (action === 'toggleClaimed') {
-		const item = await prisma.shareItem.findUnique({
-			where: { id: itemId as string },
-			select: { userId: true, claimed: true },
-		})
-
-		// Verify ownership
-		invariantResponse(item?.userId === userId, 'Not authorized', {
-			status: 403,
-		})
-
-		await prisma.shareItem.update({
-			where: { id: itemId as string },
-			data: { claimed: !item.claimed },
-		})
-
-		return data({ success: true })
-	}
-
-	if (action === 'requestItem') {
-		const item = await prisma.shareItem.findUnique({
-			where: { id: itemId as string },
-			select: { 
-				userId: true, 
-				title: true,
-				imageId: true,
-				category: { select: { name: true } },
-				shareType: true
-			},
-		})
-
-		if (!item) return null
-
-		// Create a message attachment record
-		const attachment = await prisma.messageAttachment.create({
-			data: {
-				type: 'SHARE_ITEM',
-				referenceId: itemId as string,
-				metadata: {
-					title: item.title,
-					imageId: item.imageId,
-					category: item.category.name,
-					shareType: item.shareType
-				}
-			}
-		})
-
-		return initiateConversation({
-			initiatorId: userId,
-			participantIds: [item.userId],
-			checkExisting: true,
-			initialMessage: `Hi! I'm interested in your shared item: "${item.title}"`,
-			attachmentId: attachment.id
-		})
-	}
-
-	return null
 }
 
 type DialogState = {
@@ -225,21 +147,21 @@ export default function ShareBoardPage({
 				getFilterUrl={getFilterUrl}
 				getSortUrl={getSortUrl}
 				getNewActionUrl={getNewActionUrl}
-				newActionToolTipString={isBorrowBoard ? "Share Equipment" : "Give Item"}
+				newActionToolTipString={isBorrowBoard ? 'Share Equipment' : 'Give Item'}
 				secondaryAction={
 					isBorrowBoard
 						? {
-							label: "View Free Items",
-							href: "?type=give",
-							tooltip: "Switch to Free Items board",
-							icon: Gift
-						}
+								label: 'View Free Items',
+								href: '?type=give',
+								tooltip: 'Switch to Free Items board',
+								icon: Gift,
+							}
 						: {
-							label: "View Borrowable Items",
-							href: "?",
-							tooltip: "Switch to Borrowable Items board",
-							icon: Gift
-						}
+								label: 'View Borrowable Items',
+								href: '?',
+								tooltip: 'Switch to Borrowable Items board',
+								icon: Gift,
+							}
 				}
 			/>
 

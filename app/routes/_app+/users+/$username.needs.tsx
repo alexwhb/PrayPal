@@ -1,13 +1,17 @@
 import { data } from 'react-router'
 import BoardFooter from '#app/components/board/board-footer'
 import { NeedItem } from '#app/components/needs/need-item.tsx'
+import  { type Need } from '#app/components/needs/type.ts'
 import { Card, CardContent } from '#app/components/ui/card'
 import { useBoardNavigation } from '#app/hooks/use-board-navigation'
 import { requireUserId } from '#app/utils/auth.server'
 import { loadBoardData } from '#app/utils/board-loader.server'
 import { prisma } from '#app/utils/db.server'
 import { type Route } from './+types/$username.needs'
-import type { Need } from '#app/components/needs/type.ts'
+
+// Reuse the action from the needs board
+export { action } from '../_needs+/_needs.board.actions.server.ts'
+
 
 export async function loader({ params, request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)

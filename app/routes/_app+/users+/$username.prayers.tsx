@@ -1,16 +1,15 @@
-import { formatDistanceToNow } from 'date-fns'
-import { MessageCircle } from 'lucide-react'
 import { data } from 'react-router'
-
 import BoardFooter from '#app/components/board/board-footer'
-import { Badge } from '#app/components/ui/badge'
-import { Card, CardHeader, CardContent } from '#app/components/ui/card'
+import PrayerItem from '#app/components/prayer/prayer-item.tsx'
+import { Card, CardContent } from '#app/components/ui/card'
 import { useBoardNavigation } from '#app/hooks/use-board-navigation'
 import { requireUserId } from '#app/utils/auth.server'
 import { loadBoardData } from '#app/utils/board-loader.server'
 import { prisma } from '#app/utils/db.server'
 import { type Route } from './+types/$username.prayers'
-import PrayerItem from '#app/components/prayer/prayer-item.tsx'
+
+export {action} from '../_prayer+/_prayer.board.action.server.ts'
+
 
 export async function loader({ params, request }: Route.LoaderArgs) {
   const userId = await requireUserId(request)

@@ -4,9 +4,9 @@ import { useBoardNavigation } from '#app/hooks/use-board-navigation.ts'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
-import { moderateItem } from '#app/utils/moderation.server.ts'
 import { type Route } from './+types/needs.board.ts'
-import { initiateConversation } from '#app/utils/messaging.server.ts'
+
+export { action } from './_needs.board.actions.server.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
@@ -50,65 +50,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 		...boardData,
 		needs: boardData.items
 	}
-}
-
-export async function action({ request }: Route.ActionArgs) {
-	const userId = await requireUserId(request)
-	const formData = await request.formData()
-	const needId = formData.get('needId')
-	const action = formData.get('_action')
-
-	console.log('action',action)
-
-	if (action === 'delete') {
-		const moderatorAction = formData.get('moderatorAction') === '1'
-		const reason = formData.get('reason') as string || 'Moderation action'
-
-		return moderateItem({
-			userId,
-			itemId: needId as string,
-			itemType: 'NEED',
-			action: 'delete',
-			reason,
-			isModerator: moderatorAction
-		})
-	} else if (action === 'markFulfilled') {
-		await prisma.request.update({
-			where: { id: needId as string },
-			data: {
-				fulfilled: formData.get('fulfilled') === '1',
-			},
-		})
-		
-		return data({ success: true })
-	} else if (action === 'pending' || action === 'removed') {
-		const moderatorAction = formData.get('moderatorAction') === '1'
-		const reason = formData.get('reason') as string || 'Moderation action'
-		
-		return moderateItem({
-			userId,
-			itemId: needId as string,
-			itemType: 'NEED',
-			action: action as 'pending' | 'removed',
-			reason,
-			isModerator: moderatorAction
-		})
-	} else if (action === 'contact') {
-		const need = await prisma.request.findUnique({
-			where: { id: needId as string },
-			select: { userId: true },
-		})
-
-		if (!need) return null
-
-		return initiateConversation({
-			initiatorId: userId,
-			participantIds: [need.userId],
-			checkExisting: true,
-		})
-	}
-	
-	return null
 }
 
 export default function NeedsBoardPage({

@@ -9,6 +9,8 @@ import { prisma } from '#app/utils/db.server'
 import { getImageSrc, getUserImgSrc } from '#app/utils/misc'
 import { type Route } from './+types/$username.shares'
 
+export {action} from '../_sharable+/_share.board.action.server.ts'
+
 export async function loader({ params, request }: Route.LoaderArgs) {
   const userId = await requireUserId(request)
   const url = new URL(request.url)
