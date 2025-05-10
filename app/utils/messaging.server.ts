@@ -2,7 +2,6 @@ import { redirect } from 'react-router'
 import { prisma } from '#app/utils/db.server.ts'
 
 type ParticipantId = string
-type ConversationData = { name: string } | null
 
 interface CreateConversationOptions {
 	initiatorId: ParticipantId
@@ -29,10 +28,21 @@ export async function createOrGetConversation({
 			include: { participants: true },
 		})
 
+		function isDirectConversationBetween(
+			conversation: { participants: { id: ParticipantId }[] },
+			initiatorId: ParticipantId,
+			participantId: ParticipantId
+		): boolean {
+			return (
+				conversation.participants.length === 2 &&
+				conversation.participants.some(p => p.id === initiatorId) &&
+				conversation.participants.some(p => p.id === participantId)
+			)
+		}
+
+		// Usage:
 		const existingConversation = candidateConversations.find(c =>
-			c.participants.length === 2 &&
-			c.participants.some(p => p.id === initiatorId) &&
-			c.participants.some(p => p.id === participantIds[0])
+			isDirectConversationBetween(c, initiatorId, participantIds[0])
 		)
 
 		if (existingConversation) {
