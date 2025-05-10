@@ -106,7 +106,7 @@ export default function HelpPage({ loaderData }: Route.ComponentProps) {
 						<div className="flex flex-col gap-4 pt-4 sm:flex-row">
 							<Button asChild className="flex-1">
 								<a
-									href="https://github.com/your-org/your-repo/issues/new/choose"
+									href="https://github.com/alexwhb/praypal/issues/new?template=bug_report.md"
 									target="_blank"
 									rel="noopener noreferrer"
 								>
@@ -115,7 +115,7 @@ export default function HelpPage({ loaderData }: Route.ComponentProps) {
 							</Button>
 							<Button asChild variant="outline" className="flex-1">
 								<a
-									href="https://github.com/your-org/your-repo/issues/new?template=feature_request.md"
+									href="https://github.com/alexwhb/praypal/issues/new?template=feature_request.md"
 									target="_blank"
 									rel="noopener noreferrer"
 								>
