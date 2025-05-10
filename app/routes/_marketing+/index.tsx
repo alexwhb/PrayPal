@@ -1,4 +1,4 @@
-import { ArrowRight, Gift, Heart, Users, InfoIcon } from 'lucide-react'
+import { ArrowRight, Gift, Heart, Users, InfoIcon, Coffee } from 'lucide-react'
 import { Link, redirect } from 'react-router'
 import { CTASection } from '#app/components/marketing/cta-section'
 import { Alert, AlertDescription } from '#app/components/ui/alert'
@@ -262,6 +262,20 @@ export default function LandingPage({loaderData}: Route.ComponentProps) {
 						<p className="text-sm text-muted-foreground">
 							© {new Date().getFullYear()} PrayPal. All rights reserved.
 						</p>
+						{/* Buy Me a Coffee section */}
+						<div className="flex items-center justify-center pt-2">
+							<Button asChild variant="outline" size="sm" className="gap-2">
+								<a
+									href="https://www.buymeacoffee.com/alex.black"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="flex items-center"
+								>
+									<Coffee className="h-4 w-4" />
+									<span>Buy Me a Coffee</span>
+								</a>
+							</Button>
+						</div>
 					</div>
 				</div>
 			</footer>
