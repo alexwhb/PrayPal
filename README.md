@@ -6,17 +6,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/your-username/praypal/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
+  <a href="https://github.com/alexwhb/praypal/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0">
   </a>
-  <a href="https://github.com/your-username/praypal/stargazers">
-    <img src="https://img.shields.io/github/stars/your-username/praypal" alt="GitHub stars">
+  <a href="https://github.com/alexwhb/praypal/stargazers">
+    <img src="https://img.shields.io/github/stars/alexwhb/praypal" alt="GitHub stars">
   </a>
-  <a href="https://github.com/your-username/praypal/issues">
-    <img src="https://img.shields.io/github/issues/your-username/praypal" alt="GitHub issues">
+  <a href="https://github.com/alexwhb/praypal/issues">
+    <img src="https://img.shields.io/github/issues/alexwhb/praypal" alt="GitHub issues">
   </a>
-  <a href="https://github.com/your-username/praypal/network/members">
-    <img src="https://img.shields.io/github/forks/your-username/praypal" alt="GitHub forks">
+  <a href="https://github.com/alexwhb/praypal/network/members">
+    <img src="https://img.shields.io/github/forks/alexwhb/praypal" alt="GitHub forks">
   </a>
 </p>
 
