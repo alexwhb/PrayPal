@@ -16,7 +16,6 @@ import { type Route } from './+types/share.board.ts'
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
 	const url = new URL(request.url)
-	const sort = url.searchParams.get('sort') === 'asc' ? 'asc' : 'desc'
 	const type: 'GIVE' | 'BORROW' =
 		url.searchParams.get('type')?.toUpperCase() === 'GIVE' ? 'GIVE' : 'BORROW'
 
@@ -53,7 +52,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 			},
 			transformResponse: (items, user) =>
 				items.map((item) => {
-					console.log(item.image)
 					return {
 						id: item.id,
 						userId: item.owner.id,
@@ -88,7 +86,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		filters: boardData.filters,
 		activeFilter: boardData.activeFilter,
 		userId,
-		sort,
+
 		type,
 	})
 }
