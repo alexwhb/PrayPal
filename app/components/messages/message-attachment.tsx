@@ -5,13 +5,16 @@ import { Button } from '#app/components/ui/button.tsx'
 import { Card, CardContent, CardFooter, CardHeader } from '#app/components/ui/card.tsx'
 import { getImageSrc } from '#app/utils/misc.tsx'
 
+export type Attachment = {
+  id: string
+  type: string
+  referenceId: string
+  metadata: Record<string, any>
+}
+
+
 type AttachmentProps = {
-  attachment: {
-    id: string
-    type: string
-    referenceId: string
-    metadata: Record<string, any>
-  }
+  attachment: Attachment
   isOwner: boolean
 }
 
