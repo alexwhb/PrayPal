@@ -1,16 +1,17 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { SelectGroup } from '@radix-ui/react-select'
+import { format } from 'date-fns/format'
 import React, { useCallback, useMemo, useState } from 'react'
 import { data, Form, useFetcher } from 'react-router'
 import { z } from 'zod'
+import { DateTimePicker } from '#app/components/date-time-picker.tsx'
 import {
 	ErrorList,
 	Field,
 	NumberField,
 	TextareaField,
 } from '#app/components/forms'
-import { format } from 'date-fns/format'
 import { UserAutocomplete } from '#app/components/groups/user-autocomplet.tsx'
 import { Button } from '#app/components/ui/button'
 import { Label } from '#app/components/ui/label'
@@ -26,22 +27,7 @@ import { requireUserId } from '#app/utils/auth.server'
 import { prisma } from '#app/utils/db.server'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/groups.new.ts'
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from '#app/components/ui/popover.tsx'
-import { Input } from '#app/components/ui/input.tsx'
 import { Calendar } from '#app/components/ui/calendar.tsx'
-import { CalendarIcon, Clock } from 'lucide-react'
-import {
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from '#app/components/ui/form.tsx'
-import { DateTimePicker } from '#app/components/date-time-picker.tsx'
 
 interface User {
 	id: string
@@ -107,8 +93,7 @@ export async function action({ request }: Route.ActionArgs) {
 		categoryId,
 		admins = [],
 	} = submission.value
-
-	const group = await prisma.group.create({
+	await prisma.group.create({
 		data: {
 			name,
 			description,
@@ -149,12 +134,8 @@ export default function NewGroupForm({
 	const initialDate = useMemo(() => new Date(), [])
 
 	const [selectedDate, setSelectedDate] = useState(initialDate)
-	const formattedDate = useMemo(
-		() => format(selectedDate, 'PPP'),
-		[selectedDate],
-	)
-	const isoDate = useMemo(() => selectedDate.toISOString(), [selectedDate])
-
+	useMemo(() => format(selectedDate, 'PPP'), [selectedDate])
+	useMemo(() => selectedDate.toISOString(), [selectedDate])
 	// const [selectedAdmins, setSelectedAdmins] = useState<User[]>([]);
 	const userFetcher = useFetcher<UserSearchResult[]>()
 	//
@@ -171,8 +152,7 @@ export default function NewGroupForm({
 	const [selectedAdmins, setSelectedAdmins] = React.useState<
 		UserSearchResult[]
 	>([])
-
-	const handleDateSelect = useCallback((date: Date | undefined) => {
+	useCallback((date: Date | undefined) => {
 		if (date) setSelectedDate(date)
 	}, [])
 
@@ -192,7 +172,7 @@ export default function NewGroupForm({
 	const defaultValues = {
 		categoryId: categories[0]?.id,
 		admins: selectedAdmins,
-		frequency: 'WEEKLY',
+		frequency: 'MONTHLY',
 		meetingTime: new Date().toISOString(),
 		isOnline: false,
 		capacity: null,
@@ -211,6 +191,8 @@ export default function NewGroupForm({
 		defaultValue: defaultValues,
 		shouldRevalidate: 'onBlur',
 	})
+
+	console.log(form.value.frequency, fields)
 
 	return (
 		<Form method="post" {...getFormProps(form)} className="space-y-8">
@@ -251,22 +233,24 @@ export default function NewGroupForm({
 			<div className="space-y-2">
 				<Label htmlFor="frequency">Frequency</Label>
 				<Select
-					{...getInputProps(fields.frequency, { type: 'text' })} // Bind the field to the form state
+					{...getInputProps(fields.frequency, { type: 'text' })}
+					onValueChange={(value) => {
+						form.update(fields.frequency.name, value)
+					}}
 					required
 				>
 					<SelectTrigger id="frequency">
-						<SelectValue placeholder="Select a category" />
+						<SelectValue placeholder="Select a frequency" />
 					</SelectTrigger>
 					<SelectContent>
-						{['ONCE', 'DAILY', 'WEEKLY', 'BIWEEKLY', 'MONTHLY', 'CUSTOM'].map(
-							(freq) => (
-								<SelectItem key={freq} value={freq}>
-									{freq.charAt(0) + freq.slice(1).toLowerCase()}
-								</SelectItem>
-							),
-						)}
+						{['ONCE', 'DAILY', 'WEEKLY', 'MONTHLY', 'CUSTOM'].map((freq) => (
+							<SelectItem key={freq} value={freq}>
+								{freq.charAt(0) + freq.slice(1).toLowerCase()}
+							</SelectItem>
+						))}
 					</SelectContent>
 				</Select>
+
 				<div className="min-h-[12px] px-4 pb-3 pt-1">
 					{fields.frequency.errorId ? (
 						<ErrorList
@@ -277,33 +261,19 @@ export default function NewGroupForm({
 				</div>
 			</div>
 
-
-			<div className="space-y-1">
-				<Label htmlFor="pubDate">Start Date</Label>
-				<Popover>
-					<PopoverTrigger asChild>
-						<div className="relative">
-							<Input
-								id="pubDate"
-								readOnly
-								placeholder="Pick a date"
-								value={formattedDate}
-								className="cursor-pointer text-left"
-							/>
-							<CalendarIcon className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
-						</div>
-					</PopoverTrigger>
-					<PopoverContent className="w-auto p-0" align="start">
-						<Calendar
-							mode="single"
-							selected={selectedDate}
-							onSelect={handleDateSelect}
-							initialFocus
-						/>
-					</PopoverContent>
-				</Popover>
-				<input type="hidden" name="startDate" value={isoDate} />
-			</div>
+			{fields.frequency.value === 'CUSTOM' ? (
+				<CustomDateCalendar fields={fields} />
+			) : (
+				<div className="space-y-2">
+					<Label>Activity Date</Label>
+					<DateTimePicker date={selectedDate} setDate={setSelectedDate} />
+					<input
+						type="hidden"
+						name="meetingTime"
+						value={selectedDate.toISOString()}
+					/>
+				</div>
+			)}
 
 			<NumberField
 				min={1}
@@ -334,16 +304,14 @@ export default function NewGroupForm({
 					</SelectContent>
 				</Select>
 				<div className="min-h-[12px] px-4 pb-3 pt-1">
-					{fields.frequency.errorId ? (
+					{fields.categoryId.errorId ? (
 						<ErrorList
-							id={fields.frequency.errorId}
-							errors={fields.frequency.errors}
+							id={fields.categoryId.errorId}
+							errors={fields.categoryId.errors}
 						/>
 					) : null}
 				</div>
 			</div>
-
-			<DateTimePicker />
 
 			{/*TODO this is not worth my time right now, but it would be nice to have down the road. */}
 
@@ -399,5 +367,24 @@ export default function NewGroupForm({
 				Create Group
 			</Button>
 		</Form>
+	)
+}
+
+function CustomDateCalendar({
+	fields,
+}: {
+	fields: ReturnType<typeof useForm>[1]
+}) {
+	return (
+		<div className="space-y-4">
+			<Label htmlFor="availableDates">Select Dates</Label>
+			<Calendar
+				mode="multiple"
+				{...getInputProps(fields.customFrequency, { type: 'text' })}
+				className="rounded-md border"
+				numberOfMonths={2}
+				fromDate={new Date()}
+			/>
+		</div>
 	)
 }
