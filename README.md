@@ -30,6 +30,19 @@ PrayPal is a comprehensive web application designed to strengthen church communi
 
 Built with modern web technologies and designed with church communities in mind, PrayPal aims to extend the sense of community beyond physical gatherings and enable members to support one another throughout the week.
 
+## ✨ Demo
+
+### Theme Switching
+<p align="center">
+  <img src="assets/theme-change.gif" alt="Theme Switching" width="800">
+</p>
+
+### Community Groups
+<p align="center">
+  <img src="assets/comunity-groups.gif" alt="Community Groups" width="800">
+</p>
+
+
 ## 🚀 Features
 
 ### Prayer Board
