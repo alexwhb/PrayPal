@@ -9,8 +9,8 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 
 
 
-export function DateTimePicker() {
-	const [date, setDate] = React.useState<Date>();
+export function DateTimePicker({ date, setDate }: { date: Date; setDate: (date: Date) => void }) {
+	// const [date, setDate] = React.useState<Date>();
 	const [isOpen, setIsOpen] = React.useState(false);
 
 	const hours = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -65,6 +65,7 @@ export function DateTimePicker() {
 					<Calendar
 						mode="single"
 						selected={date}
+						fromDate={new Date()}
 						onSelect={handleDateSelect}
 						initialFocus
 					/>
