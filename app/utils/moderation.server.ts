@@ -145,7 +145,7 @@ export async function moderateItem({
         where: { id: itemId },
         data: {
           status,
-          flagged: action === 'pending'
+
         }
       })
     } else if (itemType === 'SHARE_ITEM') {
@@ -153,7 +153,6 @@ export async function moderateItem({
         where: { id: itemId },
         data: {
           status,
-          flagged: action === 'pending'
         }
       })
     }

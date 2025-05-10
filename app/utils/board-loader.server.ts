@@ -41,6 +41,8 @@ export async function loadBoardData({ url, userId }: BoardQueryParams, options: 
   const filterParam = url.searchParams.get('filter')
   const activeFilter = filterParam && filterParam !== 'All' ? filterParam : null
 
+	console.log(sort, page, filterParam, activeFilter)
+
   // Build the where clause by combining the base where with filters
   const where = {
     ...options.where,
@@ -67,7 +69,6 @@ export async function loadBoardData({ url, userId }: BoardQueryParams, options: 
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
-    // options.model.count({ where }),
   ])
 
 	const totalCacheKey = `groups:total:${options.type}:filter:${activeFilter || 'All'}`;
