@@ -104,6 +104,7 @@ export async function action({ request }: Route.ActionArgs) {
 		return initiateConversation({
 			initiatorId: userId,
 			participantIds: [need.userId],
+			checkExisting: true,
 		})
 	}
 	
