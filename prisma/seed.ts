@@ -516,6 +516,7 @@ async function seed() {
 				duration: shareType === ShareType.BORROW ? faker.helpers.arrayElement(['1 week', '2 weeks', '1 month', 'Flexible']) : null,
 				userId,
 				status: faker.helpers.arrayElement(Object.values(ContentStatus)),
+				createdAt: faker.date.past(),
 			})
 		}
 	}
