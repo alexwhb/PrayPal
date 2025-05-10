@@ -2,14 +2,14 @@ import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { SelectGroup } from '@radix-ui/react-select'
 import { format } from 'date-fns/format'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { data, Form, useFetcher } from 'react-router'
 import { z } from 'zod'
 import { DateTimePicker } from '#app/components/date-time-picker.tsx'
 import {
 	ErrorList,
 	Field,
-	NumberField,
+	NumberField, SwitchConform,
 	TextareaField,
 } from '#app/components/forms'
 import { UserAutocomplete } from '#app/components/groups/user-autocomplet.tsx'
@@ -22,12 +22,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#app/components/ui/select.tsx'
+
 import { type UserSearchResult } from '#app/routes/resources+/users.search.tsx'
 import { requireUserId } from '#app/utils/auth.server'
 import { prisma } from '#app/utils/db.server'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/groups.new.ts'
 import { Calendar } from '#app/components/ui/calendar.tsx'
+import { Input } from '#app/components/ui/input.tsx'
 
 interface User {
 	id: string
@@ -46,17 +48,45 @@ const GroupSchema = z.object({
 		'CUSTOM',
 	]),
 
-	startDate: z.date({
-		required_error: 'A start date is required.',
-	}),
-	meetingTime: z.string().min(1, 'Meeting time is required'),
+	// For CUSTOM frequency - from CustomDateCalendar
+	// Conform-to might send these as multiple form entries with the same name or a serialized string.
+	// The preprocess step helps ensure it's parsed into an array of Date objects.
+	customFrequency: z.preprocess(
+		(val) => {
+			if (Array.isArray(val)) {
+				// Filter out any null/undefined values that might result from empty form fields
+				return val.filter(v => v != null).map(v => v instanceof Date ? v : new Date(String(v)));
+			}
+			if (typeof val === 'string' && val.trim() !== '') {
+				// Attempt to parse if it's a single date string (though less likely for multi-date picker)
+				// Or if conform serializes the array as a single string, adjust parsing accordingly.
+				// For now, assume it's an array from formData.getAll() or conform handles it.
+				try {
+					// This part might need adjustment based on how Calendar data is submitted
+					const date = new Date(val);
+					if (!isNaN(date.getTime())) return [date];
+				} catch (e) {
+					return []; // Or handle error
+				}
+			}
+			return val; // Let Zod attempt to parse, or pass through if already Date[]
+		},
+		z.array(z.date({ invalid_type_error: "Each custom date must be a valid date." }))
+			.optional() // Make it optional at base level, superRefine will enforce if frequency is CUSTOM
+	),
+
+	// For non-CUSTOM frequencies - this will be an ISO string from DateTimePicker
+	meetingTime: z.string().optional(),
+
 	endDate: z.date().optional(),
 
 	location: z.string().optional(),
+	isPrivate: z.boolean().default(false),
 	isOnline: z.boolean().default(false),
 	capacity: z.number().int().positive().optional(),
 	categoryId: z.string().min(1, 'Category is required'),
 	admins: z.array(z.string()).optional(),
+	videoUrl: z.string().url().optional(),
 })
 
 export async function loader() {
@@ -92,6 +122,7 @@ export async function action({ request }: Route.ActionArgs) {
 		capacity,
 		categoryId,
 		admins = [],
+		videoUrl,
 	} = submission.value
 	await prisma.group.create({
 		data: {
@@ -103,6 +134,7 @@ export async function action({ request }: Route.ActionArgs) {
 			isOnline,
 			capacity,
 			categoryId,
+			videoUrl,
 			memberships: {
 				create: [
 					{ userId, role: 'LEADER' },
@@ -176,9 +208,14 @@ export default function NewGroupForm({
 		meetingTime: new Date().toISOString(),
 		isOnline: false,
 		capacity: null,
+		customFrequency: [],
+		endDate: null,
+		isOnline: false,
+		isPrivate: false,
 		description: '',
 		name: '',
 		location: '',
+		videoUrl: '',
 	}
 
 	const [form, fields] = useForm({
@@ -262,7 +299,7 @@ export default function NewGroupForm({
 			</div>
 
 			{fields.frequency.value === 'CUSTOM' ? (
-				<CustomDateCalendar fields={fields} />
+				<CustomDateCalendar fields={fields} form={form} />
 			) : (
 				<div className="space-y-2">
 					<Label>Activity Date</Label>
@@ -273,6 +310,41 @@ export default function NewGroupForm({
 						value={selectedDate.toISOString()}
 					/>
 				</div>
+			)}
+
+			{/* Add toggle switches for isPrivate and isOnline */}
+			<div className="space-y-6">
+				<div className="flex items-center justify-between">
+					<div className="space-y-0.5">
+						<Label htmlFor={fields.isPrivate.id}>Private Group</Label>
+						<p className="text-sm text-muted-foreground">
+							Require approval for new members to join
+						</p>
+					</div>
+					<SwitchConform meta={fields.isPrivate} />
+				</div>
+				
+				<div className="flex items-center justify-between">
+					<div className="space-y-0.5">
+						<Label htmlFor={fields.isOnline.id}>Online Meeting</Label>
+						<p className="text-sm text-muted-foreground">
+							This group meets virtually
+						</p>
+					</div>
+					<SwitchConform meta={fields.isOnline} />
+				</div>
+			</div>
+
+			{/* Conditional field for video URL when isOnline is toggled on */}
+			{fields.isOnline.value === 'on' && (
+				<Field
+					labelProps={{ children: 'Video Meeting URL' }}
+					inputProps={{
+						...getInputProps(fields.videoUrl, { type: 'text' }),
+						placeholder: 'https://meet.google.com/...',
+					}}
+					errors={fields.videoUrl.errors}
+				/>
 			)}
 
 			<NumberField
@@ -372,19 +444,63 @@ export default function NewGroupForm({
 
 function CustomDateCalendar({
 	fields,
+	form
 }: {
-	fields: ReturnType<typeof useForm>[1]
+	fields: ReturnType<typeof useForm>[1],
+	form: ReturnType<typeof useForm>[0],
 }) {
+	const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+	const [selectedTime, setSelectedTime] = useState<Date>(new Date());
+	
+	// Update form values when dates or time changes
+	useEffect(() => {
+		if (selectedDates.length > 0) {
+			// Set the time component for each selected date
+			const updatedDates = selectedDates.map(date => {
+				const newDate = new Date(date);
+				newDate.setHours(selectedTime.getHours());
+				newDate.setMinutes(selectedTime.getMinutes());
+				return newDate;
+			});
+			
+			// Update the form field
+			form.update(fields.customFrequency.name, updatedDates);
+		}
+	}, [selectedDates, selectedTime, fields.customFrequency.name]);
+	
 	return (
 		<div className="space-y-4">
 			<Label htmlFor="availableDates">Select Dates</Label>
 			<Calendar
 				mode="multiple"
-				{...getInputProps(fields.customFrequency, { type: 'text' })}
+				selected={selectedDates}
+				onSelect={(dates) => {
+					// Convert undefined to empty array
+					setSelectedDates(dates || []);
+				}}
 				className="rounded-md border"
 				numberOfMonths={2}
 				fromDate={new Date()}
 			/>
+			
+			{selectedDates.length > 0 && (
+				<div className="mt-4">
+					<Label>Select Time for Events</Label>
+					<div className="mt-2">
+						<Input
+							type="time"
+							value={format(selectedTime, 'HH:mm')}
+							onChange={(e) => {
+								const [hours, minutes] = e.target.value.split(':').map(Number);
+								const newTime = new Date();
+								newTime.setHours(hours);
+								newTime.setMinutes(minutes);
+								setSelectedTime(newTime);
+							}}
+						/>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }
