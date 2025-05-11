@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import {
 	data,
-	Link,
 	Links,
 	Meta,
 	Outlet,
@@ -12,7 +11,7 @@ import {
 } from 'react-router'
 import { HoneypotProvider } from 'remix-utils/honeypot/react'
 import { type Socket } from 'socket.io-client'
-import LayoutMainApp from '#app/components/layout.tsx'
+
 import { connect, disconnect, SocketContext } from '#app/utils/socket'
 import logoIcon from '../public/podcasty.svg'
 import { type Route } from './+types/root.ts'
@@ -35,12 +34,13 @@ import { prisma } from './utils/db.server.ts'
 import { getEnv } from './utils/env.server.ts'
 import { pipeHeaders } from './utils/headers.server.ts'
 import { honeypot } from './utils/honeypot.server.ts'
-import { combineHeaders, getDomainUrl } from './utils/misc.tsx'
+import { combineHeaders, getDomainUrl, getImgSrc } from './utils/misc.tsx'
 import { useNonce } from './utils/nonce-provider.ts'
 import { getTheme, type Theme } from './utils/theme.server.ts'
 import { makeTimings, time } from './utils/timing.server.ts'
 import { getToast } from './utils/toast.server.ts'
 import { useOptionalUser } from './utils/user.ts'
+import { OpenImgContextProvider } from 'openimg/react'
 
 export const links: Route.LinksFunction = () => {
 	return [
@@ -236,6 +236,10 @@ function App() {
 	}, [user?.id])
 	
 	return (
+		<OpenImgContextProvider
+			optimizerEndpoint="/resources/images"
+			getSrc={getImgSrc}
+		>
 		<Document nonce={useNonce()} theme={theme}>
 			<SocketProvider socket={socketRef.current}>
 				<Outlet context={data.requestInfo.userPrefs} />
@@ -243,6 +247,7 @@ function App() {
 			<Toaster closeButton position="top-center" theme={theme} />
 			<EpicProgress />
 		</Document>
+		</OpenImgContextProvider>
 	)
 }
 

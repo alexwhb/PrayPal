@@ -14,6 +14,8 @@ import {
 } from '#app/components/forms'
 import { UserAutocomplete } from '#app/components/groups/user-autocomplet.tsx'
 import { Button } from '#app/components/ui/button'
+import { Calendar } from '#app/components/ui/calendar.tsx'
+import { Input } from '#app/components/ui/input.tsx'
 import { Label } from '#app/components/ui/label'
 import {
 	Select,
@@ -28,8 +30,6 @@ import { requireUserId } from '#app/utils/auth.server'
 import { prisma } from '#app/utils/db.server'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { type Route } from './+types/groups.new.ts'
-import { Calendar } from '#app/components/ui/calendar.tsx'
-import { Input } from '#app/components/ui/input.tsx'
 
 interface User {
 	id: string
@@ -215,7 +215,6 @@ export default function NewGroupForm({
 		admins: selectedAdmins,
 		frequency: 'MONTHLY',
 		meetingTime: new Date().toISOString(),
-		isOnline: false,
 		capacity: null,
 		customFrequency: [],
 		endDate: null,

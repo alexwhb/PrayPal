@@ -1,4 +1,6 @@
-import { data, redirect, Link } from 'react-router'
+import { searchUsers } from '@prisma/client/sql'
+import { Img } from 'openimg/react'
+import {  redirect, Link } from 'react-router'
 import { z } from 'zod'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { ErrorList } from '#app/components/forms.tsx'
@@ -7,14 +9,9 @@ import { prisma } from '#app/utils/db.server.ts'
 import { cn, getUserImgSrc, useDelayedIsPending } from '#app/utils/misc.tsx'
 import { type Route } from './+types/index.ts'
 
-const UserSearchResultSchema = z.object({
-	id: z.string(),
-	username: z.string(),
-	name: z.string().nullable(),
-	imageId: z.string().nullable(),
-})
-
-const UserSearchResultsSchema = z.array(UserSearchResultSchema)
+export const meta: Route.MetaFunction = () => {
+	return [{ title: 'PrayPal Users' }]
+}
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const searchTerm = new URL(request.url).searchParams.get('search')
@@ -23,22 +20,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 
 	const like = `%${searchTerm ?? ''}%`
-	const rawUsers = await prisma.$queryRaw`
-		SELECT User.id, User.username, User.name, UserImage.id AS imageId
-		FROM User
-		LEFT JOIN UserImage ON User.id = UserImage.userId
-		WHERE User.username LIKE ${like}
-		OR User.name LIKE ${like}
-		LIMIT 50
-	`
+	const users = await prisma.$queryRawTyped(searchUsers(like))
+	return { status: 'idle', users } as const
 
-	const result = UserSearchResultsSchema.safeParse(rawUsers)
-	if (!result.success) {
-		return data({ status: 'error', error: result.error.message } as const, {
-			status: 400,
-		})
-	}
-	return { status: 'idle', users: result.data } as const
 }
 
 export default function UsersRoute({ loaderData }: Route.ComponentProps) {
@@ -72,10 +56,12 @@ export default function UsersRoute({ loaderData }: Route.ComponentProps) {
 										to={user.username}
 										className="flex h-36 w-44 flex-col items-center justify-center rounded-lg bg-muted px-5 py-3"
 									>
-										<img
+										<Img
 											alt={user.name ?? user.username}
-											src={getUserImgSrc(user.imageId)}
-											className="h-16 w-16 rounded-full"
+											src={getUserImgSrc(user.imageObjectKey)}
+											className="size-16 rounded-full"
+											width={256}
+											height={256}
 										/>
 										{user.name ? (
 											<span className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-body-md">

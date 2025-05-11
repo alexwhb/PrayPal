@@ -100,11 +100,11 @@ app.use(
 	morgan('tiny', {
 		skip: (req, res) =>
 			res.statusCode === 200 &&
-			(req.url?.startsWith('/resources/note-images') ||
-				req.url?.startsWith('/resources/user-images') ||
+			(req.url?.startsWith('/resources/images') ||
 				req.url?.startsWith('/resources/healthcheck')),
 	}),
 )
+
 
 app.use((_, res, next) => {
 	res.locals.cspNonce = crypto.randomBytes(16).toString('hex')
