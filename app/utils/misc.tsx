@@ -1,15 +1,9 @@
 import { clsx, type ClassValue } from 'clsx'
+import { type GetSrcArgs, defaultGetSrc } from 'openimg/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFormAction, useNavigation } from 'react-router'
 import { useSpinDelay } from 'spin-delay'
-import { extendTailwindMerge } from 'tailwind-merge'
-import { extendedTheme } from './extended-theme.ts'
-import { type GetSrcArgs, defaultGetSrc } from 'openimg/react'
-
-
-export function getImageSrc(objectKey: string) {
-		return `/resources/images?objectKey=${encodeURIComponent(objectKey)}`
-}
+import { twMerge } from 'tailwind-merge'
 
 export function getUserImgSrc(objectKey?: string | null) {
 	return objectKey
@@ -17,14 +11,19 @@ export function getUserImgSrc(objectKey?: string | null) {
 		: '/img/user.png'
 }
 
+
+export function getMainImageSrc(objectKey: string | null) {
+	return objectKey ?`/resources/images?objectKey=${encodeURIComponent(objectKey)}`: '/img/image-placeholder.svg' // todo use a different placeholder image
+}
+
 export function getImgSrc({
-														height,
-														optimizerEndpoint,
-														src,
-														width,
-														fit,
-														format,
-													}: GetSrcArgs) {
+	height,
+	optimizerEndpoint,
+	src,
+	width,
+	fit,
+	format,
+}: GetSrcArgs) {
 	// We customize getImgSrc so our src looks nice like this:
 	// /resources/images?objectKey=...&h=...&w=...&fit=...&format=...
 	// instead of this:
@@ -45,7 +44,6 @@ export function getImgSrc({
 	return defaultGetSrc({ height, optimizerEndpoint, src, width, fit, format })
 }
 
-
 export function getErrorMessage(error: unknown) {
 	if (typeof error === 'string') return error
 	if (
@@ -60,39 +58,8 @@ export function getErrorMessage(error: unknown) {
 	return 'Unknown Error'
 }
 
-function formatColors() {
-	const colors = []
-	for (const [key, color] of Object.entries(extendedTheme.colors)) {
-		if (typeof color === 'string') {
-			colors.push(key)
-		} else {
-			const colorGroup = Object.keys(color).map((subKey) =>
-				subKey === 'DEFAULT' ? '' : subKey,
-			)
-			colors.push({ [key]: colorGroup })
-		}
-	}
-	return colors
-}
-
-const customTwMerge = extendTailwindMerge<string, string>({
-	extend: {
-		theme: {
-			colors: formatColors(),
-			borderRadius: Object.keys(extendedTheme.borderRadius),
-		},
-		classGroups: {
-			'font-size': [
-				{
-					text: Object.keys(extendedTheme.fontSize),
-				},
-			],
-		},
-	},
-})
-
 export function cn(...inputs: ClassValue[]) {
-	return customTwMerge(clsx(inputs))
+	return twMerge(clsx(inputs))
 }
 
 export function getDomainUrl(request: Request) {
@@ -314,8 +281,11 @@ export async function downloadFile(url: string, retries: number = 0) {
 			throw new Error(`Failed to fetch image with status ${response.status}`)
 		}
 		const contentType = response.headers.get('content-type') ?? 'image/jpg'
-		const blob = Buffer.from(await response.arrayBuffer())
-		return { contentType, blob }
+		const arrayBuffer = await response.arrayBuffer()
+		const file = new File([arrayBuffer], 'downloaded-file', {
+			type: contentType,
+		})
+		return file
 	} catch (e) {
 		if (retries > MAX_RETRIES) throw e
 		return downloadFile(url, retries + 1)
