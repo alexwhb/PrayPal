@@ -12,6 +12,7 @@ import morgan from 'morgan'
 import { type ServerBuild } from 'react-router'
 import { Server } from 'socket.io'
 
+
 const MODE = process.env.NODE_ENV ?? 'development'
 const IS_PROD = MODE === 'production'
 const IS_DEV = MODE === 'development'
@@ -256,80 +257,80 @@ ${styleText('bold', 'Press Ctrl+C to stop')}
 // Create new instance of socket.io
 export const io = new Server(server, {
 	cors: {
-		origin: process.env.NODE_ENV === "production" ? "https://your-app.fly.dev" : "http://localhost:3001",
-		methods: ["GET", "POST"],
+		origin: process.env.NODE_ENV === 'production' ? 'https://your-app.fly.dev' : 'http://localhost:3000',
+		methods: ['GET', 'POST'],
 		credentials: true,
 	},
-});
+})
 
 const userSockets: Record<string, string> = {}
 
-io.on("connection", (socket) => {
-    console.log("New socket connection established", socket.id)
-    let currentUserId: string | null = null
+io.on('connection', (socket) => {
+	console.log('New socket connection established', socket.id)
+	let currentUserId: string | null = null
 
-    socket.on("set-user-id", (userId: string) => {
-        currentUserId = userId
-        console.log("Current userSockets before update:", userSockets)
-        
-        // Remove any existing socket for this user
-        const existingSocketId = userSockets[userId]
-        if (existingSocketId && existingSocketId !== socket.id) {
-            console.log(`Removing old socket ${existingSocketId} for user ${userId}`)
-            const existingSocket = io.sockets.sockets.get(existingSocketId)
-            if (existingSocket) {
-                existingSocket.disconnect(true)
-            }
-            delete userSockets[userId]
-        }
-        
-        // Add new socket mapping
-        userSockets[userId] = socket.id
-        console.log("User connected - ID:", userId, "Socket ID:", socket.id)
-        console.log("Updated userSockets:", userSockets)
-        
-        // Acknowledge the connection
-        socket.emit("user-connected-ack", { userId, socketId: socket.id })
-    })
+	socket.on('set-user-id', (userId: string) => {
+		currentUserId = userId
+		console.log('Current userSockets before update:', userSockets)
 
-    socket.on("disconnect", () => {
-        console.log(`Socket ${socket.id} disconnecting`)
-        if (currentUserId && userSockets[currentUserId] === socket.id) {
-            console.log("User disconnected - ID:", currentUserId)
-            delete userSockets[currentUserId]
-            console.log("Current userSockets after disconnect:", userSockets)
-        }
-    })
+		// Remove any existing socket for this user
+		const existingSocketId = userSockets[userId]
+		if (existingSocketId && existingSocketId !== socket.id) {
+			console.log(`Removing old socket ${existingSocketId} for user ${userId}`)
+			const existingSocket = io.sockets.sockets.get(existingSocketId)
+			if (existingSocket) {
+				existingSocket.disconnect(true)
+			}
+			delete userSockets[userId]
+		}
 
-    // Handle new messages directly through socket events
-    socket.on("new-message", ({ conversationId, message, recipientIds }) => {
-        console.log("Received new message event:", { conversationId, recipientIds })
-        emitNewMessage(conversationId, message, recipientIds)
-    })
+		// Add new socket mapping
+		userSockets[userId] = socket.id
+		console.log('User connected - ID:', userId, 'Socket ID:', socket.id)
+		console.log('Updated userSockets:', userSockets)
+
+		// Acknowledge the connection
+		socket.emit('user-connected-ack', { userId, socketId: socket.id })
+	})
+
+	socket.on('disconnect', () => {
+		console.log(`Socket ${socket.id} disconnecting`)
+		if (currentUserId && userSockets[currentUserId] === socket.id) {
+			console.log('User disconnected - ID:', currentUserId)
+			delete userSockets[currentUserId]
+			console.log('Current userSockets after disconnect:', userSockets)
+		}
+	})
+
+	// Handle new messages directly through socket events
+	socket.on('new-message', ({ conversationId, message, recipientIds }) => {
+		console.log('Received new message event:', { conversationId, recipientIds })
+		emitNewMessage(conversationId, message, recipientIds)
+	})
 })
 
 export function emitNewMessage(conversationId: string, message: any, recipientIds: string[]) {
-    console.log("Emitting new message:", { conversationId, message, recipientIds })
-    console.log("Current userSockets state:", userSockets)
-    
-    recipientIds.forEach((recipientId) => {
-        const recipientSocketId = userSockets[recipientId]
-        if (recipientSocketId) {
-            const socket = io.sockets.sockets.get(recipientSocketId)
-            if (socket && socket.connected) {
-                console.log(`Sending to recipient ${recipientId} via socket ${recipientSocketId}`)
-                socket.emit("message-received", {
-                    conversationId,
-                    message
-                })
-            } else {
-                console.log(`Socket ${recipientSocketId} exists but is not connected`)
-                delete userSockets[recipientId]
-            }
-        } else {
-            console.log(`No socket found for recipient ${recipientId}`)
-        }
-    })
+	console.log('Emitting new message:', { conversationId, message, recipientIds })
+	console.log('Current userSockets state:', userSockets)
+
+	recipientIds.forEach((recipientId) => {
+		const recipientSocketId = userSockets[recipientId]
+		if (recipientSocketId) {
+			const socket = io.sockets.sockets.get(recipientSocketId)
+			if (socket && socket.connected) {
+				console.log(`Sending to recipient ${recipientId} via socket ${recipientSocketId}`)
+				socket.emit('message-received', {
+					conversationId,
+					message,
+				})
+			} else {
+				console.log(`Socket ${recipientSocketId} exists but is not connected`)
+				delete userSockets[recipientId]
+			}
+		} else {
+			console.log(`No socket found for recipient ${recipientId}`)
+		}
+	})
 }
 
 global.userSockets = userSockets
