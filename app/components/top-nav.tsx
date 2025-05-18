@@ -1,16 +1,16 @@
 import { type User } from '@prisma/client'
-import { Bell, CheckCircle, MessageSquare, UserPlus } from "lucide-react"
 import { Link } from 'react-router'
 import ProfileDropdown from '#app/components/profile-dropdown.tsx'
 import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '#app/components/ui/dropdown-menu.tsx'
+import {Icon } from '#app/components/ui/icon.tsx'
 import { ScrollArea } from '#app/components/ui/scroll-area.tsx'
 import { ThemeSwitch } from '#app/routes/resources+/theme-switch.tsx'
 import { formatDistanceToNow } from '#app/utils/formatter.ts'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { getHighestRole } from '#app/utils/roles.ts'
-import { type Theme } from '#app/utils/theme.server.ts'
+
 
 type RequiredUser = User & {
 	image: { id: string } | null
@@ -31,28 +31,28 @@ interface TopNavProps {
 			id: string
 			name: string
 			username: string
-			image?: { id: string } | null
+			image?: { objectKey: string } | null
 		}
 	}>
 	unreadCount?: number
 }
 
 export default function TopNav({ userPrefs, user, notifications = [], unreadCount = 0 }: TopNavProps) {
-	const userImageSrc = getUserImgSrc(user.image?.id)
+	const userImageSrc = getUserImgSrc(user.image?.objectKey)
 	const highestRole = getHighestRole(user.roles)
 
 	// Helper function to get notification icon based on type
 	const getNotificationIcon = (type: string) => {
 		switch (type) {
 			case 'MESSAGE':
-				return <MessageSquare className="h-4 w-4 text-blue-500" />;
+				return <Icon name="message-square" className="h-4 w-4 text-blue-500" />;
 			case 'PRAYER':
-				return <CheckCircle className="h-4 w-4 text-green-500" />;
+				return <Icon name="check-circle" className="h-4 w-4 text-green-500" />;
 			case 'FRIEND_REQUEST':
 			case 'GROUP_INVITE':
-				return <UserPlus className="h-4 w-4 text-purple-500" />;
+				return <Icon name="user-plus" className="h-4 w-4 text-purple-500" />;
 			default:
-				return <Bell className="h-4 w-4 text-gray-500" />;
+				return <Icon name="bell" className="h-4 w-4 text-gray-500" />;
 		}
 	};
 
@@ -67,7 +67,7 @@ export default function TopNav({ userPrefs, user, notifications = [], unreadCoun
 							size="icon"
 							className="relative p-1.5 sm:p-2 rounded-full transition-colors"
 						>
-							<Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-300" />
+							<Icon name="bell" className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-300" />
 							{unreadCount > 0 && (
 								<span className="absolute top-[7px] right-[9px] h-2 w-2 rounded-full bg-red-500">
                   <span className="sr-only">{unreadCount} unread notifications</span>
@@ -92,7 +92,7 @@ export default function TopNav({ userPrefs, user, notifications = [], unreadCoun
 													{notification.sender ? (
 														<Avatar className="h-8 w-8">
 															<AvatarImage
-																src={getUserImgSrc(notification.sender.image?.id)}
+																src={getUserImgSrc(notification.sender.image?.objectKey)}
 																alt={notification.sender.name}
 															/>
 															<AvatarFallback>

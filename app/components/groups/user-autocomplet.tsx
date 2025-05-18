@@ -1,4 +1,3 @@
-import { ChevronsUpDown } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.tsx'
 import {
 	Command,
@@ -8,14 +7,14 @@ import {
 	CommandItem,
 	CommandList,
 } from '#app/components/ui/command.tsx'
+import { Icon } from '#app/components/ui/icon.tsx'
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from '#app/components/ui/popover.tsx'
-import { cn } from '#app/lib/utils.ts'
 import { type UserSearchResult } from '#app/routes/resources+/users.search.tsx'
-import { getUserImgSrc } from '#app/utils/misc.tsx'
+import { cn, getUserImgSrc } from '#app/utils/misc.tsx'
 import { Button } from '../ui/button'
 
 
@@ -49,7 +48,7 @@ export function UserAutocomplete({
 					className={cn("w-full justify-between text-left", className)}
 				>
 					<span className="truncate">Select user...</span>
-					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+					<Icon name="chevron-up-down" className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className={className}>

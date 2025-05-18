@@ -1,11 +1,12 @@
 import { type User } from '@prisma/client'
-import { Bell } from "lucide-react"
+
 import ProfileDropdown from '#app/components/profile-dropdown.tsx'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '#app/components/ui/dropdown-menu.tsx'
 import { ThemeSwitch } from '#app/routes/resources+/theme-switch.tsx'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { getHighestRole } from '#app/utils/roles.ts'
 import { type Theme } from '#app/utils/theme.server.ts'
+import { Icon } from '#app/components/ui/icon.tsx'
 
 type RequiredUser = User & {
   image: { id: string } | null
@@ -29,7 +30,7 @@ export default function TopNav({ theme, user }: TopNavProps) {
           type="button"
           className="p-1.5 sm:p-2 rounded-full transition-colors"
         >
-          <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-300" />
+					<Icon name="bell" className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600 dark:text-gray-300" />
         </button>
 
         <ThemeSwitch userPreference={theme} />

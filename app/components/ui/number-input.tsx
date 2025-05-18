@@ -1,7 +1,8 @@
-import { MinusIcon, PlusIcon } from 'lucide-react';
+
 import { Button } from '#app/components/ui/button.tsx';
 import { Input } from '#app/components/ui/input.tsx';
-import { cn } from '#app/lib/utils.ts';
+import { cn } from '#app/utils/misc.tsx';
+import {Icon} from '#app/components/ui/icon.tsx'
 
 interface NumberInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
@@ -73,7 +74,7 @@ export function NumberInput({
           onClick={decrement}
           disabled={disabled || (value !== null && value <= min)}
         >
-          <MinusIcon className="h-4 w-4" />
+					<Icon name="minus" size="sm" />
         </Button>
       )}
       <Input
@@ -101,7 +102,7 @@ export function NumberInput({
           onClick={increment}
           disabled={disabled || (value !== null && value >= max)}
         >
-          <PlusIcon className="h-4 w-4" />
+					<Icon name="plus" size="sm" />
         </Button>
       )}
     </div>

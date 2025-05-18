@@ -1,9 +1,9 @@
-import { Gift, Share } from 'lucide-react'
 import { Form } from 'react-router'
 import { Badge } from '#app/components/ui/badge.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Card, CardContent, CardFooter, CardHeader } from '#app/components/ui/card.tsx'
-import { getImageSrc } from '#app/utils/misc.tsx'
+import { getMainImageSrc } from '#app/utils/misc.tsx'
+import { Icon } from '../ui/icon'
 
 export type Attachment = {
   id: string
@@ -29,7 +29,7 @@ export function MessageAttachment({ attachment, isOwner }: AttachmentProps) {
 
 function ShareItemAttachment({ attachment, isOwner }: AttachmentProps) {
   const { referenceId, metadata } = attachment
-  const { title, imageId, category, shareType } = metadata
+  const { title, imageObjectKey, category, shareType } = metadata
   const isBorrowable = shareType === 'BORROW'
   
   return (
@@ -37,7 +37,7 @@ function ShareItemAttachment({ attachment, isOwner }: AttachmentProps) {
       <CardHeader className="p-0">
         <div className="h-32 relative w-full overflow-hidden">
           <img
-            src={imageId ? getImageSrc(imageId) : 'https://placehold.co/600x400'}
+            src={getMainImageSrc(imageObjectKey)}
             alt={title}
             className="h-full w-full rounded-t-lg object-cover"
           />
@@ -60,12 +60,12 @@ function ShareItemAttachment({ attachment, isOwner }: AttachmentProps) {
             >
               {isBorrowable ? (
                 <div className="flex items-center gap-1">
-                  <Share className="h-3 w-3" />
+									<Icon name="share" size="xs" />
                   <span>Borrow</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-1">
-                  <Gift className="h-3 w-3" />
+									<Icon name="gift" size="xs" />
                   <span>Free</span>
                 </div>
               )}

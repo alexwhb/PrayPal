@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react'
+import {Icon} from '#app/components/ui/icon.tsx'
 import { Link } from 'react-router'
 import { Button } from '#app/components/ui/button.tsx'
 
@@ -20,7 +20,7 @@ export default function BoardFooter({
 					>
 						<Button variant="outline" className="flex items-center gap-1">
 							Load More
-							<ChevronDown className="h-4 w-4" />
+							<Icon name="chevron-down" size="sm" />
 						</Button>
 					</Link>
 				</div>

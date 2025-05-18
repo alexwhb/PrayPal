@@ -1,12 +1,9 @@
-import { useInputControl,
-	unstable_useControl as useControl,
-	type FieldMetadata } from '@conform-to/react'
-import { type CheckboxProps } from '@radix-ui/react-checkbox'
+import { type FieldMetadata, useInputControl, unstable_useControl } from '@conform-to/react'
 import { REGEXP_ONLY_DIGITS_AND_CHARS, type OTPInputProps } from 'input-otp'
-import React, { useId, useRef, type ElementRef  } from 'react'
+import React, { type ElementRef, useId, useRef } from 'react'
 import { NumberInput } from '#app/components/ui/number-input.tsx'
-import { Button } from './ui/button.tsx'
-import { Checkbox } from './ui/checkbox.tsx'
+import { Switch } from '#app/components/ui/switch.tsx'
+import { Checkbox, type CheckboxProps } from './ui/checkbox.tsx'
 import {
 	InputOTP,
 	InputOTPGroup,
@@ -15,9 +12,7 @@ import {
 } from './ui/input-otp.tsx'
 import { Input } from './ui/input.tsx'
 import { Label } from './ui/label.tsx'
-import { Switch } from './ui/switch';
 import { Textarea } from './ui/textarea.tsx'
-
 
 export type ListOfErrors = Array<string | null | undefined> | null | undefined
 
@@ -33,7 +28,7 @@ export function ErrorList({
 	return (
 		<ul id={id} className="flex flex-col gap-1">
 			{errorsToRender.map((e) => (
-				<li key={e} className="text-[10px] text-foreground-destructive">
+				<li key={e} className="text-foreground-destructive text-[10px]">
 					{e}
 				</li>
 			))}
@@ -55,7 +50,6 @@ export function Field({
 	const fallbackId = useId()
 	const id = inputProps.id ?? fallbackId
 	const errorId = errors?.length ? `${id}-error` : undefined
-
 	return (
 		<div className={className}>
 			<Label htmlFor={id} {...labelProps} />
@@ -65,14 +59,12 @@ export function Field({
 				aria-describedby={errorId}
 				{...inputProps}
 			/>
-			<div className="min-h-[12px] px-4 pb-3 pt-1">
+			<div className="min-h-[32px] px-4 pt-1 pb-3">
 				{errorId ? <ErrorList id={errorId} errors={errors} /> : null}
 			</div>
 		</div>
 	)
 }
-
-
 
 export function OTPField({
 	labelProps,
@@ -111,7 +103,7 @@ export function OTPField({
 					<InputOTPSlot index={5} />
 				</InputOTPGroup>
 			</InputOTP>
-			<div className="min-h-[32px] px-4 pb-3 pt-1">
+			<div className="min-h-[32px] px-4 pt-1 pb-3">
 				{errorId ? <ErrorList id={errorId} errors={errors} /> : null}
 			</div>
 		</div>
@@ -123,13 +115,11 @@ export function TextareaField({
 	textareaProps,
 	errors,
 	className,
-	children, // Add children prop
 }: {
 	labelProps: React.LabelHTMLAttributes<HTMLLabelElement>
 	textareaProps: React.TextareaHTMLAttributes<HTMLTextAreaElement>
 	errors?: ListOfErrors
 	className?: string
-	children?: React.ReactNode // Add children type
 }) {
 	const fallbackId = useId()
 	const id = textareaProps.id ?? textareaProps.name ?? fallbackId
@@ -137,16 +127,13 @@ export function TextareaField({
 	return (
 		<div className={className}>
 			<Label htmlFor={id} {...labelProps} />
-			<div className="relative"> {/* Add wrapper for positioning */}
-				<Textarea
-					id={id}
-					aria-invalid={errorId ? true : undefined}
-					aria-describedby={errorId}
-					{...textareaProps}
-				/>
-				{children} {/* Render children */}
-			</div>
-			<div className="min-h-[12px] px-4 pb-3 pt-1">
+			<Textarea
+				id={id}
+				aria-invalid={errorId ? true : undefined}
+				aria-describedby={errorId}
+				{...textareaProps}
+			/>
+			<div className="min-h-[32px] px-4 pt-1 pb-3">
 				{errorId ? <ErrorList id={errorId} errors={errors} /> : null}
 			</div>
 		</div>
@@ -206,94 +193,14 @@ export function CheckboxField({
 				<label
 					htmlFor={id}
 					{...labelProps}
-					className="self-center text-body-xs text-muted-foreground"
+					className="text-body-xs text-muted-foreground self-center"
 				/>
 			</div>
-			<div className="px-4 pb-3 pt-1">
+			<div className="px-4 pt-1 pb-3">
 				{errorId ? <ErrorList id={errorId} errors={errors} /> : null}
 			</div>
 		</div>
 	)
-}
-
-
-export function TagField({
-  labelProps,
-  inputProps,
-  tags,
-  setTags,
-  errors,
-  className,
-}: {
-  labelProps: React.LabelHTMLAttributes<HTMLLabelElement>
-  inputProps?: React.InputHTMLAttributes<HTMLInputElement>
-  tags: string[]
-  setTags: React.Dispatch<React.SetStateAction<string[]>>
-  errors?: ListOfErrors
-  className?: string
-}) {
-  const fallbackId = useId()
-  const id = inputProps?.id ?? fallbackId
-  const errorId = errors?.length ? `${id}-error` : undefined
-  const [tagInput, setTagInput] = React.useState('')
-
-  const addTag = () => {
-    const trimmedTag = tagInput.trim()
-    if (trimmedTag && !tags.includes(trimmedTag)) {
-      setTags([...tags, trimmedTag])
-      setTagInput('')
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove))
-  }
-
-  return (
-    <div className={className}>
-      <Label htmlFor={id} {...labelProps} />
-      <div className="mt-1 flex flex-wrap gap-2 rounded-md border p-2">
-        {tags.map((tag, index) => (
-          <div
-            key={index}
-            className="flex items-center gap-1 rounded-md border px-2 text-sm"
-          >
-            <span>{tag}</span>
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={() => removeTag(tag)}
-              className=""
-            >
-              ×
-            </Button>
-          </div>
-        ))}
-        <Input
-          type="text"
-          value={tagInput}
-          onChange={(e) => setTagInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              addTag()
-            }
-          }}
-          placeholder="Type tag and press Enter"
-          className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-          id={id}
-          aria-invalid={errorId ? true : undefined}
-          aria-describedby={errorId}
-          {...inputProps}
-        />
-        {/* Hidden field to submit categories as CSV */}
-        <input type="hidden" name="category" value={tags.join(',')} />
-      </div>
-      <div className="min-h-[12px] px-4 pb-3 pt-1">
-        {errorId ? <ErrorList id={errorId} errors={errors} /> : null}
-      </div>
-    </div>
-  )
 }
 
 
@@ -348,7 +255,7 @@ export function NumberField({
 
 export function SwitchConform({ meta }: { meta: FieldMetadata<boolean> }) {
 	const switchRef = useRef<ElementRef<typeof Switch>>(null);
-	const control = useControl(meta);
+	const control = unstable_useControl(meta);
 
 	return (
 		<>

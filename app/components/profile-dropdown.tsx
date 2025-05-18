@@ -1,8 +1,8 @@
-import { FileText, LogOut, MoveUpRight, Settings } from 'lucide-react'
+// import { FileText, LogOut, MoveUpRight, Settings } from 'lucide-react'
 import { Form, Link } from 'react-router'
+import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.tsx'
 import { DropdownMenuItem } from '#app/components/ui/dropdown-menu.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
-import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.tsx'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
 
 interface MenuItem {
@@ -30,12 +30,12 @@ export default function ProfileDropdown({
 		{
 			label: 'Settings',
 			href: '/settings/profile',
-			icon: <Settings className="h-4 w-4" />,
+			icon: <Icon name="settings" className="h-4 w-4" />,
 		},
 		{
 			label: 'Terms & Policies',
 			href: '/tos',
-			icon: <FileText className="h-4 w-4" />,
+			icon: <Icon name="file-text" className="h-4 w-4" />,
 			external: true,
 		},
 	]
@@ -89,7 +89,7 @@ export default function ProfileDropdown({
 											{item.value}
 										</span>
 									)}
-									{item.external && <MoveUpRight className="h-4 w-4" />}
+									{item.external && <Icon name="move-up-right" className="h-4 w-4" />}
 								</div>
 							</Link>
 						))}

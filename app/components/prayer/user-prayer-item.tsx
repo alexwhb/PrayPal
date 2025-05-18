@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2, HandIcon as PrayingHands } from 'lucide-react'
+import { Img } from 'openimg/react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import DeleteDialog from '#app/components/delete-dialog.tsx'
@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.t
 import { Badge } from '#app/components/ui/badge.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Card, CardContent, CardFooter, CardHeader } from '#app/components/ui/card.tsx'
+import {Icon} from '#app/components/ui/icon.tsx'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '#app/components/ui/tooltip.tsx'
 import { formatDate } from '#app/utils/formatter.ts'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
@@ -30,9 +31,16 @@ export default function UserPrayerItem({
 						<Link to={`/users/${prayer.user.username}`} prefetch="intent">
 							<Avatar>
 								<AvatarImage
-									src={getUserImgSrc(prayer.user.image?.id)}
-									alt={prayer.user.name}
-								/>
+									src={getUserImgSrc(prayer.user.image?.objectKey)}
+									asChild >
+									<Img
+										src={getUserImgSrc(prayer.user.image?.objectKey)}
+										alt={prayer.user.name}
+										className="h-full w-full object-cover"
+										width={64}
+										height={64}
+									/>
+								</AvatarImage>
 								<AvatarFallback>
 									{prayer.user.name.charAt(0)}
 								</AvatarFallback>
@@ -41,7 +49,7 @@ export default function UserPrayerItem({
 						<div>
 							<h3 className="font-medium">{prayer.user.name}</h3>
 							<div className="flex items-center text-sm text-muted-foreground">
-								<CalendarDays className="mr-1 h-3 w-3" />
+								<Icon name="calendar-days" className="mr-1 h-3 w-3" />
 								{formatDate(prayer.createdAt)}
 							</div>
 						</div>
@@ -67,7 +75,7 @@ export default function UserPrayerItem({
 				<div className="flex w-full items-center justify-between">
 					<div className="flex items-center gap-4">
 						<div className="flex items-center">
-							<PrayingHands className="mr-1 h-4 w-4" />
+							<Icon name="hand" className="mr-1 h-4 w-4" />
 							<span className="text-sm text-muted-foreground">
 								{prayer.prayerCount}{' '}
 								{prayer.prayerCount === 1 ? 'Prayer' : 'Prayers'}
@@ -78,7 +86,7 @@ export default function UserPrayerItem({
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span className="text-sm font-medium text-green-600">
-											<CheckCircle2 />
+											<Icon name="check-circle" size="sm" />
 										</span>
 									</TooltipTrigger>
 									<TooltipContent>

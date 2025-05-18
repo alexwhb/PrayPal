@@ -1,12 +1,12 @@
-import { CalendarIcon } from "@radix-ui/react-icons";
+
 import { format } from "date-fns";
 import React from 'react'
 import { ScrollArea, ScrollBar } from '#app/components/ui/scroll-area.tsx'
-import { cn } from '#app/lib/utils.ts'
+import { cn } from '#app/utils/misc.tsx'
 import { Button } from './ui/button'
 import { Calendar } from './ui/calendar'
+import { Icon } from './ui/icon'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
-
 
 
 export function DateTimePicker({ date, setDate }: { date: Date; setDate: (date: Date) => void }) {
@@ -52,7 +52,7 @@ export function DateTimePicker({ date, setDate }: { date: Date; setDate: (date: 
 						!date && "text-muted-foreground"
 					)}
 				>
-					<CalendarIcon className="mr-2 h-4 w-4" />
+					<Icon name="calendar" className="mr-2" size="sm" />
 					{date ? (
 						format(date, "MM/dd/yyyy hh:mm aa")
 					) : (

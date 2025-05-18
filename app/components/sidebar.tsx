@@ -1,15 +1,7 @@
-import {
-	BarChart2,
-	Coffee,
-	Gift,
-	HelpCircle,
-	Home,
-	Menu,
-	MessagesSquare,
-	Users2,
-} from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router'
+import {Icon} from '#app/components/ui/icon.tsx'
+
 
 export default function Sidebar() {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -21,11 +13,11 @@ export default function Sidebar() {
 
 	function NavItem({
 		href,
-		icon: Icon,
+		icon,
 		children,
 	}: {
 		href: string
-		icon: any
+		icon: React.ReactNode
 		children: React.ReactNode
 	}) {
 		const isActive = location.pathname.startsWith(href)
@@ -40,7 +32,7 @@ export default function Sidebar() {
 				}`}
 				prefetch="intent"
 			>
-				<Icon className={`mr-3 h-4 w-4 flex-shrink-0 ${isActive ? 'text-blue-500 dark:text-blue-400' : ''}`} />
+				{icon}
 				{children}
 			</Link>
 		)
@@ -53,7 +45,7 @@ export default function Sidebar() {
 				className="fixed left-4 top-4 z-[10] rounded-lg bg-white p-2 shadow-md dark:bg-[#000000] lg:hidden"
 				onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
 			>
-				<Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+				<Icon name="menu" className="h-5 w-5 text-gray-600 dark:text-gray-300" />
 			</button>
 			<nav
 				className={`fixed inset-y-0 left-0 z-[10] w-64 transform border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out dark:border-[#1F1F23] dark:bg-[#000000] lg:static lg:w-64 lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} `}
@@ -91,19 +83,19 @@ export default function Sidebar() {
 									Boards
 								</div>
 								<div className="space-y-1">
-									<NavItem href="/prayer/board" icon={Home}>
+									<NavItem href="/prayer/board" icon={<Icon name="home" className="h-4 w-4 mr-2" />}>
 										Prayer Board
 									</NavItem>
-									<NavItem href="/needs/board" icon={BarChart2}>
+									<NavItem href="/needs/board" icon={<Icon name="bar-chart-2"  className="h-4 w-4 mr-2"/>}>
 										Needs Board
 									</NavItem>
-									<NavItem href="/share/board" icon={Gift}>
+									<NavItem href="/share/board" icon={<Icon name="gift" className="h-4 w-4 mr-2" />}>
 										Share Board
 									</NavItem>
-									<NavItem href="/groups/board" icon={Users2}>
+									<NavItem href="/groups/board" icon={<Icon name="users" className="h-4 w-4 mr-2" />}>
 										Groups
 									</NavItem>
-									<NavItem href="/mixer" icon={Coffee}>
+									<NavItem href="/mixer" icon={<Icon name="coffee" className="h-4 w-4 mr-2" />}>
 										Mixer
 									</NavItem>
 								</div>
@@ -114,10 +106,10 @@ export default function Sidebar() {
 									Members
 								</div>
 								<div className="space-y-1">
-									<NavItem href="/users" icon={Users2}>
+									<NavItem href="/users" icon={<Icon name="users-2" className="h-4 w-4 mr-2" />}>
 										Members
 									</NavItem>
-									<NavItem href="/messages" icon={MessagesSquare}>
+									<NavItem href="/messages" icon={<Icon name="message-square" className="h-4 w-4 mr-2" />}>
 										Chat
 									</NavItem>
 									{/*<NavItem href="#" icon={Video}>*/}
@@ -133,7 +125,7 @@ export default function Sidebar() {
 							{/*<NavItem href="#" icon={Settings}>*/}
 							{/*	Settings*/}
 							{/*</NavItem>*/}
-							<NavItem href="/help" icon={HelpCircle}>
+							<NavItem href="/help" icon={<Icon name="help-circle" />}>
 								Help
 							</NavItem>
 						</div>

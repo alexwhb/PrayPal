@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react'
+import {Icon} from '#app/components/ui/icon.tsx'
 import { Link } from 'react-router'
 import { Button } from '#app/components/ui/button'
 
@@ -19,7 +19,7 @@ export function CTASection() {
                     <div className="flex flex-col gap-4 sm:flex-row">
                         <Link to="/signup" prefetch="intent">
                             <Button variant="secondary" size="lg">
-                                Sign Up Now <ArrowRight className="ml-2 h-4 w-4" />
+                                Sign Up Now <Icon name="arrow-right" className="ml-2 h-4 w-4" />
                             </Button>
                         </Link>
                         <Link to="/login" prefetch="intent">

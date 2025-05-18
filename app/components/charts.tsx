@@ -19,7 +19,7 @@ import {
 } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from './ui/chart'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { TrendingUp } from 'lucide-react'
+import {Icon} from './ui/icon.tsx'
 
 type ChartProps = {
   data: any[]
@@ -397,7 +397,7 @@ export function PieChart({
 
       <div className="mt-4 flex flex-col gap-2 text-sm">
         <div className="flex items-center gap-2 font-medium leading-none">
-          <TrendingUp className="h-4 w-4" /> Trending categories this month
+					<Icon name="trending-up" size="sm" /> Trending categories this month
         </div>
         <div className="leading-none text-muted-foreground">
           Showing distribution of prayer requests by category

@@ -15,7 +15,8 @@ import { Badge } from '#app/components/ui/badge.tsx'
 import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.tsx'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { type UserSearchResult } from '#app/routes/resources+/users.search.tsx'
-import { X, UserPlus } from 'lucide-react'
+// import { X, UserPlus } from 'lucide-react'
+import { Icon } from '#app/components/ui/icon.tsx'
 
 interface UserRoleSelectorProps {
   onSubmit: (userId: string, role: string) => void
@@ -117,7 +118,7 @@ export function UserRoleSelector({
                   size="sm"
                   onClick={() => setSelectedUser(null)}
                 >
-                  <X className="h-4 w-4" />
+									<Icon name="x" size="sm" />
                 </Button>
               </div>
             )}
@@ -143,7 +144,7 @@ export function UserRoleSelector({
               disabled={!selectedUser}
               className="w-full"
             >
-              <UserPlus className="mr-2 h-4 w-4" />
+								<Icon name="user-plus" size="sm" className="mr-2" />
               Assign Role
             </Button>
           </div>

@@ -1,6 +1,6 @@
-import { CalendarDays, CheckCircle2, Trash } from 'lucide-react'
 import { useState } from 'react'
 import { Form, Link } from 'react-router'
+import ContentModeration from '#app/components/content-moderation.tsx'
 import DeleteDialog from '#app/components/delete-dialog.tsx'
 import { type Need } from '#app/components/needs/type.ts'
 import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar'
@@ -12,9 +12,10 @@ import {
 	CardFooter,
 	CardHeader,
 } from '#app/components/ui/card'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { formatDate } from '#app/utils/formatter.ts'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
-import ContentModeration from '#app/components/content-moderation.tsx'
+import { Img } from 'openimg/react'
 
 function OwnerActions({ need }: { need: Need }) {
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -24,7 +25,11 @@ function OwnerActions({ need }: { need: Need }) {
 			<Form method="post">
 				<input type="hidden" name="_action" value="markFulfilled" />
 				<input type="hidden" name="needId" value={need.id} />
-				<input type="hidden" name="fulfilled" value={need.fulfilled === false ? 1 : 0} />
+				<input
+					type="hidden"
+					name="fulfilled"
+					value={need.fulfilled === false ? 1 : 0}
+				/>
 				<Button type="submit">
 					{need.fulfilled ? 'Mark as Unfulfilled' : 'Mark as Fulfilled'}
 				</Button>
@@ -44,9 +49,7 @@ function ContactAction({ needId }: { needId: string }) {
 		<Form method="post">
 			<input type="hidden" name="_action" value="contact" />
 			<input type="hidden" name="needId" value={needId} />
-			<Button type="submit">
-				Contact
-			</Button>
+			<Button type="submit">Contact</Button>
 		</Form>
 	)
 }
@@ -58,8 +61,6 @@ export function NeedItem({
 	need: Need
 	isCurrentUser: boolean
 }) {
-	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-
 	return (
 		<Card className={need.fulfilled ? 'opacity-75' : ''}>
 			<CardHeader className="pb-2">
@@ -68,9 +69,18 @@ export function NeedItem({
 						<Link to={`/users/${need.user.username}`} prefetch="intent">
 							<Avatar>
 								<AvatarImage
-									src={getUserImgSrc(need.user.image?.id)}
-									alt={need.user.name}
-								/>
+									src={getUserImgSrc(need.user.image?.objectKey)}
+									asChild
+								>
+									<Img
+										src={getUserImgSrc(need.user.image?.objectKey)}
+										alt={need.user.name}
+										className="h-full w-full object-cover"
+										width={64}
+										height={64}
+									/>
+								</AvatarImage>
+
 								<AvatarFallback>{need.user.name.charAt(0)}</AvatarFallback>
 							</Avatar>
 						</Link>
@@ -78,8 +88,8 @@ export function NeedItem({
 							<Link to={`/users/${need.user.username}`} prefetch="intent">
 								<h3 className="font-medium">{need.user.name}</h3>
 							</Link>
-							<div className="flex items-center text-sm text-muted-foreground">
-								<CalendarDays className="mr-1 h-3 w-3" />
+							<div className="text-muted-foreground flex items-center text-sm">
+								<Icon name="calendar-days" className="mr-1" size="xs" />
 								{formatDate(need.createdAt)}
 							</div>
 						</div>
@@ -95,20 +105,22 @@ export function NeedItem({
 			<CardFooter className="flex justify-between pt-2">
 				{need.fulfilled ? (
 					<div className="flex items-center text-green-600">
-						<CheckCircle2 className="mr-1 h-4 w-4" />
+						<Icon name="check-circle" className="mr-1" size="sm" />
 						<span className="text-sm">Fulfilled</span>
 					</div>
 				) : isCurrentUser ? (
 					<OwnerActions need={need} />
 				) : (
-					<ContactAction needId={need.id} />
+					<>
+						<ContactAction needId={need.id} />
+						<ContentModeration
+							itemId={need.id}
+							itemType="need"
+							canModerate={need.canModerate}
+							isOwner={isCurrentUser}
+						/>
+					</>
 				)}
-				<ContentModeration
-					itemId={need.id}
-					itemType="need"
-					canModerate={need.canModerate}
-					isOwner={isCurrentUser}
-				/>
 			</CardFooter>
 		</Card>
 	)

@@ -1,15 +1,6 @@
-import {
-	BarChart2,
-	FolderTree,
-	HelpCircle,
-	Users2,
-	Menu,
-	ShieldAlert,
-	UserCog,
-	MessageSquare,
-} from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router'
+import { Icon } from '#app/components/ui/icon.tsx'
 
 export default function Sidebar() {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -20,12 +11,12 @@ export default function Sidebar() {
 	}
 
 	function NavItem({
-		href,
-		icon: Icon,
-		children,
-	}: {
+										 href,
+										 icon,
+										 children,
+									 }: {
 		href: string
-		icon: any
+		icon: React.ReactNode
 		children: React.ReactNode
 	}) {
 		const isActive = location.pathname.startsWith(href)
@@ -53,7 +44,7 @@ export default function Sidebar() {
 				className="fixed left-4 top-4 z-[10] rounded-lg bg-white p-2 shadow-md dark:bg-[#000000] lg:hidden"
 				onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
 			>
-				<Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+				<Icon name="menu" className="h-5 w-5 text-gray-600 dark:text-gray-300" />
 			</button>
 			<nav
 				className={`fixed inset-y-0 left-0 z-[10] w-64 transform border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out dark:border-[#1F1F23] dark:bg-[#000000] lg:static lg:w-64 lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} `}
@@ -91,22 +82,22 @@ export default function Sidebar() {
 									Admin
 								</div>
 								<div className="space-y-1">
-									<NavItem href="/admin/dashboard" icon={BarChart2}>
+									<NavItem href="/admin/dashboard" icon={<Icon name="bar-chart-2" />}>
 										Main Dashboard
 									</NavItem>
-									<NavItem href="/admin/category-edit" icon={FolderTree}>
+									<NavItem href="/admin/category-edit" icon={<Icon name="folder-tree" />}>
 										Category Editor
 									</NavItem>
-									<NavItem href="/admin/moderation" icon={ShieldAlert}>
+									<NavItem href="/admin/moderation" icon={<Icon name="shield-alert" />}>
 										Moderation
 									</NavItem>
-									<NavItem href="/admin/roles" icon={UserCog}>
+									<NavItem href="/admin/roles" icon={<Icon name="user-cog" />}>
 										Role Editor
 									</NavItem>
-									<NavItem href="/admin/feedback" icon={MessageSquare}>
+									<NavItem href="/admin/feedback" icon={<Icon name="message-square" />}>
 										Feedback
 									</NavItem>
-									<NavItem href="/admin/help-faqs" icon={HelpCircle}>
+									<NavItem href="/admin/help-faqs" icon={<Icon name="help-circle" />}>
 										Help FAQs
 									</NavItem>
 								</div>
@@ -117,7 +108,7 @@ export default function Sidebar() {
 									Advanced
 								</div>
 								<div className="space-y-1">
-									<NavItem href="/admin/cache" icon={Users2}>
+									<NavItem href="/admin/cache" icon={<Icon name="users-2" />}>
 										Cache Editor
 									</NavItem>
 
