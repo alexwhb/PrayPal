@@ -46,7 +46,7 @@ export function LineChart({
   const chartConfig = categories.reduce((acc, category, i) => {
     acc[category] = {
       label: category.charAt(0).toUpperCase() + category.slice(1),
-      color: colors ? colors[i % colors.length] : `hsl(var(--chart-${i + 1}))`
+      color: colors ? colors[i % colors.length] : `var(--chart-${i + 1})`
     }
     return acc
   }, {} as ChartConfig)
@@ -202,7 +202,7 @@ export function BarChart({
   const chartConfig = categories.reduce((acc, category, i) => {
     acc[category] = {
       label: category.charAt(0).toUpperCase() + category.slice(1),
-      color: colors ? colors[i % colors.length] : `hsl(var(--chart-${i + 1}))`
+      color: colors ? colors[i % colors.length] : `var(--chart-${i + 1})`
     }
     return acc
   }, {} as ChartConfig)
@@ -275,7 +275,7 @@ export function PieChart({
   const chartConfig = data.reduce((acc, entry, i) => {
     acc[entry[index]] = {
       label: entry[index],
-      color: colors ? colors[i % colors.length] : `hsl(var(--chart-${i + 1}))`,
+      color: colors ? colors[i % colors.length] : `var(--chart-${i + 1})`,
     };
     return acc;
   }, {} as ChartConfig);
@@ -346,7 +346,7 @@ export function PieChart({
                   fill={
                     colors
                       ? colors[index % colors.length]
-                      : `hsl(var(--chart-${index + 1}))`
+                      : `var(--chart-${index + 1})`
                   }
                 />
               ))}
