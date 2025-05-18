@@ -1,6 +1,5 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { data, Form, useLoaderData } from 'react-router'
 import { z } from 'zod'
@@ -21,6 +20,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '#app/components/ui/dialog'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { Label } from '#app/components/ui/label'
 import {
 	Select,
@@ -311,7 +311,7 @@ export default function AdminCategoryPage() {
 						}}
 						size="sm"
 					>
-						<Plus className="mr-2 h-4 w-4" />
+						<Icon name="plus" className="h-4 w-4" />
 						Add Category
 					</Button>
 				</CardHeader>
@@ -345,14 +345,14 @@ export default function AdminCategoryPage() {
 													size="icon"
 													onClick={() => handleEditClick(category)}
 												>
-													<Pencil className="h-4 w-4" />
+													<Icon name="pencil" className="h-4 w-4" />
 												</Button>
 												<Button
 													variant="ghost"
 													size="icon"
 													onClick={() => handleDeleteClick(category)}
 												>
-													<Trash2 className="h-4 w-4" />
+													<Icon name="trash2"  className="h-4 w-4" />
 												</Button>
 											</div>
 										</TableCell>

@@ -1,15 +1,15 @@
 import { type User } from '@prisma/client'
-
+import { Img } from 'openimg/react'
 import ProfileDropdown from '#app/components/profile-dropdown.tsx'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '#app/components/ui/dropdown-menu.tsx'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { ThemeSwitch } from '#app/routes/resources+/theme-switch.tsx'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { getHighestRole } from '#app/utils/roles.ts'
 import { type Theme } from '#app/utils/theme.server.ts'
-import { Icon } from '#app/components/ui/icon.tsx'
 
 type RequiredUser = User & {
-  image: { id: string } | null
+  image: { objectKey: string } | null
   roles: Array<{ name: string }>
 }
 
@@ -19,7 +19,7 @@ interface TopNavProps {
 }
 
 export default function TopNav({ theme, user }: TopNavProps) {
-  const userImageSrc = getUserImgSrc(user.image?.id)
+  const userImageSrc = getUserImgSrc(user.image?.objectKey)
   const highestRole = getHighestRole(user.roles)
 
   return (
@@ -37,7 +37,7 @@ export default function TopNav({ theme, user }: TopNavProps) {
 
         <DropdownMenu>
           <DropdownMenuTrigger className="focus:outline-none">
-            <img
+            <Img
               src={userImageSrc}
               alt={`${user.name}'s avatar`}
               width={28}

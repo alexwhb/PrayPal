@@ -1,6 +1,6 @@
-import { Flag, CheckCircle2 } from 'lucide-react'
 import { Link } from 'react-router'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#app/components/ui/card.tsx'
+import {Icon} from '#app/components/ui/icon.tsx'
 
 type ModerationTabProps = {
   metrics: {
@@ -16,7 +16,7 @@ export function ModerationTab({ metrics }: ModerationTabProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Reports</CardTitle>
-            <Flag className="h-4 w-4 text-muted-foreground" />
+						<Icon name="flag" className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.pendingReports}</div>
@@ -29,7 +29,7 @@ export function ModerationTab({ metrics }: ModerationTabProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Moderation Actions</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+						<Icon name="check-circle" className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.moderationActions}</div>

@@ -1,6 +1,5 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { PlusIcon, Pencil, Trash2 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { data, redirect, Form, useLoaderData } from 'react-router'
 import { z } from 'zod'
@@ -15,6 +14,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '#app/components/ui/dialog'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { Label } from '#app/components/ui/label'
 import {
 	Select, SelectContent, SelectItem,
@@ -260,7 +260,8 @@ export default function AdminHelpFAQs() {
 			<div className="mb-8 flex items-center justify-between">
 				<h1 className="text-2xl font-bold">Manage Help FAQs</h1>
 				<Button onClick={handleNew}>
-					<PlusIcon className="mr-2 h-4 w-4" />
+					<Icon name="plus" className="h-4 w-4" />
+					{/*<PlusIcon className="mr-2 h-4 w-4" />*/}
 					Add New FAQ
 				</Button>
 			</div>

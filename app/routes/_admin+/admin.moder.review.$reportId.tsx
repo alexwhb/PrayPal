@@ -1,11 +1,11 @@
 import { type ModerationType, type ModeratorAction } from '@prisma/client'
-import { AlertCircle } from 'lucide-react'
 import { data, Form, Link, useLoaderData } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Alert, AlertDescription } from '#app/components/ui/alert.tsx'
 import { Badge } from '#app/components/ui/badge.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '#app/components/ui/card.tsx'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { Label } from '#app/components/ui/label.tsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '#app/components/ui/select.tsx'
 import { Textarea } from '#app/components/ui/textarea.tsx'
@@ -224,7 +224,7 @@ export default function ReviewReport() {
 
 			{!reportedItem && (
 				<Alert variant="destructive">
-					<AlertCircle className="h-4 w-4" />
+					<Icon name="alert-circle" className="h-4 w-4" />
 					<AlertDescription>
 						The reported content could not be found. It may have been already deleted.
 					</AlertDescription>

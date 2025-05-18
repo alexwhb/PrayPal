@@ -1,5 +1,5 @@
 import { type ModerationType, type ModeratorAction } from '@prisma/client'
-import { AlertCircle } from 'lucide-react'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { data, Link, useLoaderData, Form } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Alert, AlertDescription } from '#app/components/ui/alert.tsx'
@@ -266,7 +266,10 @@ export default function ModerationDetails() {
 		if (!moderatedItem) {
 			return (
 				<Alert variant="destructive" className="mb-4">
-					<AlertCircle className="h-4 w-4" />
+
+					{/*TODO not sure what icon should go here. */}
+					{/*<Icon name="alert-circle" className="h-4 w-4" />*/}
+
 					{/*<AlertTitle>Item not found</AlertTitle>*/}
 					<AlertDescription>
 						The moderated item may have been deleted or is no longer accessible.

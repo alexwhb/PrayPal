@@ -94,9 +94,6 @@ export default function Sidebar() {
 									<NavItem href="/admin/roles" icon={<Icon name="user-cog" />}>
 										Role Editor
 									</NavItem>
-									<NavItem href="/admin/feedback" icon={<Icon name="message-square" />}>
-										Feedback
-									</NavItem>
 									<NavItem href="/admin/help-faqs" icon={<Icon name="help-circle" />}>
 										Help FAQs
 									</NavItem>

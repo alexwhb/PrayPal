@@ -1,6 +1,6 @@
-import { Users, MessageCircle, Flag } from 'lucide-react'
 import { LineChart, PieChart as PieChartComponent } from '#app/components/charts.tsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#app/components/ui/card.tsx'
+import {Icon} from '#app/components/ui/icon.tsx'
 
 type OverviewTabProps = {
   metrics: {
@@ -31,7 +31,7 @@ export function OverviewTab({ metrics, activityData, prayerCategoryData }: Overv
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+						<Icon name="users" className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.totalUsers}</div>
@@ -44,7 +44,7 @@ export function OverviewTab({ metrics, activityData, prayerCategoryData }: Overv
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Prayer Requests</CardTitle>
-            <MessageCircle className="h-4 w-4 text-muted-foreground" />
+						<Icon name="message-circle" className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.newPrayers}</div>
@@ -57,7 +57,7 @@ export function OverviewTab({ metrics, activityData, prayerCategoryData }: Overv
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Needs Posted</CardTitle>
-            <Flag className="h-4 w-4 text-muted-foreground" />
+						<Icon name="flag" className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.newNeeds}</div>
@@ -70,7 +70,7 @@ export function OverviewTab({ metrics, activityData, prayerCategoryData }: Overv
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Messages Sent</CardTitle>
-            <MessageCircle className="h-4 w-4 text-muted-foreground" />
+						<Icon name="message-circle" className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.messagesSent}</div>
