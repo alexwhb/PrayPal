@@ -75,11 +75,11 @@ function getSignatureKey(
 }
 
 function getBaseSignedRequestInfo({
-																		method,
-																		key,
-																		contentType,
-																		uploadDate,
-																	}: {
+	method,
+	key,
+	contentType,
+	uploadDate,
+}: {
 	method: 'GET' | 'PUT'
 	key: string
 	contentType?: string
