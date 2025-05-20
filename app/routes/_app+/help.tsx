@@ -1,4 +1,3 @@
-import { Coffee, Heart } from 'lucide-react'
 import { data, Link } from 'react-router'
 import {
 	Accordion,
@@ -14,6 +13,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '#app/components/ui/card'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { Separator } from '#app/components/ui/separator'
 import { prisma } from '#app/utils/db.server'
 import { type Route } from './+types/help'
@@ -173,14 +173,15 @@ export default function HelpPage({ loaderData }: Route.ComponentProps) {
 							rel="noopener noreferrer"
 							className="flex items-center"
 						>
-							<Coffee className="h-4 w-4" />
+							<Icon name="heart" className="h-4 w-4" />
 							<span>Buy Me a Coffee</span>
 						</a>
 					</Button>
 				</div>
 
 				<div className="mt-8 flex items-center justify-center text-sm text-muted-foreground">
-					<Heart className="mr-2 h-4 w-4 text-red-500" />
+					<Icon name="heart" className="mr-2 h-4 w-4 text-red-500" />
+
 					<span>Thank you for your support!</span>
 				</div>
 			</section>

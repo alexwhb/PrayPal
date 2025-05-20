@@ -1,4 +1,4 @@
-import { Edit, Pause, Play, Plus, Trash2, User, Users } from "lucide-react"
+// import { Edit, Pause, Play, Plus, Trash2, User, Users } from "lucide-react"
 import { useState } from "react"
 import { Link } from 'react-router'
 import { Badge } from "#app/components/ui/badge"
@@ -17,6 +17,7 @@ import { Input } from "#app/components/ui/input"
 import { Label } from "#app/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "#app/components/ui/radio-group"
 import { Separator } from "#app/components/ui/separator"
+import { Icon } from '#app/components/ui/icon.tsx'
 
 // Mock data - in a real app, this would come from your API
 const mockProfiles = [
@@ -106,7 +107,7 @@ export default function ProfilesPage() {
 				<Dialog open={newProfileOpen} onOpenChange={setNewProfileOpen}>
 					<DialogTrigger asChild>
 						<Button>
-							<Plus className="mr-2 h-4 w-4" />
+							<Icon name="plus" className="h-4 w-4" />
 							New Profile
 						</Button>
 					</DialogTrigger>
@@ -181,9 +182,9 @@ export default function ProfilesPage() {
 							<div className="flex justify-between items-start">
 								<div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
 									{profile.type === "single" ? (
-										<User className="h-5 w-5 text-primary" />
+										<Icon name="user" className="h-5 w-5 text-primary" />
 									) : (
-										<Users className="h-5 w-5 text-primary" />
+											<Icon name="users" className="h-5 w-5 text-primary" />
 									)}
 								</div>
 								<div className="flex items-center gap-2">
@@ -215,12 +216,13 @@ export default function ProfilesPage() {
 										setDeleteConfirmOpen(true)
 									}}
 								>
-									<Trash2 className="h-4 w-4" />
+									<Icon name="trash2" className="h-4 w-4" />
+
 									<span className="sr-only">Delete</span>
 								</Button>
 								<Link to={`/mixer/join?profile=${profile.id}`}>
 									<Button variant="outline" size="sm">
-										<Edit className="h-4 w-4" />
+										<Icon name="edit" className="h-4 w-4" />
 										<span className="sr-only">Edit</span>
 									</Button>
 								</Link>
@@ -232,12 +234,12 @@ export default function ProfilesPage() {
 							>
 								{profile.isPaused ? (
 									<>
-										<Play className="h-4 w-4 mr-1" />
+										<Icon name="play" className="h-4 w-4 mr-1" />
 										Resume
 									</>
 								) : (
 									<>
-										<Pause className="h-4 w-4 mr-1" />
+										<Icon name="pause" className="h-4 w-4 mr-1" />
 										Pause
 									</>
 								)}

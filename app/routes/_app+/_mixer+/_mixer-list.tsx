@@ -1,17 +1,3 @@
-
-import {
-	Calendar,
-	CalendarPlus,
-	Check,
-	Clock,
-	Edit,
-	MapPin,
-	MessageSquare,
-	ThumbsUp,
-	User,
-	Users,
-	X,
-} from "lucide-react"
 import { useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "#app/components/ui/alert"
 import { Avatar, AvatarFallback, AvatarImage } from "#app/components/ui/avatar"
@@ -27,6 +13,7 @@ import {
 	DialogTitle,
 } from "#app/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "#app/components/ui/dropdown-menu"
+import {Icon} from '#app/components/ui/icon.tsx'
 import { Input } from "#app/components/ui/input"
 import { Label } from "#app/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "#app/components/ui/radio-group"
@@ -282,13 +269,13 @@ function NewMatchCard({ match, startMessaging, startPlanning }: NewMatchCardProp
 			</CardContent>
 			<CardFooter className="flex justify-between pt-2">
 				<Button variant="outline" size="sm" onClick={() => startMessaging(match.id)}>
-					<MessageSquare className="h-4 w-4 mr-1" />
+					<Icon name="message-square" className="h-4 w-4 mr-1" />
 					Message
 				</Button>
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button size="sm">
-							<ThumbsUp className="h-4 w-4 mr-1" />
+							<Icon name="thumbs-up" className="h-4 w-4 mr-1" />
 							Plan Meetup
 						</Button>
 					</DropdownMenuTrigger>
@@ -318,17 +305,17 @@ function CounterProposedCard({ match, startMessaging, openDeclineDialog }: Count
 			<CardContent className="pb-2">
 				<PlanDetails plan={match.plan} />
 				<div className="flex items-center gap-2 text-xs text-amber-600 mt-1">
-					<Edit className="h-3 w-3" />
+					<Icon name="edit" className="h-3 w-3" />
 					<span>You suggested changes</span>
 				</div>
 			</CardContent>
 			<CardFooter className="flex justify-between pt-2">
 				<Button className="dark:border-amber-900  dark:bg-amber-900 dark:hover:bg-amber-800 dark:text-white" variant="outline" size="sm" onClick={() => startMessaging(match.id)}>
-					<MessageSquare className="h-4 w-4 mr-1" />
+					<Icon name="message-square" className="h-4 w-4 mr-1" />
 					Message
 				</Button>
 				<Button variant="outline" className="dark:border-amber-900  dark:bg-amber-900 dark:hover:bg-amber-800 dark:text-white" size="sm" onClick={() => openDeclineDialog(match.id)}>
-					<X className="h-4 w-4 mr-1" />
+					<Icon name="x" className="h-4 w-4 mr-1" />
 					Cancel Plan
 				</Button>
 			</CardFooter>
@@ -350,17 +337,17 @@ function PendingYoursCard({ match, startMessaging, openDeclineDialog }: PendingY
 			<CardContent className="pb-2">
 				<PlanDetails plan={match.plan} />
 				<div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-					<Clock className="h-3 w-3" />
+					<Icon name="clock" className="h-3 w-3" />
 					<span>Waiting for {match.match.name} to respond</span>
 				</div>
 			</CardContent>
 			<CardFooter className="flex justify-between pt-2">
 				<Button variant="outline" size="sm" onClick={() => startMessaging(match.id)}>
-					<MessageSquare className="h-4 w-4 mr-1" />
+					<Icon name="message-square" className="h-4 w-4 mr-1" />
 					Message
 				</Button>
 				<Button variant="outline" size="sm" onClick={() => openDeclineDialog(match.id)}>
-					<X className="h-4 w-4 mr-1" />
+					<Icon name="x" className="h-4 w-4 mr-1" />
 					Cancel Plan
 				</Button>
 			</CardFooter>
@@ -382,17 +369,17 @@ function PendingTheirsCard({ match, startMessaging, viewPlanDetails }: PendingTh
 			<CardContent className="pb-2">
 				<PlanDetails plan={match.plan} />
 				<div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-					<Clock className="h-3 w-3" />
+					<Icon name="clock" className="h-3 w-3" />
 					<span>Proposed by {match.match.name}</span>
 				</div>
 			</CardContent>
 			<CardFooter className="flex justify-between pt-2">
 				<Button variant="outline" size="sm" onClick={() => startMessaging(match.id)}>
-					<MessageSquare className="h-4 w-4 mr-1" />
+					<Icon name="message-square" className="h-4 w-4 mr-1" />
 					Message
 				</Button>
 				<Button size="sm" onClick={() => viewPlanDetails(match.id)}>
-					<Check className="h-4 w-4 mr-1" />
+					<Icon name="check" className="h-4 w-4 mr-1" />
 					Review Plan
 				</Button>
 			</CardFooter>
@@ -416,11 +403,11 @@ function ConfirmedCard({ match, startMessaging, viewMatchDetails, isAccepted }: 
 			</CardContent>
 			<CardFooter className="flex justify-between pt-2">
 				<Button variant="outline" size="sm" onClick={() => startMessaging(match.id)}>
-					<MessageSquare className="h-4 w-4 mr-1" />
+					<Icon name="message-square" className="h-4 w-4 mr-1" />
 					Message
 				</Button>
 				<Button size="sm" onClick={() => viewMatchDetails(match.id)}>
-					<CalendarPlus className="h-4 w-4 mr-1" />
+					<Icon name="calendar-plus" className="h-4 w-4 mr-1" />
 					View Details
 				</Button>
 			</CardFooter>
@@ -444,11 +431,11 @@ function PastCard({ match, startMessaging, viewMatchDetails }: PastCardProps) {
 			</CardContent>
 			<CardFooter className="flex justify-between pt-2">
 				<Button variant="outline" size="sm" onClick={() => startMessaging(match.id)}>
-					<MessageSquare className="h-4 w-4 mr-1" />
+					<Icon name="message-square" className="h-4 w-4 mr-1" />
 					Message
 				</Button>
 				<Button size="sm" onClick={() => viewMatchDetails(match.id)}>
-					<CalendarPlus className="h-4 w-4 mr-1" />
+					<Icon name="calendar-plus" className="h-4 w-4 mr-1" />
 					View Details
 				</Button>
 			</CardFooter>
@@ -463,10 +450,10 @@ function ProfileInfo({ match }: ProfileInfoProps) {
 			<div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
 				<div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
 					{match.profileType === "single" ? (
-						<User className="h-3 w-3 text-primary" />
+						<Icon name="user" className="h-3 w-3 text-primary" />
 					) : (
-						<Users className="h-3 w-3 text-primary" />
-					)}
+						<Icon name="users" className="h-3 w-3 text-primary" />
+						)}
 				</div>
 				<span>{match.profileName}</span>
 			</div>
@@ -493,19 +480,19 @@ function PlanDetails({ plan }: PlanDetailsProps) {
 		<div className="space-y-2 text-sm">
 			{plan.date && (
 				<div className="flex items-center gap-2">
-					<Calendar className="h-4 w-4 text-muted-foreground" />
+					<Icon name="calendar" className="h-4 w-4 text-muted-foreground" />
 					<span>{plan.date}</span>
 				</div>
 			)}
 			{plan.time && (
 				<div className="flex items-center gap-2">
-					<Clock className="h-4 w-4 text-muted-foreground" />
+					<Icon name="clock" className="h-4 w-4 text-muted-foreground" />
 					<span>{plan.time}</span>
 				</div>
 			)}
 			{plan.location && (
 				<div className="flex items-center gap-2">
-					<MapPin className="h-4 w-4 text-muted-foreground" />
+					<Icon name="map-pin" className="h-4 w-4 text-muted-foreground" />
 					<span>{plan.location}</span>
 				</div>
 			)}
@@ -671,7 +658,8 @@ export function MixerList() {
 
 			{planAccepted && (
 				<Alert className="mb-6 bg-primary/10 border-primary">
-					<Check className="h-4 w-4 text-primary" />
+					<Icon name="check" className="h-4 w-4 text-primary" />
+
 					<AlertTitle>Plan Accepted!</AlertTitle>
 					<AlertDescription>
 						You've accepted the plan with {mockMatches.find((match) => match.id === planAccepted)?.match.name}. It's now
@@ -682,7 +670,7 @@ export function MixerList() {
 
 			{counterProposalSubmitted && (
 				<Alert className="mb-6 bg-primary/10 border-primary">
-					<Edit className="h-4 w-4 text-primary" />
+					<Icon name="edit" className="h-4 w-4 text-primary" />
 					<AlertTitle>Counter-Proposal Sent!</AlertTitle>
 					<AlertDescription>
 						Your suggested changes have been sent. You'll be notified when they respond.
@@ -807,7 +795,7 @@ export function MixerList() {
 							<div className="space-y-4 py-4">
 								<div className="space-y-2">
 									<div className="flex items-center gap-2">
-										<Calendar className="h-4 w-4 text-muted-foreground" />
+										<Icon name="calendar" className="h-4 w-4 text-muted-foreground" />
 										<h3 className="font-medium">Activity</h3>
 									</div>
 									<p className="pl-6">{getSelectedMatch()?.plan?.activity}</p>
@@ -825,14 +813,14 @@ export function MixerList() {
 
 								<div className="space-y-2">
 									<div className="flex items-center gap-2">
-										<MapPin className="h-4 w-4 text-muted-foreground" />
+										<Icon name="map-pin" className="h-4 w-4 text-muted-foreground" />
 										<h3 className="font-medium">Location</h3>
 									</div>
 									<p className="pl-6">{getSelectedMatch()?.plan?.location}</p>
 								</div>
 
 								<div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-									<Clock className="h-3 w-3" />
+									<Icon name="clock" className="h-3 w-3" />
 									<span>
                     Proposed on{" "}
 										{getSelectedMatch()?.plan?.proposedAt.toLocaleDateString("en-US", {
@@ -849,7 +837,7 @@ export function MixerList() {
 									Decline
 								</Button>
 								<Button variant="outline" onClick={openCounterProposalForm}>
-									<Edit className="h-4 w-4 mr-1" />
+									<Icon name="edit" className="h-4 w-4 mr-1" />
 									Suggest Changes
 								</Button>
 								<Button onClick={() => acceptPlan(selectedMatch!)}>Accept Plan</Button>
@@ -1014,7 +1002,7 @@ export function MixerList() {
 							Cancel
 						</Button>
 						<Button onClick={addToCalendar}>
-							<Calendar className="h-4 w-4 mr-2" />
+							<Icon name="calendar" className="h-4 w-4 mr-2" />
 							Add to Calendar
 						</Button>
 					</DialogFooter>

@@ -1,9 +1,10 @@
-import { Edit, Pause, User, Users } from "lucide-react"
+// import { Edit, Pause, User, Users } from "lucide-react"
 import { useState } from "react"
 import { Link } from "react-router"
 import { Badge } from "#app/components/ui/badge"
 import { Button } from "#app/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "#app/components/ui/card"
+import { Icon } from '#app/components/ui/icon.tsx'
 
 // Mock data - in a real app, this would come from your API
 const mockProfiles = [
@@ -60,16 +61,16 @@ export function ProfileSummary() {
 					>
 						<div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
 							{profile.type === "single" ? (
-								<User className="h-4 w-4 text-primary" />
+								<Icon name="person" className="h-4 w-4 text-primary" />
 							) : (
-								<Users className="h-4 w-4 text-primary" />
+								<Icon name="person" className="h-4 w-4 text-primary" />
 							)}
 						</div>
 						<div className="min-w-0 flex-1">
 							<div className="flex items-center justify-between">
 								<p className="text-sm font-medium truncate">{profile.name}</p>
 								<div className="flex items-center gap-1 ml-2 shrink-0">
-									{profile.isPaused && <Pause className="h-3 w-3 text-muted-foreground" />}
+									{profile.isPaused && <Icon name="pause" className="h-3 w-3 text-muted-foreground" />}
 									<Badge variant="outline">{profile.matchCount}</Badge>
 								</div>
 							</div>
@@ -85,7 +86,7 @@ export function ProfileSummary() {
 						</div>
 						<Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
 							<Link to={`/mixer/join?profile=${profile.id}`}>
-								<Edit className="h-4 w-4" />
+								<Icon name="pencil-1" className="h-4 w-4" />
 								<span className="sr-only">Edit {profile.name}</span>
 							</Link>
 						</Button>

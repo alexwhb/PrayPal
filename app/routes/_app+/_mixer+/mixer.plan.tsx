@@ -1,7 +1,4 @@
-
-import { ArrowLeft, ArrowRight, Calendar, Check, MapPin, User, Users } from "lucide-react"
 import { useState, useEffect } from "react"
-
 import { Link } from 'react-router'
 import { Alert, AlertDescription, AlertTitle } from "#app/components/ui/alert"
 import { Avatar, AvatarFallback, AvatarImage } from "#app/components/ui/avatar"
@@ -24,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "#
 import { Separator } from "#app/components/ui/separator"
 import { Textarea } from "#app/components/ui/textarea"
 import { ConfettiCelebration } from '#app/routes/_app+/_mixer+/confetti-celebration.tsx'
+import { Icon } from '#app/components/ui/icon.tsx'
 
 
 // Mock data - in a real app, this would come from your API
@@ -407,7 +405,7 @@ export default function PlanMatchPage() {
 				<div className="flex items-center gap-2">
 					<Link to="/mixer">
 					<Button variant="ghost" size="icon">
-						<ArrowLeft className="h-5 w-5" />
+						<Icon name="arrow-left" className="h-5 w-5" />
 						<span className="sr-only">Back</span>
 					</Button>
 					</Link>
@@ -415,7 +413,7 @@ export default function PlanMatchPage() {
 				</div>
 
 				<Alert className="bg-primary/10 border-primary">
-					<Check className="h-4 w-4 text-primary" />
+					<Icon name="check" className="h-4 w-4 text-primary" />
 					<AlertTitle>Plan Successfully Proposed!</AlertTitle>
 					<AlertDescription>
 						Your plan has been sent to {matchData.match.name}. You'll be notified when they respond.
@@ -430,7 +428,7 @@ export default function PlanMatchPage() {
 					<CardContent className="space-y-4">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2">
-								<Calendar className="h-4 w-4 text-muted-foreground" />
+								<Icon name="check" className="h-4 w-4 text-muted-foreground" />
 								<h3 className="font-medium">Activity</h3>
 							</div>
 							<p className="pl-6">{selectedActivity}</p>
@@ -438,7 +436,7 @@ export default function PlanMatchPage() {
 
 						<div className="space-y-2">
 							<div className="flex items-center gap-2">
-								<Calendar className="h-4 w-4 text-muted-foreground" />
+								<Icon name="calendar" className="h-4 w-4 text-muted-foreground" />
 								<h3 className="font-medium">Date & Time</h3>
 							</div>
 							<p className="pl-6">
@@ -448,7 +446,7 @@ export default function PlanMatchPage() {
 
 						<div className="space-y-2">
 							<div className="flex items-center gap-2">
-								<MapPin className="h-4 w-4 text-muted-foreground" />
+								<Icon name="map-pin" className="h-4 w-4 text-muted-foreground" />
 								<h3 className="font-medium">Location</h3>
 							</div>
 							<p className="pl-6">
@@ -466,7 +464,7 @@ export default function PlanMatchPage() {
 						{notes && (
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
-									<Calendar className="h-4 w-4 text-muted-foreground" />
+									<Icon name="calendar" className="h-4 w-4 text-muted-foreground" />
 									<h3 className="font-medium">Additional Notes</h3>
 								</div>
 								<p className="pl-6">{notes}</p>
@@ -497,7 +495,7 @@ export default function PlanMatchPage() {
 			<div className="flex items-center gap-2">
 				<Link to="/mixer">
 				<Button variant="ghost" size="icon" >
-					<ArrowLeft className="h-5 w-5" />
+					<Icon name="arrow-left" className="h-5 w-5" />
 					<span className="sr-only">Back</span>
 				</Button>
 				</Link>
@@ -542,9 +540,9 @@ export default function PlanMatchPage() {
 								<div className="flex items-center gap-2">
 									<div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
 										{matchData.profileType === "single" ? (
-											<User className="h-4 w-4 text-primary" />
+											<Icon name="user" className="h-4 w-4 text-primary" />
 										) : (
-											<Users className="h-4 w-4 text-primary" />
+											<Icon name="users" className="h-4 w-4 text-primary" />
 										)}
 									</div>
 									<div>
@@ -569,25 +567,25 @@ export default function PlanMatchPage() {
                     <span className={selectedActivity ? "text-primary font-medium" : "text-muted-foreground"}>
                       Activity
                     </span>
-										{selectedActivity && <Check className="h-4 w-4 text-primary" />}
+										{selectedActivity && <Icon name="check" className="h-4 w-4 text-primary" />}
 									</div>
 									<div className="flex items-center justify-between text-sm">
 										<span className={selectedDate ? "text-primary font-medium" : "text-muted-foreground"}>Date</span>
-										{selectedDate && <Check className="h-4 w-4 text-primary" />}
+										{selectedDate && <Icon name="check" className="h-4 w-4 text-primary" />}
 									</div>
 									<div className="flex items-center justify-between text-sm">
 										<span className={selectedTime ? "text-primary font-medium" : "text-muted-foreground"}>Time</span>
-										{selectedTime && <Check className="h-4 w-4 text-primary" />}
+										{selectedTime && <Icon name="check" className="h-4 w-4 text-primary" />}
 									</div>
 									<div className="flex items-center justify-between text-sm">
                     <span className={selectedLocation ? "text-primary font-medium" : "text-muted-foreground"}>
                       Location
                     </span>
-										{selectedLocation && <Check className="h-4 w-4 text-primary" />}
+										{selectedLocation && <Icon name="check" className="h-4 w-4 text-primary" />}
 									</div>
 									<div className="flex items-center justify-between text-sm">
 										<span className={notes ? "text-primary font-medium" : "text-muted-foreground"}>Notes</span>
-										{notes && <Check className="h-4 w-4 text-primary" />}
+										{notes && <Icon name="check" className="h-4 w-4 text-primary" />}
 									</div>
 								</div>
 							</div>
@@ -600,14 +598,14 @@ export default function PlanMatchPage() {
 						<CardContent className="pt-6">{renderStepContent()}</CardContent>
 						<CardFooter className="flex justify-between border-t p-4 mt-4">
 							<Button variant="outline" onClick={handlePreviousStep} disabled={currentStep === 1}>
-								<ArrowLeft className="mr-2 h-4 w-4" />
+								<Icon name="arrow-left" className="mr-2 h-4 w-4" />
 								Back
 							</Button>
 							<Button onClick={handleNextStep} disabled={!isStepComplete()}>
 								{currentStep < getTotalSteps() ? (
 									<>
 										Next
-										<ArrowRight className="ml-2 h-4 w-4" />
+										<Icon name="arrow-right" className="ml-2 h-4 w-4" />
 									</>
 								) : (
 									"Review & Propose"
@@ -631,7 +629,7 @@ export default function PlanMatchPage() {
 					<div className="space-y-4 py-4">
 						<div className="space-y-2">
 							<div className="flex items-center gap-2">
-								<Calendar className="h-4 w-4 text-muted-foreground" />
+								<Icon name="calendar" className="h-4 w-4 text-muted-foreground" />
 								<h3 className="font-medium">Activity</h3>
 							</div>
 							<p className="pl-6">{selectedActivity}</p>
@@ -639,7 +637,7 @@ export default function PlanMatchPage() {
 
 						<div className="space-y-2">
 							<div className="flex items-center gap-2">
-								<Calendar className="h-4 w-4 text-muted-foreground" />
+								<Icon name="calendar" className="h-4 w-4 text-muted-foreground" />
 								<h3 className="font-medium">Date & Time</h3>
 							</div>
 							<p className="pl-6">
@@ -649,7 +647,7 @@ export default function PlanMatchPage() {
 
 						<div className="space-y-2">
 							<div className="flex items-center gap-2">
-								<MapPin className="h-4 w-4 text-muted-foreground" />
+								<Icon name="map-pin" className="h-4 w-4 text-muted-foreground" />
 								<h3 className="font-medium">Location</h3>
 							</div>
 							<p className="pl-6">
@@ -667,7 +665,7 @@ export default function PlanMatchPage() {
 						{notes && (
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
-									<Calendar className="h-4 w-4 text-muted-foreground" />
+									<Icon name="calendar" className="h-4 w-4 text-muted-foreground" />
 									<h3 className="font-medium">Additional Notes</h3>
 								</div>
 								<p className="pl-6">{notes}</p>

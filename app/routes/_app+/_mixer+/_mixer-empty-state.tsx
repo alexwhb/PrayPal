@@ -1,4 +1,3 @@
-import { Users } from 'lucide-react'
 import { Link } from 'react-router'
 import { Button } from '#app/components/ui/button.tsx'
 import {
@@ -8,6 +7,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '#app/components/ui/card.tsx'
+import { Icon } from '#app/components/ui/icon.tsx'
 
 export function MixerEmptyState() {
 	// const router = useRouter()
@@ -23,7 +23,7 @@ export function MixerEmptyState() {
 		<Card className="w-full max-w-md mx-auto">
 			<CardHeader>
 				<div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-					<Users className="h-6 w-6 text-primary" />
+					<Icon name="users" className="h-6 w-6" />
 				</div>
 				<CardTitle className="text-center">{hasJoined ? "Waiting for a Match" : "Join the Church Mixer"}</CardTitle>
 				<CardDescription className="text-center">
