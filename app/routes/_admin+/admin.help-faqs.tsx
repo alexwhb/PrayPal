@@ -299,13 +299,13 @@ export default function AdminHelpFAQs() {
 									<TableCell>
 										<div className="flex space-x-2">
 											<Button variant="outline" size="sm" onClick={() => handleEdit(faq)}>
-												<Pencil className="h-4 w-4" />
+												<Icon name="pencil-1" size="sm" />
 											</Button>
 											<Form method="post">
 												<input type="hidden" name="intent" value="delete" />
 												<input type="hidden" name="id" value={faq.id} />
 												<Button variant="outline" size="sm" className="text-destructive">
-													<Trash2 className="h-4 w-4" />
+													<Icon name="trash" size="sm" />
 												</Button>
 											</Form>
 										</div>

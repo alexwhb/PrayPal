@@ -35,7 +35,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       id: true,
       name: true,
       username: true,
-      image: { select: { id: true } },
+      image: { select: { objectKey: true } },
       roles: {
         select: {
           name: true,
@@ -67,7 +67,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       id: true,
       name: true,
       username: true,
-      image: { select: { id: true } },
+      image: { select: { objectKey: true } },
       roles: {
         select: {
           name: true,
@@ -82,11 +82,11 @@ export async function loader({ request }: Route.LoaderArgs) {
   return data({
     adminUsers: adminUsers.map(user => ({
       ...user,
-      imageId: user.image?.id,
+      imageId: user.image?.objectKey,
     })),
     moderatorUsers: moderatorUsers.map(user => ({
       ...user,
-      imageId: user.image?.id,
+      imageId: user.image?.objectKey,
     })),
   })
 }

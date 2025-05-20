@@ -31,7 +31,7 @@ export function UserDropdown() {
 				>
 					<Avatar>
 						<AvatarImage
-							src={getUserImgSrc(user.image?.id)}
+							src={getUserImgSrc(user.image?.objectKey)}
 							alt={user.username}
 						/>
 						<AvatarFallback>{user.username.charAt(0)}</AvatarFallback>

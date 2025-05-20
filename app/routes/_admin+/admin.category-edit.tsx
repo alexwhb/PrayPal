@@ -345,14 +345,14 @@ export default function AdminCategoryPage() {
 													size="icon"
 													onClick={() => handleEditClick(category)}
 												>
-													<Icon name="pencil" className="h-4 w-4" />
+													<Icon name="pencil-1" className="h-4 w-4" />
 												</Button>
 												<Button
 													variant="ghost"
 													size="icon"
 													onClick={() => handleDeleteClick(category)}
 												>
-													<Icon name="trash2"  className="h-4 w-4" />
+													<Icon name="trash"  className="h-4 w-4" />
 												</Button>
 											</div>
 										</TableCell>
