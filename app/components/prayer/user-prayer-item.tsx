@@ -86,7 +86,7 @@ export default function UserPrayerItem({
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span className="text-sm font-medium text-green-600">
-											<Icon name="check-circle" size="sm" />
+											<Icon name="check-circle" size="md" />
 										</span>
 									</TooltipTrigger>
 									<TooltipContent>

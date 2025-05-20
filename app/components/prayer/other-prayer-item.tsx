@@ -1,4 +1,3 @@
-import {Icon} from '#app/components/ui/icon.tsx'
 import { Form, Link } from 'react-router'
 import ContentModeration from '#app/components/content-moderation.tsx'
 import {
@@ -14,14 +13,15 @@ import {
 	CardFooter,
 	CardHeader,
 } from '#app/components/ui/card.tsx'
+import {Icon} from '#app/components/ui/icon.tsx'
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from '#app/components/ui/tooltip.tsx'
-import { cn } from '#app/utils/misc.tsx'
 import { formatDate } from '#app/utils/formatter.ts'
+import { cn } from '#app/utils/misc.tsx'
 import { getUserImgSrc } from '#app/utils/misc.tsx' // This is for users that are not me.
 import { type Prayer } from './type.ts'
 
@@ -116,7 +116,7 @@ export default function OtherPrayerItem({
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span className="text-sm font-medium text-green-600">
-											<Icon name="check-circle" />
+											<Icon name="check-circle" size="md"/>
 										</span>
 									</TooltipTrigger>
 									<TooltipContent>Prayer marked as answered</TooltipContent>
