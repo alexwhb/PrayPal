@@ -59,8 +59,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 	const issuer = new URL(getDomainUrl(request)).host
 	const otpUri = getTOTPAuthUri({
 		...verification,
-		// OTP clients break with the `-` in the algorithm name.
-		algorithm: verification.algorithm.replaceAll('-', ''),
 		accountName: user.email,
 		issuer,
 	})
@@ -145,7 +143,7 @@ export default function TwoFactorRoute({
 	return (
 		<div>
 			<div className="flex flex-col items-center gap-4">
-				<img alt="qr code" src={loaderData.qrCode} className="h-56 w-56" />
+				<img alt="qr code" src={loaderData.qrCode} className="size-56" />
 				<p>Scan this QR code with your authenticator app.</p>
 				<p className="text-sm">
 					If you cannot scan the QR code, you can manually add this account to
@@ -153,7 +151,7 @@ export default function TwoFactorRoute({
 				</p>
 				<div className="p-3">
 					<pre
-						className="whitespace-pre-wrap break-all text-sm"
+						className="text-sm break-all whitespace-pre-wrap"
 						aria-label="One-time Password URI"
 					>
 						{loaderData.otpUri}
@@ -183,7 +181,7 @@ export default function TwoFactorRoute({
 							/>
 						</div>
 
-						<div className="min-h-[32px] px-4 pb-3 pt-1">
+						<div className="min-h-[32px] px-4 pt-1 pb-3">
 							<ErrorList id={form.errorId} errors={form.errors} />
 						</div>
 

@@ -79,7 +79,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 	const response = await sendEmail({
 		to: submission.value.email,
-		subject: `PrayPal Email Change Verification`,
+		subject: `Epic Notes Email Change Verification`,
 		react: <EmailChangeEmail verifyUrl={verifyUrl.toString()} otp={otp} />,
 	})
 

@@ -5,7 +5,11 @@ import { data, redirect, Form } from 'react-router'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { ErrorList, Field } from '#app/components/forms.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
-import { requireAnonymous, resetUserPassword } from '#app/utils/auth.server.ts'
+import {
+	checkIsCommonPassword,
+	requireAnonymous,
+	resetUserPassword,
+} from '#app/utils/auth.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
 import { PasswordAndConfirmPasswordSchema } from '#app/utils/user-validation.ts'
 import { verifySessionStorage } from '#app/utils/verification.server.ts'
@@ -41,8 +45,18 @@ export async function loader({ request }: Route.LoaderArgs) {
 export async function action({ request }: Route.ActionArgs) {
 	const resetPasswordUsername = await requireResetPasswordUsername(request)
 	const formData = await request.formData()
-	const submission = parseWithZod(formData, {
-		schema: ResetPasswordSchema,
+	const submission = await parseWithZod(formData, {
+		schema: ResetPasswordSchema.superRefine(async ({ password }, ctx) => {
+			const isCommonPassword = await checkIsCommonPassword(password)
+			if (isCommonPassword) {
+				ctx.addIssue({
+					path: ['password'],
+					code: 'custom',
+					message: 'Password is too common',
+				})
+			}
+		}),
+		async: true,
 	})
 	if (submission.status !== 'success') {
 		return data(
@@ -82,15 +96,15 @@ export default function ResetPasswordPage({
 	})
 
 	return (
-		<div className="container flex flex-col justify-center pb-32 pt-20">
+		<div className="container flex flex-col justify-center pt-20 pb-32">
 			<div className="text-center">
 				<h1 className="text-h1">Password Reset</h1>
-				<p className="mt-3 text-body-md text-muted-foreground">
+				<p className="text-body-md text-muted-foreground mt-3">
 					Hi, {loaderData.resetPasswordUsername}. No worries. It happens all the
 					time.
 				</p>
 			</div>
-			<div className="mx-auto mt-16 min-w-full max-w-sm sm:min-w-[368px]">
+			<div className="mx-auto mt-16 max-w-sm min-w-full sm:min-w-[368px]">
 				<Form method="POST" {...getFormProps(form)}>
 					<Field
 						labelProps={{

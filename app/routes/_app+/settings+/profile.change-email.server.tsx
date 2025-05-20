@@ -9,7 +9,7 @@ import { prisma } from '#app/utils/db.server.ts'
 import { sendEmail } from '#app/utils/email.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { verifySessionStorage } from '#app/utils/verification.server.ts'
-import { newEmailAddressSessionKey } from './profile.change-email'
+import { newEmailAddressSessionKey } from './profile.change-email.tsx'
 
 export async function handleVerification({
 	request,
@@ -79,7 +79,7 @@ export function EmailChangeEmail({
 		<E.Html lang="en" dir="ltr">
 			<E.Container>
 				<h1>
-					<E.Text>PrayPal Email Change</E.Text>
+					<E.Text>Epic Notes Email Change</E.Text>
 				</h1>
 				<p>
 					<E.Text>
@@ -100,11 +100,11 @@ function EmailChangeNoticeEmail({ userId }: { userId: string }) {
 		<E.Html lang="en" dir="ltr">
 			<E.Container>
 				<h1>
-					<E.Text>Your PrayPal email has been changed</E.Text>
+					<E.Text>Your Epic Notes email has been changed</E.Text>
 				</h1>
 				<p>
 					<E.Text>
-						We're writing to let you know that your PrayPal email has been
+						We're writing to let you know that your Epic Notes email has been
 						changed.
 					</E.Text>
 				</p>

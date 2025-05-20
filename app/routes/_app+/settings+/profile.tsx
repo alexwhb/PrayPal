@@ -9,14 +9,6 @@ import { prisma } from '#app/utils/db.server.ts'
 import { cn } from '#app/utils/misc.tsx'
 import { useUser } from '#app/utils/user.ts'
 import { type Route } from './+types/profile.ts'
-import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
-} from '#app/components/ui/breadcrumb.tsx'
 
 export const BreadcrumbHandle = z.object({ breadcrumb: z.any() })
 export type BreadcrumbHandle = z.infer<typeof BreadcrumbHandle>
@@ -56,27 +48,33 @@ export default function EditUserProfile() {
 		.filter(Boolean)
 
 	return (
-		<div className="m-auto mb-24 mt-16 max-w-3xl">
-			<Breadcrumb>
-				<BreadcrumbList>
-					<BreadcrumbItem key={`bread-255`}>
-						<BreadcrumbLink href={`/users/${user.username}`}>
+		<div className="m-auto mt-16 mb-24 max-w-3xl">
+			<div className="container">
+				<ul className="flex gap-3">
+					<li>
+						<Link
+							className="text-muted-foreground"
+							to={`/users/${user.username}`}
+						>
 							Profile
-						</BreadcrumbLink>
-					</BreadcrumbItem>
-					<BreadcrumbSeparator />
-					{breadcrumbs.map((breadcrumb, i, arr) => {
-						return (
-							<>
-								<BreadcrumbItem key={`bread-${i}`}>{breadcrumb}</BreadcrumbItem>
-								{i < arr.length - 1 && <BreadcrumbSeparator />}
-							</>
-						)
-					})}
-				</BreadcrumbList>
-			</Breadcrumb>
-			<Spacer size="3xs" />
-			<main className="mx-auto px-6 py-8 md:container md:rounded-3xl">
+						</Link>
+					</li>
+					{breadcrumbs.map((breadcrumb, i, arr) => (
+						<li
+							key={i}
+							className={cn('flex items-center gap-3', {
+								'text-muted-foreground': i < arr.length - 1,
+							})}
+						>
+							<Icon name="arrow-right" size="sm">
+								{breadcrumb}
+							</Icon>
+						</li>
+					))}
+				</ul>
+			</div>
+			<Spacer size="xs" />
+			<main className="bg-muted mx-auto px-6 py-8 md:container md:rounded-3xl">
 				<Outlet />
 			</main>
 		</div>

@@ -65,7 +65,7 @@ export async function handleNewSession(
 		authSession.set(sessionKey, session.id)
 
 		return redirect(
-			safeRedirect('/prayer/board'),
+			safeRedirect(redirectTo),
 			combineResponseInits(
 				{
 					headers: {

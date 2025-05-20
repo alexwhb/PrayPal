@@ -7,7 +7,12 @@ import { z } from 'zod'
 import { CheckboxField, ErrorList, Field } from '#app/components/forms.tsx'
 import { Spacer } from '#app/components/spacer.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
-import { requireAnonymous, sessionKey, signup } from '#app/utils/auth.server.ts'
+import {
+	checkIsCommonPassword,
+	requireAnonymous,
+	sessionKey,
+	signup,
+} from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { checkHoneypot } from '#app/utils/honeypot.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
@@ -71,6 +76,14 @@ export async function action({ request }: Route.ActionArgs) {
 						message: 'A user already exists with this username',
 					})
 					return
+				}
+				const isCommonPassword = await checkIsCommonPassword(data.password)
+				if (isCommonPassword) {
+					ctx.addIssue({
+						path: ['password'],
+						code: 'custom',
+						message: 'Password is too common',
+					})
 				}
 			}).transform(async (data) => {
 				if (intent !== null) return { ...data, session: null }
@@ -138,7 +151,7 @@ export default function OnboardingRoute({
 	})
 
 	return (
-		<div className="container flex min-h-full flex-col justify-center pb-32 pt-20">
+		<div className="container flex min-h-full flex-col justify-center pt-20 pb-32">
 			<div className="mx-auto w-full max-w-lg">
 				<div className="flex flex-col gap-3 text-center">
 					<h1 className="text-h1">Welcome aboard {loaderData.email}!</h1>
@@ -149,7 +162,7 @@ export default function OnboardingRoute({
 				<Spacer size="xs" />
 				<Form
 					method="POST"
-					className="mx-auto min-w-full max-w-sm sm:min-w-[368px]"
+					className="mx-auto max-w-sm min-w-full sm:min-w-[368px]"
 					{...getFormProps(form)}
 				>
 					<HoneypotInputs />
