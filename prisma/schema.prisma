@@ -50,6 +50,8 @@ model User {
   conversations     Conversation[]    @relation("ConversationParticipants")
   groupMemberships  GroupMembership[]
 
+  passkey Passkey[]
+
   // Add notifications relation
   notifications Notification[]
 }
@@ -528,4 +530,21 @@ model Notification {
   @@index([userId])
   @@index([read])
   @@index([createdAt])
+}
+
+model Passkey {
+  id             String   @id
+  aaguid         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  publicKey      Bytes
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  webauthnUserId String
+  counter        BigInt
+  deviceType     String // 'singleDevice' or 'multiDevice'
+  backedUp       Boolean
+  transports     String? // Stored as comma-separated values
+
+  @@index(userId)
 }
