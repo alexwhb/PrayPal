@@ -1,7 +1,6 @@
 import { searchUsers } from '@prisma/client/sql'
 import { Img } from 'openimg/react'
 import {  redirect, Link } from 'react-router'
-import { z } from 'zod'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { ErrorList } from '#app/components/forms.tsx'
 import { SearchBar } from '#app/components/search-bar.tsx'
@@ -60,8 +59,8 @@ export default function UsersRoute({ loaderData }: Route.ComponentProps) {
 											alt={user.name ?? user.username}
 											src={getUserImgSrc(user.imageObjectKey)}
 											className="size-16 rounded-full"
-											width={256}
-											height={256}
+											width={360}
+											height={360}
 										/>
 										{user.name ? (
 											<span className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-body-md">

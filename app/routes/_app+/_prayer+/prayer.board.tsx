@@ -38,7 +38,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 					select: {
 						id: true,
 						name: true,
-						image: { select: { id: true } },
+						image: { select: { objectKey: true } },
 						username: true,
 					},
 				},

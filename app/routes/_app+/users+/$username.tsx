@@ -1,13 +1,12 @@
 import { invariantResponse } from '@epic-web/invariant'
-import { ArrowLeft, CalendarDays, MessageCircle, Trash, Users } from 'lucide-react'
 import { useState } from 'react'
 import { data, Form, Link, Outlet, redirect } from 'react-router'
-
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { DeleteDialog } from '#app/components/shared/delete-dialog.tsx'
 import { Badge } from '#app/components/ui/badge.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
+import { Img } from 'openimg/react'
 import {
 	Tabs,
 	TabsList,
@@ -51,7 +50,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 			name: true,
 			username: true,
 			createdAt: true,
-			image: { select: { id: true } },
+			image: { select: { objectKey: true } },
 			roles: true,
 			requests: {
 				where: {
@@ -177,17 +176,19 @@ export default function ProfileRoute({loaderData}: Route.ComponentProps) {
 					to="/users"
 					className="flex items-center text-muted-foreground hover:text-foreground"
 				>
-					<ArrowLeft className="mr-2 h-4 w-4" />
+					<Icon name="arrow-left" className="mr-2 h-4 w-4" />
 					Back to Users
 				</Link>
 			</div>
 
 			<div className="mb-8 flex flex-col items-center gap-6 md:flex-row md:items-start">
 				<div className="relative h-48 w-48 overflow-hidden rounded-full border-4 border-background shadow-md">
-					<img
-						src={getUserImgSrc(user.image?.id)}
+					<Img
+						src={getUserImgSrc(user.image?.objectKey)}
 						alt={userDisplayName}
 						className="h-full w-full object-cover"
+						width={360}
+						height={360}
 					/>
 				</div>
 
@@ -195,14 +196,14 @@ export default function ProfileRoute({loaderData}: Route.ComponentProps) {
 					<h1 className="mb-2 text-3xl font-bold">{userDisplayName}</h1>
 
 					<div className="mb-4 flex items-center justify-center text-muted-foreground md:justify-start">
-						<CalendarDays className="mr-2 h-4 w-4" />
+						<Icon name="calendar-days" className="mr-2 h-4 w-4" />
 						<span>Member since {userJoinedDisplay}</span>
 					</div>
 
 					{user.groupMemberships.length > 0 && (
 						<div className="mb-6">
 							<div className="mb-2 flex items-center gap-2">
-								<Users className="h-4 w-4 text-muted-foreground" />
+								<Icon name="users" className="h-4 w-4 text-muted-foreground" />
 								<span className="font-medium">Groups</span>
 							</div>
 							<div className="flex flex-wrap gap-2">
@@ -244,7 +245,7 @@ export default function ProfileRoute({loaderData}: Route.ComponentProps) {
 											<input type="hidden" name="_action" value="startConversation" />
 											<input type="hidden" name="participantId" value={user.id} />
 											<Button type="submit" variant="secondary">
-												<MessageCircle className="mr-2 h-4 w-4" />
+												<Icon name="message-circle" className="mr-2 h-4 w-4" />
 												Message
 											</Button>
 										</Form>
@@ -253,7 +254,7 @@ export default function ProfileRoute({loaderData}: Route.ComponentProps) {
 												variant="destructive"
 												onClick={() => setIsDeleteDialogOpen(true)}
 											>
-												<Trash className="mr-2 h-4 w-4" />
+												<Icon name="trash" className="mr-2 h-4 w-4" />
 												Delete User
 											</Button>
 										)}

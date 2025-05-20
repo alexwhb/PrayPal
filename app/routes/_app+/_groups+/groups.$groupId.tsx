@@ -1,8 +1,8 @@
-import { addMonths, addWeeks, format, isBefore, startOfDay } from 'date-fns'
-import { ArrowLeft } from 'lucide-react'
+import { addMonths, addWeeks, isBefore, startOfDay } from 'date-fns'
 import { data, Link } from 'react-router'
 import GroupDetailView from '#app/components/groups/group-detail-view'
 import { Button } from '#app/components/ui/button'
+import {Icon} from '#app/components/ui/icon.tsx'
 import { requireUserId } from '#app/utils/auth.server'
 import { prisma } from '#app/utils/db.server'
 import { type Route } from './+types/groups.$groupId'
@@ -36,7 +36,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
               id: true,
               name: true,
               username: true,
-              image: { select: { id: true } },
+              image: { select: { objectKey: true } },
             },
           },
         },
@@ -243,7 +243,7 @@ export default function GroupDetailPage({loaderData}: Route.ComponentProps) {
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
           <Link to="/groups/board">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+						<Icon name="arrow-left" className="h-4 w-4 mr-2" />
             Back to Groups
           </Link>
         </Button>

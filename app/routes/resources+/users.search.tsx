@@ -11,7 +11,7 @@ const UserSearchResultSchema = z.object({
 	name: z.string().nullable(),
 	username: z.string(),
 	email: z.string(),
-	imageId: z.string().nullable(),
+	objectKey: z.string().nullable(),
 });
 
 export type UserSearchResult = z.infer<typeof UserSearchResultSchema>;
@@ -45,7 +45,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         "User".name, 
         "User".username, 
         "User".email,
-        "UserImage".id as "imageId"
+        "UserImage".objectKey as "objectKey"
       FROM "User"
       LEFT JOIN "UserImage" ON "User".id = "UserImage"."userId"
       WHERE (LOWER("User".name) LIKE LOWER(${likeQuery}))

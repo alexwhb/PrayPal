@@ -1,8 +1,10 @@
 import { data } from 'react-router'
-import BoardFooter from '#app/components/board/board-footer'
-import PrayerItem from '#app/components/prayer/prayer-item.tsx'
-import { Card, CardContent } from '#app/components/ui/card'
-import { useBoardNavigation } from '#app/hooks/use-board-navigation'
+import { useState } from 'react'
+import BoardFooter from '#app/components/board/board-footer.tsx'
+import UserPrayerItem from '#app/components/prayer/user-prayer-item.tsx'
+import { Card, CardContent } from '#app/components/ui/card.tsx'
+import DeleteDialog from '#app/components/delete-dialog.tsx'
+import { useBoardNavigation } from '#app/hooks/use-board-navigation.ts'
 import { requireUserId } from '#app/utils/auth.server'
 import { loadBoardData } from '#app/utils/board-loader.server'
 import { prisma } from '#app/utils/db.server'
@@ -42,7 +44,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
           select: {
             id: true,
             name: true,
-            image: { select: { id: true } },
+            image: { select: { objectKey: true } },
             username: true
           }
         },
@@ -77,6 +79,24 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 export default function UserPrayersTab({loaderData, actionData}: Route.ComponentProps) {
   const { prayers, hasNextPage, userDisplayName, userId: currentUserId } = loaderData
   const { getNextPageUrl } = useBoardNavigation()
+  const [deleteDialogState, setDeleteDialogState] = useState({
+    isOpen: false,
+    prayerId: ''
+  })
+  
+  const handleDeleteClick = (prayerId: string) => {
+    setDeleteDialogState({
+      isOpen: true,
+      prayerId
+    })
+  }
+  
+  const handleDialogOpenChange = (isOpen: boolean) => {
+    setDeleteDialogState(prev => ({
+      ...prev,
+      isOpen
+    }))
+  }
   
   if (prayers.length === 0) {
     return (
@@ -91,14 +111,14 @@ export default function UserPrayersTab({loaderData, actionData}: Route.Component
   return (
     <div className="space-y-4">
       {prayers.map(prayer => (
-				<PrayerItem
-					key={prayer.id}
-					prayer={prayer}
-					actionData={actionData}
-					canModerate={false}
-					isCurrentUser={prayer.user.id === currentUserId} // In a real app, check if the current user is the author
-				/>
+        <UserPrayerItem
+          key={prayer.id}
+          prayer={prayer}
+          actionData={actionData}
+          onDeleteClick={prayer.user.id === currentUserId ? handleDeleteClick : undefined}
+        />
       ))}
+      
       <BoardFooter getNextPageUrl={getNextPageUrl} hasNextPage={hasNextPage} />
     </div>
   )

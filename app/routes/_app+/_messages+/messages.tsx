@@ -1,8 +1,8 @@
-import { ArrowLeft } from 'lucide-react'
 import { useEffect } from 'react'
 import { Link, Outlet, useLoaderData, useRevalidator } from 'react-router' // Assuming Epic Stack provides a socket hook
 import { ConversationList } from '#app/components/messages/conversation-list.tsx'
 import { Button } from '#app/components/ui/button.tsx'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { useMediaQuery } from '#app/hooks/use-media-query.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
@@ -22,7 +22,7 @@ export async function loader({ request, params}: Route.LoaderArgs) {
 			id: true,
 			name: true, // Include the name field
 			participants: {
-				select: { id: true, name: true, username: true, image: { select: { id: true } } },
+				select: { id: true, name: true, username: true, image: { select: { objectKey: true } } },
 				where: { id: { not: userId } },
 			},
 			lastMessage: {
@@ -56,7 +56,7 @@ export async function loader({ request, params}: Route.LoaderArgs) {
 		} else if (conv.participants.length === 1) {
 			const otherUser = conv.participants[0]
 			name = otherUser?.name || otherUser?.username
-			image = otherUser?.image?.id || ''
+			image = otherUser?.image?.objectKey || ''
 		} else {
 			const otherParticipants = conv.participants
 			name = otherParticipants.slice(0, 3).map(p => p.name || p.username).join(', ') + (otherParticipants.length > 3 ? '...' : '')
@@ -116,7 +116,7 @@ export default function MessagesPage() {
 								<div className="border-b p-2">
 									<Link to="../">
 										<Button variant="ghost" size="sm">
-											<ArrowLeft className="mr-2 h-4 w-4" />
+											<Icon name="arrow-left" className="h-4 w-4 mr-2" />
 											Back to conversations
 										</Button>
 									</Link>

@@ -6,7 +6,7 @@ import { useBoardNavigation } from '#app/hooks/use-board-navigation'
 import { requireUserId } from '#app/utils/auth.server'
 import { loadBoardData } from '#app/utils/board-loader.server'
 import { prisma } from '#app/utils/db.server'
-import { getImageSrc, getUserImgSrc } from '#app/utils/misc'
+import { getMainImageSrc, getUserImgSrc } from '#app/utils/misc'
 import { type Route } from './+types/$username.shares'
 
 export {action} from '../_sharable+/_share.board.action.server.ts'
@@ -42,7 +42,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
           select: {
             id: true,
             name: true,
-            image: { select: { id: true } },
+            image: { select: { objectKey: true } },
             username: true,
           },
         },
@@ -67,7 +67,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
           description: item.description,
           category: item.category.name,
           location: item.location,
-          image: item.imageId != null ? getImageSrc(item.imageId) : 'https://placehold.co/600x400',
+          image: item.imageId != null ? getMainImageSrc(item.imageId) : 'https://placehold.co/600x400',
           postedDate: item.createdAt,
           claimed: item.claimed,
           shareType: item.shareType.toLowerCase(),

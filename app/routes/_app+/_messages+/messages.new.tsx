@@ -1,10 +1,10 @@
-
-import { X } from "lucide-react"
+// import { X } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Form, useSearchParams } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from "#app/components/ui/avatar"
 import { Badge } from "#app/components/ui/badge"
 import { Button } from "#app/components/ui/button"
+import {Icon} from '#app/components/ui/icon.tsx'
 import { Input } from "#app/components/ui/input"
 import { Label } from "#app/components/ui/label"
 import { requireUserId } from "#app/utils/auth.server"
@@ -114,7 +114,7 @@ export default function NewConversation({loaderData}: Route.ComponentProps) {
 							<Badge key={user.id} variant="secondary" className="flex items-center gap-1 py-1">
 								{user.name || user.username}
 								<button type="button" onClick={() => handleUserRemove(user.id)}>
-									<X className="h-3 w-3" />
+									<Icon name="cross-1" className="h-3 w-3" />
 								</button>
 								<input type="hidden" name="participants" value={user.id} />
 							</Badge>
