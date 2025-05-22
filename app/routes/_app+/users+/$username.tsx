@@ -25,11 +25,14 @@ import { type Route } from './+types/$username.ts'
 export async function loader({ params, request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
 
-	// redirect to payer tab if we are just at /users/:username
+	// redirect to the payer tab if we are just at /users/:username
 	const url = new URL(request.url)
 	if (url.pathname === `/users/${params.username}`) {
 		return redirect(`/users/${params.username}/prayers`)
 	}
+
+	const idx = url.pathname.lastIndexOf('/')
+	const tab = url.pathname.slice(idx + 1)
 
 	const loggedInUser = await prisma.user.findFirst({
 		select: {
@@ -91,7 +94,8 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 	return data({
 		user,
 		userJoinedDisplay: formatDate(user.createdAt),
-		canModerate: canModerate , // todo userHasRole(user, ['admin', 'moderator'])
+		canModerate: canModerate , // todo userHasRole(user, ['admin', 'moderator']),
+		tab,
 	})
 }
 
@@ -162,7 +166,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function ProfileRoute({loaderData}: Route.ComponentProps) {
-	const { user, userJoinedDisplay, canModerate }  = loaderData
+	const { user, userJoinedDisplay, canModerate, tab }  = loaderData
 	// const user = data.user
 	const userDisplayName = user.name ?? user.username
 	const loggedInUser = useOptionalUser()
@@ -266,7 +270,7 @@ export default function ProfileRoute({loaderData}: Route.ComponentProps) {
 				</div>
 			</div>
 
-			<Tabs defaultValue="prayers">
+			<Tabs defaultValue={tab}>
 				<TabsList className="grid w-full grid-cols-3">
 					<TabsTrigger value="prayers" asChild>
 						<Link to={`/users/${user.username}/prayers`}>Prayer Requests</Link>
