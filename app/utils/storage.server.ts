@@ -49,6 +49,20 @@ export async function uploadNoteImage(
 	return uploadToStorage(file, key)
 }
 
+export async function uploadGeneralImage(
+	userId: string,
+	imageId: string,
+	file: File | FileUpload,
+) {
+	const fileId = createId()
+	const fileExtension = file.name.split('.').pop() || ''
+	const timestamp = Date.now()
+	const key = `users/${userId}/image/${imageId}/images/${timestamp}-${fileId}.${fileExtension}`
+	return uploadToStorage(file, key)
+}
+
+
+
 function hmacSha256(key: string | Buffer, message: string) {
 	const hmac = createHmac('sha256', key)
 	hmac.update(message)
