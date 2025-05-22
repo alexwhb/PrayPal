@@ -41,7 +41,7 @@ export default function ShareItem({
 			className={`${item.claimed ? 'opacity-75' : ''} border-2 transition-shadow hover:shadow-md`}
 		>
 			<CardHeader className="p-0">
-				<div className="relative h-58  overflow-hidden">
+				<div className="relative h-58 overflow-hidden">
 					<Img
 						src={item.image}
 						alt={item.title}
@@ -157,14 +157,20 @@ export default function ShareItem({
 						</Button>
 					</Form>
 				)}
-
-				<ContentModeration
-					itemId={item.id}
-					itemType="share-item"
-					canModerate={item.canModerate}
-					isOwner={isCurrentUser}
-					onModerateAction={onOpenDialog}
-				/>
+				<div className="flex gap-6">
+					<ContentModeration
+						itemId={item.id}
+						itemType="share-item"
+						canModerate={item.canModerate}
+						isOwner={isCurrentUser}
+						onModerateAction={onOpenDialog}
+					/>
+					{isCurrentUser && (
+						<Link to={`/share/${item.id}/edit`} prefetch="intent">
+							<Icon name="pencil-1" size="md" />
+						</Link>
+					)}
+				</div>
 			</CardFooter>
 		</Card>
 	)

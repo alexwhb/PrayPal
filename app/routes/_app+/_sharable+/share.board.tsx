@@ -13,6 +13,8 @@ import { prisma } from '#app/utils/db.server.ts'
 import { getMainImageSrc, getUserImgSrc } from '#app/utils/misc.tsx'
 import { type Route } from './+types/share.board.ts'
 
+export {action} from './_share.board.action.server.ts'
+
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
 	const url = new URL(request.url)
@@ -41,8 +43,19 @@ export async function loader({ request }: Route.LoaderArgs) {
 					},
 				},
 				category: { select: { name: true } },
-				image: { select: { objectKey: true } },
-
+				images: { // CORRECTED: Use the 'images' relation (ShareItemImage[])
+					orderBy: {
+						order: 'asc', // Order by the 'order' field in ShareItemImage
+					},
+					take: 1, // Take only the first image (main image) // todo update this so we can see a few
+					select: {
+						image: { // Navigate from ShareItemImage to the actual Image model
+							select: {
+								objectKey: true,
+							},
+						},
+					},
+				},
 				title: true,
 				description: true,
 				location: true,
@@ -53,6 +66,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 			},
 			transformResponse: (items, user) =>
 				items.map((item) => {
+					const mainImageObjectKey = item.images?.[0]?.image?.objectKey;
 					return {
 						id: item.id,
 						userId: item.owner.id,
@@ -63,7 +77,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 						description: item.description,
 						category: item.category.name,
 						location: item.location,
-						image: getMainImageSrc(item.image?.objectKey),
+						image: getMainImageSrc(mainImageObjectKey),
 						postedDate: item.createdAt,
 						claimed: item.claimed,
 						shareType: item.shareType.toLowerCase(),
