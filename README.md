@@ -236,7 +236,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 - [Epic Stack](https://github.com/epicweb-dev/epic-stack) - The foundation of this project
 - [Shadcn/UI](https://ui.shadcn.com/) - For the beautiful UI components
-- All our [contributors](https://github.com/your-username/praypal/graphs/contributors)
+- All our [contributors](https://github.com/alexwhb/praypal/graphs/contributors)
 
 ## ☕ Support
 
