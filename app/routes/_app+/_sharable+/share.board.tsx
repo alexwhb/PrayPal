@@ -1,4 +1,3 @@
-import { Gift } from 'lucide-react'
 import { useState } from 'react'
 import { data } from 'react-router'
 import BoardFooter from '#app/components/board/board-footer.tsx'
@@ -6,12 +5,15 @@ import BoardHeader from '#app/components/board/board-header.tsx'
 import { DeleteDialog } from '#app/components/shared/delete-dialog.tsx'
 import ShareItem from '#app/components/shared/share-item.tsx'
 import { type ShareType } from '#app/components/shared/type.ts'
+import {Icon} from '#app/components/ui/icon.tsx'
 import { useBoardNavigation } from '#app/hooks/use-board-navigation.ts'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { loadBoardData } from '#app/utils/board-loader.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
-import { getImageSrc, getUserImgSrc } from '#app/utils/misc.tsx'
+import { getMainImageSrc, getUserImgSrc } from '#app/utils/misc.tsx'
 import { type Route } from './+types/share.board.ts'
+
+export {action} from './_share.board.action.server.ts'
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const userId = await requireUserId(request)
@@ -36,12 +38,24 @@ export async function loader({ request }: Route.LoaderArgs) {
 					select: {
 						id: true,
 						name: true,
-						image: { select: { id: true } },
+						image: { select: { objectKey: true } },
 						username: true,
 					},
 				},
 				category: { select: { name: true } },
-				imageId: true,
+				images: { // CORRECTED: Use the 'images' relation (ShareItemImage[])
+					orderBy: {
+						order: 'asc', // Order by the 'order' field in ShareItemImage
+					},
+					take: 1, // Take only the first image (main image) // todo update this so we can see a few
+					select: {
+						image: { // Navigate from ShareItemImage to the actual Image model
+							select: {
+								objectKey: true,
+							},
+						},
+					},
+				},
 				title: true,
 				description: true,
 				location: true,
@@ -52,20 +66,18 @@ export async function loader({ request }: Route.LoaderArgs) {
 			},
 			transformResponse: (items, user) =>
 				items.map((item) => {
+					const mainImageObjectKey = item.images?.[0]?.image?.objectKey;
 					return {
 						id: item.id,
 						userId: item.owner.id,
 						userDisplayName: item.owner.name ?? item.owner.username,
 						userName: item.owner.username,
-						userAvatar: getUserImgSrc(item.owner.image.id),
+						userAvatar: getUserImgSrc(item.owner.image.objectKey),
 						title: item.title,
 						description: item.description,
 						category: item.category.name,
 						location: item.location,
-						image:
-							item.imageId != null
-								? getImageSrc(item.imageId)
-								: 'https://placehold.co/600x400',
+						image: getMainImageSrc(mainImageObjectKey),
 						postedDate: item.createdAt,
 						claimed: item.claimed,
 						shareType: item.shareType.toLowerCase(),
@@ -152,13 +164,13 @@ export default function ShareBoardPage({
 								label: 'View Free Items',
 								href: '?type=give',
 								tooltip: 'Switch to Free Items board',
-								icon: Gift,
+								icon: <Icon name="gift" className="h-4 w-4" />,
 							}
 						: {
 								label: 'View Borrowable Items',
 								href: '?',
 								tooltip: 'Switch to Borrowable Items board',
-								icon: Gift,
+								icon: <Icon name="gift" className="h-4 w-4" />,
 							}
 				}
 			/>

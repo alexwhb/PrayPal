@@ -1,17 +1,17 @@
-import crypto from 'node:crypto'
+import { styleText } from 'node:util'
+import { helmet } from '@nichtsam/helmet/node-http'
 import { createRequestHandler } from '@react-router/express'
-import * as Sentry from '@sentry/node'
+import * as Sentry from '@sentry/react-router'
 import { ip as ipAddress } from 'address'
-import chalk from 'chalk'
 import closeWithGrace from 'close-with-grace'
 import compression from 'compression'
 import express from 'express'
 import rateLimit from 'express-rate-limit'
 import getPort, { portNumbers } from 'get-port'
-import helmet from 'helmet'
 import morgan from 'morgan'
 import { type ServerBuild } from 'react-router'
 import { Server } from 'socket.io'
+
 
 const MODE = process.env.NODE_ENV ?? 'development'
 const IS_PROD = MODE === 'production'
@@ -27,7 +27,12 @@ const viteDevServer = IS_PROD
 	? undefined
 	: await import('vite').then((vite) =>
 			vite.createServer({
-				server: { middlewareMode: true },
+				server: {
+					middlewareMode: true,
+				},
+				// We tell Vite we are running a custom app instead of
+				// the SPA default so it doesn't run HTML middleware
+				appType: 'custom',
 			}),
 		)
 
@@ -69,6 +74,12 @@ app.use(compression())
 // http://expressjs.com/en/advanced/best-practice-security.html#at-a-minimum-disable-x-powered-by-header
 app.disable('x-powered-by')
 
+app.use((_, res, next) => {
+	// The referrerPolicy breaks our redirectTo logic
+	helmet(res, { general: { referrerPolicy: false } })
+	next()
+})
+
 if (viteDevServer) {
 	app.use(viteDevServer.middlewares)
 } else {
@@ -100,47 +111,8 @@ app.use(
 	morgan('tiny', {
 		skip: (req, res) =>
 			res.statusCode === 200 &&
-			(req.url?.startsWith('/resources/note-images') ||
-				req.url?.startsWith('/resources/user-images') ||
+			(req.url?.startsWith('/resources/images') ||
 				req.url?.startsWith('/resources/healthcheck')),
-	}),
-)
-
-app.use((_, res, next) => {
-	res.locals.cspNonce = crypto.randomBytes(16).toString('hex')
-	next()
-})
-
-app.use(
-	helmet({
-		xPoweredBy: false,
-		referrerPolicy: { policy: 'same-origin' },
-		crossOriginEmbedderPolicy: false,
-		contentSecurityPolicy: {
-			// NOTE: Remove reportOnly when you're ready to enforce this CSP
-			reportOnly: true,
-			directives: {
-				'connect-src': [
-					MODE === 'development' ? 'ws:' : null,
-					process.env.SENTRY_DSN ? '*.sentry.io' : null,
-					"'self'",
-				].filter(Boolean),
-				'font-src': ["'self'"],
-				'frame-src': ["'self'"],
-				'img-src': ["'self'", 'data:'],
-				'script-src': [
-					"'strict-dynamic'",
-					"'self'",
-					// @ts-expect-error
-					(_, res) => `'nonce-${res.locals.cspNonce}'`,
-				],
-				'script-src-attr': [
-					// @ts-expect-error
-					(_, res) => `'nonce-${res.locals.cspNonce}'`,
-				],
-				'upgrade-insecure-requests': null,
-			},
-		},
 	}),
 )
 
@@ -230,10 +202,7 @@ if (!ALLOW_INDEXING) {
 app.all(
 	'*',
 	createRequestHandler({
-		getLoadContext: (_: any, res: any) => ({
-			cspNonce: res.locals.cspNonce,
-			serverBuild: getBuild(),
-		}),
+		getLoadContext: () => ({ serverBuild: getBuild() }),
 		mode: MODE,
 		build: async () => {
 			const { error, build } = await getBuild()
@@ -259,7 +228,8 @@ if (!portAvailable && !IS_DEV) {
 const server = app.listen(portToUse, () => {
 	if (!portAvailable) {
 		console.warn(
-			chalk.yellow(
+			styleText(
+				'yellow',
 				`⚠️  Port ${desiredPort} is not available, using ${portToUse} instead.`,
 			),
 		)
@@ -277,9 +247,9 @@ const server = app.listen(portToUse, () => {
 
 	console.log(
 		`
-${chalk.bold('Local:')}            ${chalk.cyan(localUrl)}
-${lanUrl ? `${chalk.bold('On Your Network:')}  ${chalk.cyan(lanUrl)}` : ''}
-${chalk.bold('Press Ctrl+C to stop')}
+${styleText('bold', 'Local:')}            ${styleText('cyan', localUrl)}
+${lanUrl ? `${styleText('bold', 'On Your Network:')}  ${styleText('cyan', lanUrl)}` : ''}
+${styleText('bold', 'Press Ctrl+C to stop')}
 		`.trim(),
 	)
 })
@@ -287,80 +257,80 @@ ${chalk.bold('Press Ctrl+C to stop')}
 // Create new instance of socket.io
 export const io = new Server(server, {
 	cors: {
-		origin: process.env.NODE_ENV === "production" ? "https://your-app.fly.dev" : "http://localhost:3001",
-		methods: ["GET", "POST"],
+		origin: process.env.NODE_ENV === 'production' ? 'https://your-app.fly.dev' : 'http://localhost:3000',
+		methods: ['GET', 'POST'],
 		credentials: true,
 	},
-});
+})
 
 const userSockets: Record<string, string> = {}
 
-io.on("connection", (socket) => {
-    console.log("New socket connection established", socket.id)
-    let currentUserId: string | null = null
+io.on('connection', (socket) => {
+	console.log('New socket connection established', socket.id)
+	let currentUserId: string | null = null
 
-    socket.on("set-user-id", (userId: string) => {
-        currentUserId = userId
-        console.log("Current userSockets before update:", userSockets)
-        
-        // Remove any existing socket for this user
-        const existingSocketId = userSockets[userId]
-        if (existingSocketId && existingSocketId !== socket.id) {
-            console.log(`Removing old socket ${existingSocketId} for user ${userId}`)
-            const existingSocket = io.sockets.sockets.get(existingSocketId)
-            if (existingSocket) {
-                existingSocket.disconnect(true)
-            }
-            delete userSockets[userId]
-        }
-        
-        // Add new socket mapping
-        userSockets[userId] = socket.id
-        console.log("User connected - ID:", userId, "Socket ID:", socket.id)
-        console.log("Updated userSockets:", userSockets)
-        
-        // Acknowledge the connection
-        socket.emit("user-connected-ack", { userId, socketId: socket.id })
-    })
+	socket.on('set-user-id', (userId: string) => {
+		currentUserId = userId
+		console.log('Current userSockets before update:', userSockets)
 
-    socket.on("disconnect", () => {
-        console.log(`Socket ${socket.id} disconnecting`)
-        if (currentUserId && userSockets[currentUserId] === socket.id) {
-            console.log("User disconnected - ID:", currentUserId)
-            delete userSockets[currentUserId]
-            console.log("Current userSockets after disconnect:", userSockets)
-        }
-    })
+		// Remove any existing socket for this user
+		const existingSocketId = userSockets[userId]
+		if (existingSocketId && existingSocketId !== socket.id) {
+			console.log(`Removing old socket ${existingSocketId} for user ${userId}`)
+			const existingSocket = io.sockets.sockets.get(existingSocketId)
+			if (existingSocket) {
+				existingSocket.disconnect(true)
+			}
+			delete userSockets[userId]
+		}
 
-    // Handle new messages directly through socket events
-    socket.on("new-message", ({ conversationId, message, recipientIds }) => {
-        console.log("Received new message event:", { conversationId, recipientIds })
-        emitNewMessage(conversationId, message, recipientIds)
-    })
+		// Add new socket mapping
+		userSockets[userId] = socket.id
+		console.log('User connected - ID:', userId, 'Socket ID:', socket.id)
+		console.log('Updated userSockets:', userSockets)
+
+		// Acknowledge the connection
+		socket.emit('user-connected-ack', { userId, socketId: socket.id })
+	})
+
+	socket.on('disconnect', () => {
+		console.log(`Socket ${socket.id} disconnecting`)
+		if (currentUserId && userSockets[currentUserId] === socket.id) {
+			console.log('User disconnected - ID:', currentUserId)
+			delete userSockets[currentUserId]
+			console.log('Current userSockets after disconnect:', userSockets)
+		}
+	})
+
+	// Handle new messages directly through socket events
+	socket.on('new-message', ({ conversationId, message, recipientIds }) => {
+		console.log('Received new message event:', { conversationId, recipientIds })
+		emitNewMessage(conversationId, message, recipientIds)
+	})
 })
 
 export function emitNewMessage(conversationId: string, message: any, recipientIds: string[]) {
-    console.log("Emitting new message:", { conversationId, message, recipientIds })
-    console.log("Current userSockets state:", userSockets)
-    
-    recipientIds.forEach((recipientId) => {
-        const recipientSocketId = userSockets[recipientId]
-        if (recipientSocketId) {
-            const socket = io.sockets.sockets.get(recipientSocketId)
-            if (socket && socket.connected) {
-                console.log(`Sending to recipient ${recipientId} via socket ${recipientSocketId}`)
-                socket.emit("message-received", {
-                    conversationId,
-                    message
-                })
-            } else {
-                console.log(`Socket ${recipientSocketId} exists but is not connected`)
-                delete userSockets[recipientId]
-            }
-        } else {
-            console.log(`No socket found for recipient ${recipientId}`)
-        }
-    })
+	console.log('Emitting new message:', { conversationId, message, recipientIds })
+	console.log('Current userSockets state:', userSockets)
+
+	recipientIds.forEach((recipientId) => {
+		const recipientSocketId = userSockets[recipientId]
+		if (recipientSocketId) {
+			const socket = io.sockets.sockets.get(recipientSocketId)
+			if (socket && socket.connected) {
+				console.log(`Sending to recipient ${recipientId} via socket ${recipientSocketId}`)
+				socket.emit('message-received', {
+					conversationId,
+					message,
+				})
+			} else {
+				console.log(`Socket ${recipientSocketId} exists but is not connected`)
+				delete userSockets[recipientId]
+			}
+		} else {
+			console.log(`No socket found for recipient ${recipientId}`)
+		}
+	})
 }
 
 global.userSockets = userSockets
@@ -370,8 +340,8 @@ closeWithGrace(async ({ err }) => {
 		server.close((e) => (e ? reject(e) : resolve('ok')))
 	})
 	if (err) {
-		console.error(chalk.red(err))
-		console.error(chalk.red(err.stack))
+		console.error(styleText('red', String(err)))
+		console.error(styleText('red', String(err.stack)))
 		if (SENTRY_ENABLED) {
 			Sentry.captureException(err)
 			await Sentry.flush(500)

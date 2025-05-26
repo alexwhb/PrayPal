@@ -26,6 +26,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		where: { id: userId },
 		select: { roles: true },
 	})
+
 	if (!user || !user.roles.some((role) => role.name === 'admin')) {
 		await logout({ request, redirectTo: '/' })
 	} else {
@@ -34,6 +35,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 			return redirect('/admin/dashboard')
 		}
 	}
+	
+	// Return an empty object to avoid undefined
+	return {}
 }
 
 export default function Admin() {

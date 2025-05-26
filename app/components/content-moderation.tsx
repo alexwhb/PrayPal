@@ -1,5 +1,5 @@
 import { ReportReason, ReportableType } from '@prisma/client'
-import { Flag, Trash, AlertTriangle } from 'lucide-react'
+import {Icon} from '#app/components/ui/icon.tsx'
 import { useState } from 'react'
 import { Form } from 'react-router'
 import { Button } from '#app/components/ui/button.tsx'
@@ -104,7 +104,7 @@ export default function ContentModeration({
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
-              <Flag className="h-4 w-4" />
+								<Icon name="flag" size="sm" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -132,7 +132,7 @@ export default function ContentModeration({
           size="sm"
           onClick={() => handleOpenDialog('report')}
         >
-					<Flag className="h-4 w-4" />
+					<Icon name="flag" size="sm" />
           <span className="sr-only">Report</span>
         </Button>
       )}
@@ -144,7 +144,7 @@ export default function ContentModeration({
           size="sm"
           onClick={() => handleOpenDialog('delete')}
         >
-          <Trash className="mr-2 h-4 w-4" />
+					<Icon name="trash" size="sm" className="mr-2" />
           Delete
         </Button>
       )}

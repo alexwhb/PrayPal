@@ -1,6 +1,6 @@
 
-import { useEffect, useState } from "react"
 import confetti from "canvas-confetti"
+import { useEffect, useState } from "react"
 
 interface ConfettiCelebrationProps {
 	duration?: number

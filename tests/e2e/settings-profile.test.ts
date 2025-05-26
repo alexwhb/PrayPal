@@ -45,7 +45,7 @@ test('Users can update their password', async ({ page, login }) => {
 	expect(
 		await verifyUserPassword({ username }, oldPassword),
 		'Old password still works',
-	).toEqual(null)
+	).toBeNull()
 	expect(
 		await verifyUserPassword({ username }, newPassword),
 		'New password does not work',
@@ -57,6 +57,7 @@ test('Users can update their profile photo', async ({ page, login }) => {
 	await page.goto('/settings/profile')
 
 	const beforeSrc = await page
+		.getByRole('main')
 		.getByRole('img', { name: user.name ?? user.username })
 		.getAttribute('src')
 
@@ -65,7 +66,7 @@ test('Users can update their profile photo', async ({ page, login }) => {
 	await expect(page).toHaveURL(`/settings/profile/photo`)
 
 	await page
-		.getByRole('textbox', { name: /change/i })
+		.getByRole('button', { name: /change/i })
 		.setInputFiles('./tests/fixtures/images/user/kody.png')
 
 	await page.getByRole('button', { name: /save/i }).click()
@@ -76,9 +77,12 @@ test('Users can update their profile photo', async ({ page, login }) => {
 	).toHaveURL(`/settings/profile`)
 
 	const afterSrc = await page
+		.getByRole('main')
 		.getByRole('img', { name: user.name ?? user.username })
 		.getAttribute('src')
 
+	// not sure how to get the before/after src with getAttribute inline
+	// eslint-disable-next-line playwright/prefer-web-first-assertions
 	expect(beforeSrc).not.toEqual(afterSrc)
 })
 

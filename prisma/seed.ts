@@ -1,15 +1,18 @@
 import { faker } from '@faker-js/faker'
+import {
+	$Enums,
+	CategoryType,
+	ContentStatus,
+	GroupFrequency,
+	MembershipStatus,
+	RequestType,
+	ShareType,
+} from '@prisma/client'
 import { promiseHash } from 'remix-utils/promise'
 import { prisma } from '#app/utils/db.server.ts'
 import { MOCK_CODE_GITHUB } from '#app/utils/providers/constants'
-import {
-	createPassword,
-	createUser,
-	getUserImages,
-	img,
-} from '#tests/db-utils.ts'
+import { createPassword, createUser, getUserImages } from '#tests/db-utils.ts'
 import { insertGitHubUser } from '#tests/mocks/github.ts'
-import { CategoryType, RequestType, ShareType, ContentStatus, $Enums, GroupFrequency, FeedbackType, FeedbackStatus, MembershipStatus, NotificationType } from '@prisma/client'
 import GroupRole = $Enums.GroupRole
 
 async function seed() {
@@ -119,7 +122,6 @@ async function seed() {
 			data: {
 				...userData,
 				password: { create: createPassword(userData.username) },
-				image: { create: userImages[index % userImages.length] },
 				roles: { connect: { name: 'user' } },
 				requests: {
 					createMany: {
@@ -131,16 +133,20 @@ async function seed() {
 								const fulfilled = faker.datatype.boolean()
 								return {
 									type: RequestType.PRAYER,
-									categoryId: faker.helpers.arrayElement(prayerCategoryRecords).id,
+									categoryId: faker.helpers.arrayElement(prayerCategoryRecords)
+										.id,
 									description: faker.lorem.paragraph(),
 									fulfilled: fulfilled,
-									status: faker.helpers.arrayElement([ContentStatus.ACTIVE, ContentStatus.PENDING]),
+									status: faker.helpers.arrayElement([
+										ContentStatus.ACTIVE,
+										ContentStatus.PENDING,
+									]),
 
 									response: fulfilled
 										? {
-											message: faker.lorem.sentence(),
-											prayerCount: faker.number.int({ min: 0, max: 3 }),
-										}
+												message: faker.lorem.sentence(),
+												prayerCount: faker.number.int({ min: 0, max: 3 }),
+											}
 										: null,
 								}
 							}),
@@ -152,9 +158,16 @@ async function seed() {
 								categoryId: faker.helpers.arrayElement(needCategoryRecords).id,
 								description: faker.lorem.paragraph(),
 								fulfilled: faker.datatype.boolean(),
-								fulfilledAt: faker.datatype.boolean() ? faker.date.past() : null,
-								fulfilledBy: faker.datatype.boolean() ? faker.string.uuid() : null,
-								status: faker.helpers.arrayElement([ContentStatus.ACTIVE, ContentStatus.PENDING]),
+								fulfilledAt: faker.datatype.boolean()
+									? faker.date.past()
+									: null,
+								fulfilledBy: faker.datatype.boolean()
+									? faker.string.uuid()
+									: null,
+								status: faker.helpers.arrayElement([
+									ContentStatus.ACTIVE,
+									ContentStatus.PENDING,
+								]),
 
 								response: null,
 							})),
@@ -163,43 +176,56 @@ async function seed() {
 				},
 			},
 		})
+
+		// Upload user profile image
+		const userImage = userImages[index % userImages.length]
+		if (userImage) {
+			await prisma.userImage.create({
+				data: {
+					userId: user.id,
+					objectKey: userImage.objectKey,
+				},
+			})
+		}
+
 		userIds.push(user.id) // Store user IDs for later use
 	}
 	console.timeEnd(`👤 Created ${totalUsers} users...`)
 
 	console.time(`🐨 Created admin user "kody"`)
-	const kodyImages = await promiseHash({
-		kodyUser: img({ filepath: './tests/fixtures/images/user/kody.png' }),
-		cuteKoala: img({
+
+	const kodyImages = {
+		kodyUser: { objectKey: 'user/kody.png' },
+		cuteKoala: {
 			altText: 'an adorable koala cartoon illustration',
-			filepath: './tests/fixtures/images/kody-notes/cute-koala.png',
-		}),
-		koalaEating: img({
+			objectKey: 'kody-notes/cute-koala.png',
+		},
+		koalaEating: {
 			altText: 'a cartoon illustration of a koala in a tree eating',
-			filepath: './tests/fixtures/images/kody-notes/koala-eating.png',
-		}),
-		koalaCuddle: img({
+			objectKey: 'kody-notes/koala-eating.png',
+		},
+		koalaCuddle: {
 			altText: 'a cartoon illustration of koalas cuddling',
-			filepath: './tests/fixtures/images/kody-notes/koala-cuddle.png',
-		}),
-		mountain: img({
+			objectKey: 'kody-notes/koala-cuddle.png',
+		},
+		mountain: {
 			altText: 'a beautiful mountain covered in snow',
-			filepath: './tests/fixtures/images/kody-notes/mountain.png',
-		}),
-		koalaCoder: img({
+			objectKey: 'kody-notes/mountain.png',
+		},
+		koalaCoder: {
 			altText: 'a koala coding at the computer',
-			filepath: './tests/fixtures/images/kody-notes/koala-coder.png',
-		}),
-		koalaMentor: img({
+			objectKey: 'kody-notes/koala-coder.png',
+		},
+		koalaMentor: {
 			altText:
 				'a koala in a friendly and helpful posture. The Koala is standing next to and teaching a woman who is coding on a computer and shows positive signs of learning and understanding what is being explained.',
-			filepath: './tests/fixtures/images/kody-notes/koala-mentor.png',
-		}),
-		koalaSoccer: img({
+			objectKey: 'kody-notes/koala-mentor.png',
+		},
+		koalaSoccer: {
 			altText: 'a cute cartoon koala kicking a soccer ball on a soccer field ',
-			filepath: './tests/fixtures/images/kody-notes/koala-soccer.png',
-		}),
-	})
+			objectKey: 'kody-notes/koala-soccer.png',
+		},
+	}
 
 	const githubUser = await insertGitHubUser(MOCK_CODE_GITHUB)
 
@@ -209,7 +235,7 @@ async function seed() {
 			email: 'kody@kcd.dev',
 			username: 'kody',
 			name: 'Kody',
-			image: { create: kodyImages.kodyUser },
+
 			password: { create: createPassword('kodylovesyou') },
 			connections: {
 				create: { providerName: 'github', providerId: githubUser.profile.id },
@@ -218,13 +244,21 @@ async function seed() {
 		},
 	})
 
+	await prisma.userImage.create({
+		data: {
+			userId: kody.id,
+			objectKey: kodyImages.kodyUser.objectKey,
+		},
+	})
+
+
 	const other = await prisma.user.create({
 		select: { id: true },
 		data: {
 			email: 'test@kcd.dev',
 			username: 'mody',
 			name: 'Mody',
-			image: { create: kodyImages.cuteKoala },
+
 			password: { create: createPassword('testlovesyou') },
 			// connections: {
 			// 	create: { providerName: 'github', providerId: githubUser.profile.id },
@@ -232,6 +266,15 @@ async function seed() {
 			roles: { connect: [{ name: 'user' }] },
 		},
 	})
+
+	await prisma.userImage.create({
+		data: {
+			userId: other.id,
+			objectKey: kodyImages.cuteKoala.objectKey,
+		},
+	})
+
+
 	userIds.push(kody.id) // Add Kody to the user list
 	userIds.push(other.id) // Add Mody to the user list
 
@@ -249,13 +292,13 @@ async function seed() {
 	for (let i = 0; i < 10; i++) {
 		const meetingTime = faker.date.future()
 		const isOnline = faker.datatype.boolean()
-		
+
 		groups.push({
 			name: faker.helpers.arrayElement([
 				'Sunday Morning Bible Study',
 				'Youth Prayer Warriors',
-				'Women\'s Fellowship',
-				'Men\'s Breakfast Group',
+				"Women's Fellowship",
+				"Men's Breakfast Group",
 				'Marriage Enrichment',
 				'College & Career',
 				'Senior Saints',
@@ -277,11 +320,11 @@ async function seed() {
 	}
 
 	const createdGroups = await Promise.all(
-		groups.map(group => 
+		groups.map((group) =>
 			prisma.group.create({
-				data: group
-			})
-		)
+				data: group,
+			}),
+		),
 	)
 	console.timeEnd(`👥 Created groups...`)
 
@@ -303,7 +346,7 @@ async function seed() {
 		// Optionally add one more leader (50% chance)
 		if (faker.datatype.boolean()) {
 			const secondLeader = faker.helpers.arrayElement(
-				userIds.filter(id => id !== initialLeader)
+				userIds.filter((id) => id !== initialLeader),
 			)
 			memberships.push({
 				userId: secondLeader,
@@ -317,20 +360,21 @@ async function seed() {
 		// Add 3-15 regular members
 		const memberCount = faker.number.int({ min: 3, max: 15 })
 		const existingUserIds = memberships
-			.filter(m => m.groupId === group.id)
-			.map(m => m.userId)
-		
+			.filter((m) => m.groupId === group.id)
+			.map((m) => m.userId)
+
 		const members = faker.helpers.arrayElements(
-			userIds.filter(id => !existingUserIds.includes(id)),
-			memberCount
+			userIds.filter((id) => !existingUserIds.includes(id)),
+			memberCount,
 		)
 
-		members.forEach(userId => {
+		members.forEach((userId) => {
 			// For private groups, create a mix of pending and approved members
-			const status = group.isPrivate && faker.datatype.boolean({ probability: 0.3 }) 
-				? MembershipStatus.PENDING 
-				: MembershipStatus.APPROVED;
-			
+			const status =
+				group.isPrivate && faker.datatype.boolean({ probability: 0.3 })
+					? MembershipStatus.PENDING
+					: MembershipStatus.APPROVED
+
 			memberships.push({
 				userId,
 				groupId: group.id,
@@ -414,7 +458,8 @@ async function seed() {
 	console.time(`✉️ Creating two-sided messages for Kody...`)
 	const messageCount = 10 // Number of messages to create
 	for (let i = 0; i < messageCount; i++) {
-		const recipientId = userIds[faker.number.int({ min: 0, max: userIds.length - 1 })] // Randomly select a recipient
+		const recipientId =
+			userIds[faker.number.int({ min: 0, max: userIds.length - 1 })] // Randomly select a recipient
 
 		// Find or create a conversation between Kody and the recipient
 		let conversation = await prisma.conversation.findFirst({
@@ -471,7 +516,8 @@ async function seed() {
 	const groupMessageCount = 5 // Number of group messages per group
 	for (const groupConversation of [familyConversation, friendsConversation]) {
 		for (let i = 0; i < groupMessageCount; i++) {
-			const senderId = userIds[faker.number.int({ min: 0, max: userIds.length - 1 })] // Randomly select a sender
+			const senderId =
+				userIds[faker.number.int({ min: 0, max: userIds.length - 1 })] // Randomly select a sender
 
 			// Create a message in the group conversation
 			const message = await prisma.message.create({
@@ -513,7 +559,15 @@ async function seed() {
 				claimedAt: claimed ? faker.date.past() : null,
 				claimedById,
 				shareType,
-				duration: shareType === ShareType.BORROW ? faker.helpers.arrayElement(['1 week', '2 weeks', '1 month', 'Flexible']) : null,
+				duration:
+					shareType === ShareType.BORROW
+						? faker.helpers.arrayElement([
+								'1 week',
+								'2 weeks',
+								'1 month',
+								'Flexible',
+							])
+						: null,
 				userId,
 				status: faker.helpers.arrayElement(Object.values(ContentStatus)),
 				createdAt: faker.date.past(),
@@ -530,47 +584,51 @@ async function seed() {
 	console.time(`❓ Creating help FAQs...`)
 	const helpFaqs = [
 		{
-			question: "How do I create a prayer request?",
-			answer: "Navigate to the Prayer section and click on 'New Prayer Request'. Fill out the form with your request details and submit.",
-			category: "Prayer",
+			question: 'How do I create a prayer request?',
+			answer:
+				"Navigate to the Prayer section and click on 'New Prayer Request'. Fill out the form with your request details and submit.",
+			category: 'Prayer',
 			order: 1,
 			active: true,
 		},
 		{
-			question: "Can I join multiple groups?",
-			answer: "Yes, you can join as many groups as you'd like. Browse available groups in the Groups section and request to join those that interest you.",
-			category: "Groups",
+			question: 'Can I join multiple groups?',
+			answer:
+				"Yes, you can join as many groups as you'd like. Browse available groups in the Groups section and request to join those that interest you.",
+			category: 'Groups',
 			order: 1,
 			active: true,
 		},
 		{
-			question: "How do I share an item with others?",
-			answer: "Go to the Share section and click 'Share New Item'. Fill out the details about what you're sharing and whether it's for borrowing or giving away.",
-			category: "Sharing",
+			question: 'How do I share an item with others?',
+			answer:
+				"Go to the Share section and click 'Share New Item'. Fill out the details about what you're sharing and whether it's for borrowing or giving away.",
+			category: 'Sharing',
 			order: 1,
 			active: true,
 		},
 		{
 			question: "What's the difference between borrowing and giving?",
-			answer: "When you select 'Borrow', you're indicating the item will be returned after a period of time. 'Give' means you're donating the item permanently.",
-			category: "Sharing",
+			answer:
+				"When you select 'Borrow', you're indicating the item will be returned after a period of time. 'Give' means you're donating the item permanently.",
+			category: 'Sharing',
 			order: 2,
 			active: true,
 		},
 		{
-			question: "How do I update my profile information?",
-			answer: "Click on your profile picture in the top right corner and select 'Settings'. From there, you can update your personal information.",
-			category: "Account",
+			question: 'How do I update my profile information?',
+			answer:
+				"Click on your profile picture in the top right corner and select 'Settings'. From there, you can update your personal information.",
+			category: 'Account',
 			order: 1,
 			active: true,
 		},
-	];
+	]
 
 	await prisma.helpFAQ.createMany({
 		data: helpFaqs,
-	});
+	})
 	console.timeEnd(`❓ Creating help FAQs...`)
-
 
 	// After creating feedback entries, add notifications
 	console.time(`🔔 Creating notifications...`)
@@ -611,7 +669,8 @@ async function seed() {
 			userId: other.id,
 			type: 'GROUP_APPROVED',
 			title: 'Group join request approved',
-			description: 'Your request to join the Prayer Warriors group has been approved',
+			description:
+				'Your request to join the Prayer Warriors group has been approved',
 			actionUrl: `/groups/${createdGroups[1].id}`,
 			read: false,
 		},
@@ -628,14 +687,16 @@ async function seed() {
 
 	// Create some random notifications for other users
 	const randomNotifications = []
-	for (const userId of userIds.filter(id => id !== kody.id && id !== other.id)) {
+	for (const userId of userIds.filter(
+		(id) => id !== kody.id && id !== other.id,
+	)) {
 		// Add 1-3 random notifications per user
 		const notificationCount = faker.number.int({ min: 1, max: 3 })
-		
+
 		for (let i = 0; i < notificationCount; i++) {
 			const type = faker.helpers.arrayElement(notificationTypes)
 			const read = faker.datatype.boolean({ probability: 0.3 }) // 30% chance of being read
-			
+
 			randomNotifications.push({
 				userId,
 				type,
@@ -661,11 +722,7 @@ async function seed() {
 
 	// Create all notifications
 	await prisma.notification.createMany({
-		data: [
-			...kodyNotifications,
-			...otherNotifications,
-			...randomNotifications,
-		],
+		data: [...kodyNotifications, ...otherNotifications, ...randomNotifications],
 	})
 
 	console.timeEnd(`🔔 Creating notifications...`)

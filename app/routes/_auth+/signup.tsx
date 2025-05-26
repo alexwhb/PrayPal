@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { ErrorList, Field } from '#app/components/forms.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
+import { requireAnonymous } from '#app/utils/auth.server.ts'
 import {
 	ProviderConnectionForm,
 	providerNames,
@@ -30,6 +31,8 @@ const SignupSchema = z.object({
 })
 
 export async function loader({ request }: Route.LoaderArgs) {
+	// await requireAnonymous(request)
+
 	const url = new URL(request.url)
 	const referralId = url.searchParams.get('ref')
 
@@ -38,19 +41,19 @@ export async function loader({ request }: Route.LoaderArgs) {
 		if (!referralId) {
 			throw redirect('/login')
 		}
-		
+
 		const referral = await prisma.referralLink.findUnique({
 			where: { id: referralId },
 		})
-		
-		if (!referral || 
-			referral.used || 
+
+		if (!referral ||
+			referral.used ||
 			referral.expiresAt < new Date() ||
 			referral.usedById) {
 			throw redirect('/login')
 		}
 	}
-	
+
 	return data({ referralId })
 }
 
@@ -177,14 +180,14 @@ export default function SignupRoute({ actionData }: Route.ComponentProps) {
 	})
 
 	return (
-		<div className="container flex flex-col justify-center pb-32 pt-20">
+		<div className="container flex flex-col justify-center pt-20 pb-32">
 			<div className="text-center">
 				<h1 className="text-h1">Let's start your journey!</h1>
-				<p className="mt-3 text-body-md text-muted-foreground">
+				<p className="text-body-md text-muted-foreground mt-3">
 					Please enter your email.
 				</p>
 			</div>
-			<div className="mx-auto mt-16 min-w-full max-w-sm sm:min-w-[368px]">
+			<div className="mx-auto mt-16 max-w-sm min-w-full sm:min-w-[368px]">
 				<Form method="POST" {...getFormProps(form)}>
 					<HoneypotInputs />
 					<Field
@@ -209,15 +212,18 @@ export default function SignupRoute({ actionData }: Route.ComponentProps) {
 						Submit
 					</StatusButton>
 				</Form>
-				<ul className="mt-5 flex flex-col gap-5 border-b-2 border-t-2 border-border py-3">
+				<ul className="flex flex-col gap-4 py-4">
 					{providerNames.map((providerName) => (
-						<li key={providerName}>
-							<ProviderConnectionForm
-								type="Signup"
-								providerName={providerName}
-								redirectTo={redirectTo}
-							/>
-						</li>
+						<>
+							<hr />
+							<li key={providerName}>
+								<ProviderConnectionForm
+									type="Signup"
+									providerName={providerName}
+									redirectTo={redirectTo}
+								/>
+							</li>
+						</>
 					))}
 				</ul>
 			</div>

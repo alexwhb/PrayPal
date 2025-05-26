@@ -18,12 +18,10 @@ import { CheckboxField, ErrorList, Field } from '#app/components/forms.tsx'
 import { Spacer } from '#app/components/spacer.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
 import {
-	authenticator,
 	sessionKey,
 	signupWithConnection,
 	requireAnonymous,
 } from '#app/utils/auth.server.ts'
-import { connectionSessionStorage } from '#app/utils/connections.server'
 import { ProviderNameSchema } from '#app/utils/connections.tsx'
 import { prisma } from '#app/utils/db.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
@@ -65,7 +63,7 @@ async function requireData({
 		.object({
 			email: z.string(),
 			providerName: ProviderNameSchema,
-			providerId: z.string(),
+			providerId: z.string().or(z.number()),
 		})
 		.safeParse({ email, providerName: params.provider, providerId })
 	if (result.success) {
@@ -78,24 +76,17 @@ async function requireData({
 
 export async function loader({ request, params }: Route.LoaderArgs) {
 	const { email } = await requireData({ request, params })
-	const connectionSession = await connectionSessionStorage.getSession(
-		request.headers.get('cookie'),
-	)
+
 	const verifySession = await verifySessionStorage.getSession(
 		request.headers.get('cookie'),
 	)
 	const prefilledProfile = verifySession.get(prefilledProfileKey)
 
-	const formError = connectionSession.get(authenticator.sessionErrorKey)
-	const hasError = typeof formError === 'string'
-
 	return {
 		email,
 		status: 'idle',
 		submission: {
-			status: hasError ? 'error' : undefined,
 			initialValue: prefilledProfile ?? {},
-			error: { '': hasError ? [formError] : [] },
 		} as SubmissionResult,
 	}
 }
@@ -128,7 +119,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 			const session = await signupWithConnection({
 				...data,
 				email,
-				providerId,
+				providerId: String(providerId),
 				providerName,
 			})
 			return { ...data, session }
@@ -191,7 +182,7 @@ export default function OnboardingProviderRoute({
 	})
 
 	return (
-		<div className="container flex min-h-full flex-col justify-center pb-32 pt-20">
+		<div className="container flex min-h-full flex-col justify-center pt-20 pb-32">
 			<div className="mx-auto w-full max-w-lg">
 				<div className="flex flex-col gap-3 text-center">
 					<h1 className="text-h1">Welcome aboard {loaderData.email}!</h1>
@@ -202,7 +193,7 @@ export default function OnboardingProviderRoute({
 				<Spacer size="xs" />
 				<Form
 					method="POST"
-					className="mx-auto min-w-full max-w-sm sm:min-w-[368px]"
+					className="mx-auto max-w-sm min-w-full sm:min-w-[368px]"
 					{...getFormProps(form)}
 				>
 					{fields.imageUrl.initialValue ? (
@@ -210,7 +201,7 @@ export default function OnboardingProviderRoute({
 							<img
 								src={fields.imageUrl.initialValue}
 								alt="Profile"
-								className="h-24 w-24 rounded-full"
+								className="size-24 rounded-full"
 							/>
 							<p className="text-body-sm text-muted-foreground">
 								You can change your photo later

@@ -23,7 +23,7 @@ export default function PrayerBoard({
 		prayers,
 		filters,
 		activeFilter,
-		canModerate, 
+		canModerate,
 		userId: currentUserId,
 		hasNextPage,
 	} = loaderData

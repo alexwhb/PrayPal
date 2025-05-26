@@ -1,5 +1,9 @@
-import { ChevronsUpDown } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.tsx'
+import { Img } from 'openimg/react'
+import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage,
+} from '#app/components/ui/avatar.tsx'
 import {
 	Command,
 	CommandEmpty,
@@ -8,16 +12,15 @@ import {
 	CommandItem,
 	CommandList,
 } from '#app/components/ui/command.tsx'
+import { Icon } from '#app/components/ui/icon.tsx'
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from '#app/components/ui/popover.tsx'
-import { cn } from '#app/lib/utils.ts'
 import { type UserSearchResult } from '#app/routes/resources+/users.search.tsx'
-import { getUserImgSrc } from '#app/utils/misc.tsx'
+import { cn, getUserImgSrc } from '#app/utils/misc.tsx'
 import { Button } from '../ui/button'
-
 
 interface UserAutocompleteProps {
 	onQueryChange: (query: string) => void
@@ -36,20 +39,22 @@ export function UserAutocomplete({
 	isOpen,
 	setIsOpen,
 	isLoading,
-	className
+	className,
 }: UserAutocompleteProps) {
-	
 	return (
-		<Popover open={isOpen} onOpenChange={setIsOpen} >
+		<Popover open={isOpen} onOpenChange={setIsOpen}>
 			<PopoverTrigger asChild>
 				<Button
 					variant="outline"
 					role="combobox"
 					aria-expanded={isOpen}
-					className={cn("w-full justify-between text-left", className)}
+					className={cn('w-full justify-between text-left', className)}
 				>
 					<span className="truncate">Select user...</span>
-					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+					<Icon
+						name="chevrons-up-down"
+						className="ml-2 h-4 w-4 shrink-0 opacity-50"
+					/>
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className={className}>
@@ -60,7 +65,7 @@ export function UserAutocomplete({
 					/>
 					<CommandList>
 						{isLoading ? (
-							<div className="animate-pulse py-6 text-center text-sm text-muted-foreground">
+							<div className="text-muted-foreground animate-pulse py-6 text-center text-sm">
 								Loading users...
 							</div>
 						) : (
@@ -78,17 +83,21 @@ export function UserAutocomplete({
 													setIsOpen(false)
 												}}
 											>
-												<Avatar className="h-6 w-6 border-2 border-background">
-													{user.id ? (
-														<AvatarImage
-															src={getUserImgSrc(user.imageId)}
-															alt={user.name || user.username}
-														/>
-													) : (
-														<AvatarFallback>
-															{(user.name || user.username)[0]}
-														</AvatarFallback>
-													)}
+												<Avatar className="border-background h-6 w-6 border-2">
+													<AvatarImage
+														src={getUserImgSrc(user.objectKey)}
+														asChild
+													/>
+													<Img
+														src={getUserImgSrc(user.objectKey)}
+														alt={user.name || user.username}
+														className="h-full w-full object-cover"
+														width={64}
+														height={64}
+													/>
+													<AvatarFallback>
+														{(user.name || user.username)[0]}
+													</AvatarFallback>
 												</Avatar>
 												{user.name}
 											</CommandItem>

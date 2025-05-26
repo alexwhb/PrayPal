@@ -1,13 +1,22 @@
-import { CalendarDays, Clock, Gift, MapPin, Share } from 'lucide-react'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { Form, Link } from 'react-router'
-import { Avatar, AvatarFallback, AvatarImage } from '#app/components/ui/avatar.tsx'
+import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage,
+} from '#app/components/ui/avatar.tsx'
 import { Badge } from '#app/components/ui/badge.tsx'
 import { Button } from '#app/components/ui/button.tsx'
-import { Card, CardContent, CardFooter, CardHeader } from '#app/components/ui/card.tsx'
+import {
+	Card,
+	CardContent,
+	CardFooter,
+	CardHeader,
+} from '#app/components/ui/card.tsx'
 import { formatDate } from '#app/utils/formatter.ts'
+import { Img } from 'openimg/react'
 
-
-import {type ShareType} from './type.ts'
+import { type ShareType } from './type.ts'
 import ContentModeration from '#app/components/content-moderation.tsx'
 
 type ItemCardProps = {
@@ -20,8 +29,11 @@ type ItemCardProps = {
 	) => void
 }
 
-
-export default function ShareItem({ item, isCurrentUser, onOpenDialog }: ItemCardProps) {
+export default function ShareItem({
+	item,
+	isCurrentUser,
+	onOpenDialog,
+}: ItemCardProps) {
 	const isBorrowable = item.shareType === 'borrow'
 
 	return (
@@ -29,13 +41,15 @@ export default function ShareItem({ item, isCurrentUser, onOpenDialog }: ItemCar
 			className={`${item.claimed ? 'opacity-75' : ''} border-2 transition-shadow hover:shadow-md`}
 		>
 			<CardHeader className="p-0">
-				<div className="h-58 relative w-full overflow-hidden">
-					<img
+				<div className="relative h-58 overflow-hidden">
+					<Img
 						src={item.image}
 						alt={item.title}
+						width={600}
+						height={400}
 						className="h-full w-full rounded-t-lg object-cover"
 					/>
-					<div className="absolute right-2 top-2">
+					<div className="absolute top-2 right-2">
 						<Badge
 							variant="secondary"
 							className="bg-green-500 hover:bg-green-400"
@@ -43,7 +57,7 @@ export default function ShareItem({ item, isCurrentUser, onOpenDialog }: ItemCar
 							{item.category}
 						</Badge>
 					</div>
-					<div className="absolute left-2 top-2">
+					<div className="absolute top-2 left-2">
 						<Badge
 							variant={isBorrowable ? 'outline' : 'default'}
 							className={
@@ -54,12 +68,12 @@ export default function ShareItem({ item, isCurrentUser, onOpenDialog }: ItemCar
 						>
 							{isBorrowable ? (
 								<div className="flex items-center gap-1">
-									<Share className="h-3 w-3" />
+									<Icon name="share" size="xs" />
 									<span>Borrow</span>
 								</div>
 							) : (
 								<div className="flex items-center gap-1">
-									<Gift className="h-3 w-3" />
+									<Icon name="gift" size="xs" />
 									<span>Free</span>
 								</div>
 							)}
@@ -79,21 +93,21 @@ export default function ShareItem({ item, isCurrentUser, onOpenDialog }: ItemCar
 			</CardHeader>
 			<CardContent className="pt-4">
 				<h3 className="mb-1 text-lg font-semibold">{item.title}</h3>
-				<p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
+				<p className="text-muted-foreground mb-3 line-clamp-2 text-sm">
 					{item.description}
 				</p>
-				<div className="mb-1 flex items-center text-sm text-muted-foreground">
-					<MapPin className="mr-1 h-3 w-3" />
+				<div className="text-muted-foreground mb-1 flex items-center text-sm">
+					<Icon name="map-pin" className="mr-1" size="xs" />
 					{item.location}
 				</div>
 				{isBorrowable && item.duration && (
-					<div className="mb-1 flex items-center text-sm text-muted-foreground">
-						<Clock className="mr-1 h-3 w-3" />
+					<div className="text-muted-foreground mb-1 flex items-center text-sm">
+						<Icon name="clock" className="mr-1" size="xs" />
 						{item.duration}
 					</div>
 				)}
-				<div className="mb-3 flex items-center text-sm text-muted-foreground">
-					<CalendarDays className="mr-1 h-3 w-3" />
+				<div className="text-muted-foreground mb-3 flex items-center text-sm">
+					<Icon name="calendar-days" className="mr-1" size="xs" />
 					Posted {formatDate(item.postedDate)}
 				</div>
 
@@ -105,7 +119,15 @@ export default function ShareItem({ item, isCurrentUser, onOpenDialog }: ItemCar
 						className="flex items-center gap-2"
 					>
 						<Avatar className="h-6 w-6">
-							<AvatarImage src={item.userAvatar} alt={item.userDisplayName} />
+							<AvatarImage src={item.userAvatar} asChild>
+								<Img
+									src={item.userAvatar}
+									alt={item.userDisplayName}
+									className="h-full w-full object-cover"
+									width={64}
+									height={64}
+								/>
+							</AvatarImage>
 							<AvatarFallback>{item.userDisplayName.charAt(0)}</AvatarFallback>
 						</Avatar>
 						<span className="text-sm">{item.userDisplayName}</span>
@@ -135,14 +157,20 @@ export default function ShareItem({ item, isCurrentUser, onOpenDialog }: ItemCar
 						</Button>
 					</Form>
 				)}
-
-				<ContentModeration
-					itemId={item.id}
-					itemType="share-item"
-					canModerate={item.canModerate}
-					isOwner={isCurrentUser}
-					onModerateAction={onOpenDialog}
-				/>
+				<div className="flex gap-6">
+					<ContentModeration
+						itemId={item.id}
+						itemType="share-item"
+						canModerate={item.canModerate}
+						isOwner={isCurrentUser}
+						onModerateAction={onOpenDialog}
+					/>
+					{isCurrentUser && (
+						<Link to={`/share/${item.id}/edit`} prefetch="intent">
+							<Icon name="pencil-1" size="md" />
+						</Link>
+					)}
+				</div>
 			</CardFooter>
 		</Card>
 	)

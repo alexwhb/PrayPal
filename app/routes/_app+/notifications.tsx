@@ -1,7 +1,7 @@
 import { type $Enums, type Notification } from '@prisma/client'
-import { Bell, MessageSquare, UserPlus, CheckCircle } from 'lucide-react'
 import { data, Link } from 'react-router'
 import { Button } from '#app/components/ui/button.tsx'
+import {Icon} from '#app/components/ui/icon.tsx'
 import { Card, CardContent } from '#app/components/ui/card.tsx'
 import {
 	Tabs,
@@ -74,19 +74,19 @@ export async function action({ request }: Route.ActionArgs) {
 const getNotificationIcon = (type: $Enums.NotificationType) => {
 	switch (type) {
 		case 'MESSAGE_RECEIVED':
-			return <MessageSquare className="h-5 w-5 text-blue-500" />
+			return <Icon name="message-square" className="h-5 w-5 text-blue-500" />
 		case 'GROUP_JOIN_REQUEST':
 		case 'GROUP_APPROVED':
 		case 'GROUP_REJECTED':
-			return <UserPlus className="h-5 w-5 text-purple-500" />
+			return <Icon name="user-plus" className="h-5 w-5 text-purple-500" />
 		case 'SHARE_ITEM_REQUEST':
 		case 'SHARE_ITEM_APPROVED':
 		case 'SHARE_ITEM_REJECTED':
-			return <CheckCircle className="h-5 w-5 text-green-500" />
+			return <Icon name="check-circle" className="h-5 w-5 text-green-500" />
 		case 'SYSTEM_ANNOUNCEMENT':
 		case 'OTHER':
 		default:
-			return <Bell className="h-5 w-5 text-gray-500" />
+			return <Icon name="bell"  className="h-5 w-5 text-gray-500" />
 	}
 }
 

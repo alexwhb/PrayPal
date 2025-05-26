@@ -2,6 +2,7 @@ import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
 import { invariantResponse } from '@epic-web/invariant'
 import { type SEOHandle } from '@nasa-gcn/remix-seo'
+import { Img } from 'openimg/react'
 import { data, Link, useFetcher } from 'react-router'
 import { z } from 'zod'
 import { ErrorList, Field } from '#app/components/forms.tsx'
@@ -22,7 +23,7 @@ export const handle: SEOHandle = {
 }
 
 const ProfileFormSchema = z.object({
-	name: NameSchema.optional(),
+	name: NameSchema.nullable().default(null),
 	username: UsernameSchema,
 })
 
@@ -36,7 +37,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 			username: true,
 			email: true,
 			image: {
-				select: { id: true },
+				select: { objectKey: true },
 			},
 			_count: {
 				select: {
@@ -100,16 +101,19 @@ export default function EditUserProfile({ loaderData }: Route.ComponentProps) {
 	return (
 		<div className="flex flex-col gap-12">
 			<div className="flex justify-center">
-				<div className="relative h-52 w-52">
-					<img
-						src={getUserImgSrc(loaderData.user.image?.id)}
-						alt={loaderData.user.username}
+				<div className="relative size-52">
+					<Img
+						src={getUserImgSrc(loaderData.user.image?.objectKey)}
+						alt={loaderData.user.name ?? loaderData.user.username}
 						className="h-full w-full rounded-full object-cover"
+						width={832}
+						height={832}
+						isAboveFold
 					/>
 					<Button
 						asChild
 						variant="outline"
-						className="absolute -right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full p-0"
+						className="absolute top-3 -right-3 flex size-10 items-center justify-center rounded-full p-0"
 					>
 						<Link
 							preventScrollReset
@@ -117,14 +121,14 @@ export default function EditUserProfile({ loaderData }: Route.ComponentProps) {
 							title="Change profile photo"
 							aria-label="Change profile photo"
 						>
-							<Icon name="camera" className="h-4 w-4" />
+							<Icon name="camera" className="size-4" />
 						</Link>
 					</Button>
 				</div>
 			</div>
 			<UpdateProfile loaderData={loaderData} />
 
-			<div className="col-span-6 my-6 h-1 border-b-[1.5px] border-foreground" />
+			<div className="border-foreground col-span-6 my-6 h-1 border-b-[1.5px]" />
 			<div className="col-span-full flex flex-col gap-6">
 				<div>
 					<Link to="change-email">
@@ -152,6 +156,11 @@ export default function EditUserProfile({ loaderData }: Route.ComponentProps) {
 				<div>
 					<Link to="connections">
 						<Icon name="link-2">Manage connections</Icon>
+					</Link>
+				</div>
+				<div>
+					<Link to="passkeys">
+						<Icon name="passkey">Manage passkeys</Icon>
 					</Link>
 				</div>
 				<div>
@@ -251,6 +260,7 @@ function UpdateProfile({ loaderData }: { loaderData: Info['loaderData'] }) {
 			<div className="mt-8 flex justify-center">
 				<StatusButton
 					type="submit"
+					size="wide"
 					name="intent"
 					value={profileUpdateActionIntent}
 					status={

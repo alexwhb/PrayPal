@@ -1,4 +1,4 @@
-import { Users, TrendingUp, CheckCircle2 } from 'lucide-react'
+import {Icon} from '#app/components/ui/icon.tsx'
 import { BarChart } from '#app/components/charts.tsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#app/components/ui/card.tsx'
 
@@ -26,7 +26,7 @@ export function CommunityTab({ metrics, activityData }: CommunityTabProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Groups</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+						<Icon name="users" className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.totalGroups}</div>
@@ -39,7 +39,7 @@ export function CommunityTab({ metrics, activityData }: CommunityTabProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Shared Items</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+						<Icon name="trending-up" className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.newShareItems}</div>
@@ -52,7 +52,7 @@ export function CommunityTab({ metrics, activityData }: CommunityTabProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">User Engagement</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+						<Icon name="check-circle" className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.activeUsers}</div>

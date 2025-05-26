@@ -1,9 +1,3 @@
-import {
-	CalendarDays,
-	CheckCircle2,
-	HandIcon as PrayingHands,
-} from 'lucide-react'
-import { useState } from 'react'
 import { Form, Link } from 'react-router'
 import ContentModeration from '#app/components/content-moderation.tsx'
 import {
@@ -19,14 +13,15 @@ import {
 	CardFooter,
 	CardHeader,
 } from '#app/components/ui/card.tsx'
+import {Icon} from '#app/components/ui/icon.tsx'
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from '#app/components/ui/tooltip.tsx'
-import { cn } from '#app/lib/utils.ts'
 import { formatDate } from '#app/utils/formatter.ts'
+import { cn } from '#app/utils/misc.tsx'
 import { getUserImgSrc } from '#app/utils/misc.tsx' // This is for users that are not me.
 import { type Prayer } from './type.ts'
 
@@ -46,7 +41,7 @@ export default function OtherPrayerItem({
 						<Link to={`/users/${prayer.user.username}`} prefetch="intent">
 							<Avatar>
 								<AvatarImage
-									src={getUserImgSrc(prayer.user.image?.id)}
+									src={getUserImgSrc(prayer.user.image?.objectKey)}
 									alt={prayer.user.name}
 								/>
 								<AvatarFallback>{prayer.user.name.charAt(0)}</AvatarFallback>
@@ -57,7 +52,7 @@ export default function OtherPrayerItem({
 								<h3 className="font-medium">{prayer.user.name}</h3>
 							</Link>
 							<div className="flex items-center text-sm text-muted-foreground">
-								<CalendarDays className="mr-1 h-3 w-3" />
+								<Icon name="calendar-days" size="xs" className="mr-1"/>
 								{formatDate(prayer.createdAt)}
 							</div>
 						</div>
@@ -100,7 +95,7 @@ export default function OtherPrayerItem({
 												'text-green-600 transition-colors hover:text-green-600',
 										)}
 									>
-										<PrayingHands className="mr-1 h-4 w-4" />
+										<Icon name="hand" size="sm" />
 										<div className="flex items-center">
 											<span className="mr-1 text-sm">Praying</span>
 											{prayer.prayerCount > 0 && (
@@ -121,7 +116,7 @@ export default function OtherPrayerItem({
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span className="text-sm font-medium text-green-600">
-											<CheckCircle2 />
+											<Icon name="check-circle" size="md"/>
 										</span>
 									</TooltipTrigger>
 									<TooltipContent>Prayer marked as answered</TooltipContent>

@@ -1,7 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { PlusIcon, Pencil, Trash2 } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { data, redirect, Form, useLoaderData } from 'react-router'
 import { z } from 'zod'
 import { Field, NumberField, TextareaField } from '#app/components/forms'
@@ -15,6 +14,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '#app/components/ui/dialog'
+import { Icon } from '#app/components/ui/icon.tsx'
 import { Label } from '#app/components/ui/label'
 import {
 	Select, SelectContent, SelectItem,
@@ -39,7 +39,7 @@ export const FAQSchema = z.object({
 	question: z.string().min(5, 'Question must be at least 5 characters').max(200),
 	answer: z.string().min(10, 'Answer must be at least 10 characters').max(2000),
 	category: z.string().min(1, 'Category is required'),
-	order: z.coerce.number().int().min(0),
+	order: z.number().int().min(0),
 	active: z.boolean().default(true),
 })
 
@@ -90,7 +90,7 @@ export async function action({ request }: Route.ActionArgs) {
 			data: { question, answer, category, order, active },
 		})
 	} else {
-		// Create new FAQ
+		// Create a new FAQ
 		await prisma.helpFAQ.create({
 			data: { question, answer, category, order, active },
 		})
@@ -109,16 +109,10 @@ function FAQDialog({
 }: {
     isOpen: boolean
     onOpenChange: (open: boolean) => void
-    selectedFAQ: any | null
+		selectedFAQ: FAQ | null
     categories: string[]
     onSubmit: () => void
 }) {
-    const [order, setOrder] = useState<number | null>(selectedFAQ?.order || 0)
-    
-    // Update order when selectedFAQ changes
-    useEffect(() => {
-        setOrder(selectedFAQ?.order || 0)
-    }, [selectedFAQ])
 
     const [form, fields] = useForm({
         id: 'faq-form',
@@ -131,8 +125,9 @@ function FAQDialog({
             active: true,
         },
         onValidate({ formData }) {
-            return parseWithZod(formData, { schema: FAQSchema })
+           return parseWithZod(formData, { schema: FAQSchema })
         },
+			shouldRevalidate: 'onBlur',
     })
 
     return (
@@ -151,15 +146,10 @@ function FAQDialog({
                     {selectedFAQ && <input type="hidden" name="id" value={selectedFAQ.id} />}
 
                     <div className="grid gap-4 py-4">
-                        <Select 
-                            defaultValue={selectedFAQ?.category || ""}
-                            onValueChange={(value) => {
-                                // Update the hidden input with the selected value
-                                const input = document.createElement('input')
-                                input.name = fields.category.name
-                                input.value = value
-                                form.ref.current?.appendChild(input)
-                            }}
+                        <Select
+													{...getInputProps(fields.category, { type: 'text' })}
+													defaultValue={selectedFAQ?.category || ""}
+													required
                         >
                             <SelectTrigger id="category">
                                 <SelectValue placeholder="Select a category" />
@@ -172,12 +162,6 @@ function FAQDialog({
                                 ))}
                             </SelectContent>
                         </Select>
-                        {/* Hidden input to store the category value for form submission */}
-                        <input 
-                            type="hidden" 
-                            name={fields.category.name} 
-                            defaultValue={selectedFAQ?.category || ""} 
-                        />
 
                         <Field
                             labelProps={{
@@ -206,20 +190,24 @@ function FAQDialog({
                             errors={fields.answer.errors}
                         />
 
-                        <NumberField
-                            min={0}
-                            max={10000}
-                            labelProps={{ children: 'Display Order' }}
-                            onChange={setOrder}
-                            value={order}
-                            errors={fields.order.errors}
-                        />
+											<NumberField
+												labelProps={{
+													children: 'Display Order',
+													htmlFor: fields.order.id
+												}}
+												inputProps={{
+													...getInputProps(fields.order, { type: 'number' }),
+												}}
+												name="order"
+												defaultValue={selectedFAQ?.order || 0}
+												min={0}
+												max={10000}
+												errors={fields.order.errors}
+											/>
 
                         <div className="flex items-center space-x-2">
                             <Switch
-                                id={fields.active.id}
-                                name={fields.active.name}
-                                defaultChecked={selectedFAQ?.active ?? true}
+
                                 {...getInputProps(fields.active, { type: 'checkbox' })}
                             />
                             <Label htmlFor={fields.active.id}>Active</Label>
@@ -260,7 +248,8 @@ export default function AdminHelpFAQs() {
 			<div className="mb-8 flex items-center justify-between">
 				<h1 className="text-2xl font-bold">Manage Help FAQs</h1>
 				<Button onClick={handleNew}>
-					<PlusIcon className="mr-2 h-4 w-4" />
+					<Icon name="plus" className="h-4 w-4" />
+					{/*<PlusIcon className="mr-2 h-4 w-4" />*/}
 					Add New FAQ
 				</Button>
 			</div>
@@ -298,13 +287,13 @@ export default function AdminHelpFAQs() {
 									<TableCell>
 										<div className="flex space-x-2">
 											<Button variant="outline" size="sm" onClick={() => handleEdit(faq)}>
-												<Pencil className="h-4 w-4" />
+												<Icon name="pencil-1" size="sm" />
 											</Button>
 											<Form method="post">
 												<input type="hidden" name="intent" value="delete" />
 												<input type="hidden" name="id" value={faq.id} />
 												<Button variant="outline" size="sm" className="text-destructive">
-													<Trash2 className="h-4 w-4" />
+													<Icon name="trash" size="sm" />
 												</Button>
 											</Form>
 										</div>

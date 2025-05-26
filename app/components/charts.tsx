@@ -19,7 +19,7 @@ import {
 } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from './ui/chart'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { TrendingUp } from 'lucide-react'
+import {Icon} from './ui/icon.tsx'
 
 type ChartProps = {
   data: any[]
@@ -46,7 +46,7 @@ export function LineChart({
   const chartConfig = categories.reduce((acc, category, i) => {
     acc[category] = {
       label: category.charAt(0).toUpperCase() + category.slice(1),
-      color: colors ? colors[i % colors.length] : `hsl(var(--chart-${i + 1}))`
+      color: colors ? colors[i % colors.length] : `var(--chart-${i + 1})`
     }
     return acc
   }, {} as ChartConfig)
@@ -202,7 +202,7 @@ export function BarChart({
   const chartConfig = categories.reduce((acc, category, i) => {
     acc[category] = {
       label: category.charAt(0).toUpperCase() + category.slice(1),
-      color: colors ? colors[i % colors.length] : `hsl(var(--chart-${i + 1}))`
+      color: colors ? colors[i % colors.length] : `var(--chart-${i + 1})`
     }
     return acc
   }, {} as ChartConfig)
@@ -275,7 +275,7 @@ export function PieChart({
   const chartConfig = data.reduce((acc, entry, i) => {
     acc[entry[index]] = {
       label: entry[index],
-      color: colors ? colors[i % colors.length] : `hsl(var(--chart-${i + 1}))`,
+      color: colors ? colors[i % colors.length] : `var(--chart-${i + 1})`,
     };
     return acc;
   }, {} as ChartConfig);
@@ -346,7 +346,7 @@ export function PieChart({
                   fill={
                     colors
                       ? colors[index % colors.length]
-                      : `hsl(var(--chart-${index + 1}))`
+                      : `var(--chart-${index + 1})`
                   }
                 />
               ))}
@@ -397,7 +397,7 @@ export function PieChart({
 
       <div className="mt-4 flex flex-col gap-2 text-sm">
         <div className="flex items-center gap-2 font-medium leading-none">
-          <TrendingUp className="h-4 w-4" /> Trending categories this month
+					<Icon name="trending-up" size="sm" /> Trending categories this month
         </div>
         <div className="leading-none text-muted-foreground">
           Showing distribution of prayer requests by category

@@ -7,6 +7,8 @@ interface PrayerItemProps {
 	isCurrentUser: boolean
 	canModerate: boolean
 	actionData: any
+	onDeleteClick?: (prayerId: string) => void,
+	onMarkAsAnswered?: (prayerId: string) => void,
 }
 
 export default function PrayerItem({ prayer, isCurrentUser, actionData, canModerate }: PrayerItemProps) {

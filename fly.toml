@@ -1,4 +1,4 @@
-app = "podcast-admin-d5e7"
+app = "church-app-updated-c2e5"
 primary_region = "sjc"
 kill_signal = "SIGINT"
 kill_timeout = 5
@@ -59,6 +59,3 @@ script_checks = [ ]
     method = "GET"
     timeout = "5s"
     path = "/litefs/health"
-
-[http_service.handlers]
-    ws = true # Enable WebSocket support

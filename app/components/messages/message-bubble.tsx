@@ -11,7 +11,7 @@ type MessageProps = {
     createdAt: string | Date
     sender: {
       id: string
-      image?: { id: string } | null
+      image?: { objectKey: string } | null
       name?: string
       username?: string
     }
@@ -28,7 +28,7 @@ export function MessageBubble({ message, userId }: MessageProps) {
     <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
 			<Avatar className="h-8 w-8 m-2">
 				<AvatarImage
-					src={getUserImgSrc(message.sender.image?.id)}
+					src={getUserImgSrc(message.sender.image?.objectKey)}
 					alt={message.sender.name || message.sender.username}
 				/>
 				<AvatarFallback>{message.sender.name[0] || message.sender.username[0]}</AvatarFallback>

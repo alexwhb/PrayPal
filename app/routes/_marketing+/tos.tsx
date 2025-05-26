@@ -1,7 +1,6 @@
-import { Coffee, Heart } from 'lucide-react'
-import { Link } from 'react-router'
 import { Button } from '#app/components/ui/button'
 import { type Route } from './+types/tos'
+import { Icon } from '#app/components/ui/icon.tsx'
 
 export const meta: Route.MetaFunction = () => [{ title: 'Terms of Service | PrayPal' }]
 
@@ -222,14 +221,14 @@ export default function TermsOfServiceRoute() {
 								rel="noopener noreferrer"
 								className="flex items-center"
 							>
-								<Coffee className="h-4 w-4" />
+								<Icon name="coffee"  className="h-4 w-4" />
 								<span>Buy Me a Coffee</span>
 							</a>
 						</Button>
 					</div>
 
 					<div className="mt-8 flex items-center justify-center text-sm text-muted-foreground">
-						<Heart className="mr-2 h-4 w-4 text-red-500" />
+						<Icon name="heart"  className="mr-2 h-4 w-4 text-red-500" />
 						<span>Thank you for your support!</span>
 					</div>
 				</section>
