@@ -3,6 +3,7 @@ import { REGEXP_ONLY_DIGITS_AND_CHARS, type OTPInputProps } from 'input-otp'
 import React, { type ElementRef, useId, useRef } from 'react'
 import { NumberInput } from '#app/components/ui/number-input.tsx'
 import { Switch } from '#app/components/ui/switch.tsx'
+import { useState } from 'react'
 import { Checkbox, type CheckboxProps } from './ui/checkbox.tsx'
 import {
 	InputOTP,
@@ -203,7 +204,6 @@ export function CheckboxField({
 	)
 }
 
-
 export function NumberField({
 															labelProps,
 															inputProps,
@@ -215,29 +215,46 @@ export function NumberField({
 															max,
 															step,
 															controls = true,
+															// Add these new props for Conform compatibility
+															name,
+															defaultValue,
 														}: {
 	labelProps: React.LabelHTMLAttributes<HTMLLabelElement>
 	inputProps?: Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type' | 'min' | 'max' | 'step'>
-	value: number | null
-	onChange: (value: number | null) => void
+	value?: number | null
+	onChange?: (value: number | null) => void
 	min?: number
 	max?: number
 	step?: number
 	controls?: boolean
 	errors?: ListOfErrors
 	className?: string
+	// New props for Conform compatibility
+	name?: string
+	defaultValue?: string | number
 }) {
 	const fallbackId = useId()
 	const id = inputProps?.id ?? fallbackId
 	const errorId = errors?.length ? `${id}-error` : undefined
+
+	// Handle both controlled (value/onChange) and uncontrolled (name/defaultValue) modes
+	const isControlled = value !== undefined && onChange !== undefined
+	const initialValue = isControlled
+		? value
+		: (defaultValue ? Number(defaultValue) : null)
+
+	const [internalValue, setInternalValue] = useState<number | null>(initialValue)
+
+	const currentValue = isControlled ? value : internalValue
+	const handleChange = isControlled ? onChange : setInternalValue
 
 	return (
 		<div className={className}>
 			<Label htmlFor={id} {...labelProps} />
 			<NumberInput
 				id={id}
-				value={value}
-				onChange={onChange}
+				value={currentValue}
+				onChange={handleChange}
 				min={min}
 				max={max}
 				step={step}
@@ -245,6 +262,8 @@ export function NumberField({
 				aria-invalid={errorId ? true : undefined}
 				aria-describedby={errorId}
 				{...inputProps}
+				// Pass through the name for form submission
+				name={name}
 			/>
 			<div className="min-h-[12px] px-4 pb-3 pt-1">
 				{errorId ? <ErrorList id={errorId} errors={errors} /> : null}
