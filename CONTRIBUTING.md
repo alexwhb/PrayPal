@@ -57,7 +57,7 @@ Project maintainers are responsible for clarifying the standards of acceptable b
 Project maintainers have the right and responsibility to remove, edit, or reject comments, commits, code, wiki edits, issues, and other contributions that are not aligned to this Code of Conduct, or to ban temporarily or permanently any contributor for other behaviors that they deem inappropriate, threatening, offensive, or harmful.
 
 **Reporting Issues:**  
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at [YOUR CONTACT EMAIL OR GITHUB]. All complaints will be reviewed and investigated and will result in a response that is deemed necessary and appropriate to the circumstances. The project team is obligated to maintain confidentiality with regard to the reporter of an incident.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at [alexwhb]. All complaints will be reviewed and investigated and will result in a response that is deemed necessary and appropriate to the circumstances. The project team is obligated to maintain confidentiality with regard to the reporter of an incident.
 
 ---
 
@@ -74,7 +74,7 @@ Instances of abusive, harassing, or otherwise unacceptable behavior may be repor
 
 1. **Fork** the repository and clone your fork:
     ```bash
-    git clone https://github.com/your-username/praypal.git
+    git clone https://github.com/alexwhb/praypal.git
     cd praypal
     ```
 
