@@ -1,6 +1,6 @@
 import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { data, redirect, Form, useLoaderData } from 'react-router'
 import { z } from 'zod'
 import { Field, NumberField, TextareaField } from '#app/components/forms'
@@ -74,8 +74,6 @@ export async function action({ request }: Route.ActionArgs) {
 		schema: FAQSchema,
 	})
 
-	console.log(submission, submission.value)
-
 	if (submission.status !== 'success') {
 		return data(
 			{ result: submission.reply() },
@@ -115,14 +113,6 @@ function FAQDialog({
     categories: string[]
     onSubmit: () => void
 }) {
-    // const [order, setOrder] = useState<number | null>(selectedFAQ?.order || 0)
-
-    // Update order when selectedFAQ changes
-    // useEffect(() => {
-    //     if (selectedFAQ) {
-    //         setOrder(selectedFAQ.order || 0)
-    //     }
-    // }, [selectedFAQ])
 
     const [form, fields] = useForm({
         id: 'faq-form',
@@ -135,9 +125,7 @@ function FAQDialog({
             active: true,
         },
         onValidate({ formData }) {
-            const test = parseWithZod(formData, { schema: FAQSchema })
-					console.log('onValidate: ', test)
-					return test
+           return parseWithZod(formData, { schema: FAQSchema })
         },
 			shouldRevalidate: 'onBlur',
     })
@@ -174,14 +162,6 @@ function FAQDialog({
                                 ))}
                             </SelectContent>
                         </Select>
-
-
-                        {/*/!* Hidden input to store the category value for form submission *!/*/}
-                        {/*<input */}
-                        {/*    type="hidden" */}
-                        {/*    name={fields.category.name} */}
-                        {/*    defaultValue={selectedFAQ?.category || ""} */}
-                        {/*/>*/}
 
                         <Field
                             labelProps={{

@@ -249,7 +249,7 @@ export default function AdminCategoryPage() {
 	}>(null)
 
 	// Create category form
-	const [createForm, createFields] = useForm({
+	const [form, fields] = useForm({
 		id: 'create-category',
 		constraint: getZodConstraint(CategorySchema),
 		onValidate({ formData }) {
@@ -305,8 +305,8 @@ export default function AdminCategoryPage() {
 					</div>
 					<Button
 						onClick={() => {
-							createForm.reset()
-							createFields.type.value = type
+							form.reset()
+							fields.type.value = type
 							setIsCreateDialogOpen(true)
 						}}
 						size="sm"
@@ -411,23 +411,23 @@ export default function AdminCategoryPage() {
 						</DialogDescription>
 					</DialogHeader>
 
-					<Form method="post" {...getFormProps(createForm)}>
+					<Form method="post" {...getFormProps(form)}>
 						<input type="hidden" name="_action" value="create" />
 
 						<div className="space-y-4 py-4">
 							<Field
 								labelProps={{ children: 'Category Name' }}
 								inputProps={{
-									...getInputProps(createFields.name, { type: 'text' }),
+									...getInputProps(fields.name, { type: 'text' }),
 									placeholder: 'Enter category name',
 								}}
-								errors={createFields.name.errors}
+								errors={fields.name.errors}
 							/>
 
 							<div className="space-y-2">
 								<Label htmlFor="type">Category Type</Label>
 								<Select
-									{...getInputProps(createFields.type, { type: 'text' })}
+									{...getInputProps(fields.type, { type: 'text' })}
 									required
 								>
 									<SelectTrigger id="type">
@@ -445,7 +445,7 @@ export default function AdminCategoryPage() {
 							<div className="flex items-center space-x-2">
 								<Switch
 									id="active"
-									{...getInputProps(createFields.active, { type: 'checkbox' })}
+									{...getInputProps(fields.active, { type: 'checkbox' })}
 									defaultChecked
 								/>
 								<Label htmlFor="active">Active</Label>
