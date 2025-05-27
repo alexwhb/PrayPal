@@ -1,7 +1,9 @@
-import { LineChart, PieChart as PieChartComponent } from '#app/components/charts.tsx'
+import { LineChart, PieChart as PieChartComponent } from '#app/components/admin/charts.tsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#app/components/ui/card.tsx'
 import {Icon} from '#app/components/ui/icon.tsx'
 
+// components/dashboard/overview-tab.tsx
+// Update the component props type
 type OverviewTabProps = {
   metrics: {
     totalUsers: number
@@ -18,13 +20,14 @@ type OverviewTabProps = {
     needs: number
     shares: number
   }>
-  prayerCategoryData: Array<{
+	selectedCategory: string
+  categoryData: Array<{
     name: string
     value: number
   }>
 }
 
-export function OverviewTab({ metrics, activityData, prayerCategoryData }: OverviewTabProps) {
+export function OverviewTab({ selectedCategory, metrics, activityData, categoryData }: OverviewTabProps) {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -94,9 +97,7 @@ export function OverviewTab({ metrics, activityData, prayerCategoryData }: Overv
               data={activityData}
               categories={['prayers', 'needs', 'shares']}
               index="name"
-
               valueFormatter={(value) => `${value} posts`}
-              className="h-[300px]"
             />
           </CardContent>
         </Card>
@@ -110,11 +111,12 @@ export function OverviewTab({ metrics, activityData, prayerCategoryData }: Overv
           </CardHeader>
           <CardContent>
             <PieChartComponent
-              data={prayerCategoryData}
+              data={categoryData}
               index="name"
               categories={['value']}
+							categoryName={selectedCategory}
               valueFormatter={(value) => `${value} prayers`}
-              // className="h-[300px]"
+              className="h-[300px]"
             />
           </CardContent>
         </Card>
