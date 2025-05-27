@@ -1,5 +1,5 @@
 import {Icon} from '#app/components/ui/icon.tsx'
-import { BarChart } from '#app/components/charts.tsx'
+import { BarChart } from '#app/components/admin/charts.tsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '#app/components/ui/card.tsx'
 
 type CommunityTabProps = {
