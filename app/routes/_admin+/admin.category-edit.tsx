@@ -341,7 +341,7 @@ export default function AdminCategoryPage({loaderData, actionData}: Route.Compon
 
             <CategoryDialog
                 isOpen={isDialogOpen}
-                onOpenChange={(isOpen: Boolean) => {
+                onOpenChange={(isOpen: boolean) => {
                     setDefaultType('PRAYER')
                     setSelectedCategory(null)
                     setIsDialogOpen(isOpen)
