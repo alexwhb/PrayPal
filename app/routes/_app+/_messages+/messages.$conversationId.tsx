@@ -36,7 +36,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 					id: true,
 					name: true,
 					username: true,
-					image: { select: { id: true } },
+					image: { select: { objectKey: true } },
 				},
 			},
 			messages: {
@@ -52,7 +52,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 							id: true,
 							username: true,
 							name: true,
-							image: { select: { object: true } },
+							image: { select: { objectKey: true } },
 						},
 					},
 					attachment: {
@@ -163,7 +163,7 @@ export async function action({ request }: Route.ActionArgs) {
 					id: true,
 					username: true,
 					name: true,
-					image: { select: { id: true } },
+					image: { select: { objectKey: true } },
 				},
 			},
 		},
