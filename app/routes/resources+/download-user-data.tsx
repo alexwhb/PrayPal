@@ -24,6 +24,15 @@ export async function loader({ request }: Route.LoaderArgs) {
 			password: false, // <-- intentionally omit password
 			sessions: true,
 			roles: true,
+			connections: true,
+			requests: true,
+			createdReferrals: true,
+			usedReferral: true,
+			notifications: true,
+			moderationActions: true,
+			ownedItems: true,
+			claimedItems: true,
+			groupMemberships: true,
 		},
 	})
 
