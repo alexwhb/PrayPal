@@ -138,7 +138,7 @@ export default function NewPrayerForm({loaderData: { categories }, actionData}: 
 						</div>
 					</TextareaField>
 				</CardContent>
-				<CardFooter>
+				<CardFooter className="border-t">
 					<div className="flex gap-4">
 						<Link to="../board" prefetch="intent">
 							<Button variant="outline">Cancel</Button>

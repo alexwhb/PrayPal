@@ -30,7 +30,7 @@ import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { type Route } from './+types/needs.new.ts'
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader() {
 	const categories = await prisma.category.findMany({
 		where: { type: 'NEED', active: true },
 		select: { id: true, name: true },
@@ -139,7 +139,7 @@ export default function NewNeedForm({
 						</div>
 					</TextareaField>
 				</CardContent>
-				<CardFooter>
+				<CardFooter className="border-t">
 					<div className="flex gap-4">
 						<Link to="../board" prefetch="intent">
 							<Button variant="outline">Cancel</Button>
