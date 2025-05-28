@@ -42,6 +42,28 @@ Built with modern web technologies and designed with church communities in mind,
   <img src="assets/comunity-groups.gif" alt="Community Groups" width="800">
 </p>
 
+### Messaging
+<p align="center">
+  <img src="assets/messaging.gif" alt="Messaging" width="800">
+</p>
+
+---
+## Admin Features
+
+### Admin Dashboard
+<p align="center">
+  <img src="assets/admin-dashboard.gif" alt="Admin Dashboard" width="800">
+</p>
+
+### Role Management
+<p align="center">
+  <img src="assets/role-editor.gif" alt="Role Management" width="800">
+</p>
+
+### Help FAQ Management
+<p align="center">
+  <img src="assets/help-and-faq.gif" alt="Help FAQ Management" width="800">
+</p>
 
 ## 🚀 Features
 
