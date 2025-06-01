@@ -128,21 +128,28 @@ export async function action({ request }: Route.ActionArgs) {
 	const formData = await request.formData()
 	const intent = formData.get('intent')
 
+	// In the action function
 	if (intent === 'mark-seen') {
 		const conversationId = formData.get('conversationId')
 		if (typeof conversationId !== 'string') return null
 
+		// Find all messages that this user hasn't seen yet
 		const unseenMessages = await prisma.message.findMany({
 			where: {
 				conversationId,
+				senderId: { not: userId }, // Only mark others' messages as seen
 				messageSeen: { none: { userId } },
 			},
 			select: { id: true },
 		})
-		const messageIds = unseenMessages.map((m) => m.id)
-		await prisma.messageSeen.createMany({
-			data: messageIds.map((messageId) => ({ messageId, userId })),
-		})
+
+		// If there are unseen messages, mark them as seen
+		if (unseenMessages.length > 0) {
+			const messageIds = unseenMessages.map((m) => m.id)
+			await prisma.messageSeen.createMany({
+				data: messageIds.map((messageId) => ({ messageId, userId })),
+			})
+		}
 		return null
 	}
 
@@ -189,7 +196,7 @@ export async function action({ request }: Route.ActionArgs) {
 	// Emit socket event directly
 	const socket = io(
 		process.env.NODE_ENV === 'production'
-			? 'https://your-app.fly.dev'
+			? 'https://praypal.fly.dev'
 			: 'http://localhost:3000',
 		{ withCredentials: true },
 	)
@@ -236,13 +243,19 @@ export default function ConversationPage({
 		[fetcher.state, fetcher.data],
 	)
 
+	// Reset hasMarkedSeen when conversationId changes
 	useEffect(() => {
-		if (!hasMarkedSeen && fetcher.state === 'idle' && !fetcher.data) {
-			setHasMarkedSeen(true)
-			void fetcher.submit(
+		setHasMarkedSeen(false)
+	}, [conversationId])
+
+	// Mark messages as seen when the component mounts or conversation changes
+	useEffect(() => {
+		if (fetcher.state === 'idle' && !hasMarkedSeen) {
+			fetcher.submit(
 				{ intent: 'mark-seen', conversationId },
 				{ method: 'post' },
 			)
+			setHasMarkedSeen(true)
 		}
 	}, [fetcher, conversationId, hasMarkedSeen])
 
@@ -255,8 +268,14 @@ export default function ConversationPage({
 		}) => {
 			console.log('Received message:', data)
 			if (data.conversationId === conversationId) {
-				console.log('Revalidating conversation:', conversationId)
-				void revalidator.revalidate()
+				// Only revalidate if the message isn't already in our list
+				const messageExists = messages.some((m) => m.id === data.message.id)
+				if (!messageExists) {
+					console.log('Revalidating conversation:', conversationId)
+					revalidator.revalidate()
+					// Optionally reset hasMarkedSeen for new messages to mark them as seen
+					setHasMarkedSeen(false)
+				}
 			}
 		}
 
@@ -278,7 +297,7 @@ export default function ConversationPage({
 			socket.off('user-connected-ack', handleConnectionAck)
 			socket.off('message-received', handleMessageReceived)
 		}
-	}, [socket, userId, conversationId, revalidator])
+	}, [socket, userId, conversationId, revalidator, messages])
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -305,13 +324,13 @@ export default function ConversationPage({
 								src={getUserImgSrc(participant.image.objectKey)}
 								asChild
 							>
-							<Img
-								src={getUserImgSrc(participant.image.objectKey)}
-								alt={participant.name || participant.username}
-								className="h-full w-full object-cover"
-								width={64}
-								height={64}
-							/>
+								<Img
+									src={getUserImgSrc(participant.image.objectKey)}
+									alt={participant.name || participant.username}
+									className="h-full w-full object-cover"
+									width={64}
+									height={64}
+								/>
 							</AvatarImage>
 							<AvatarFallback>
 								{(participant.name || participant.username)[0]}

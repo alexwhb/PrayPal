@@ -257,7 +257,7 @@ ${styleText('bold', 'Press Ctrl+C to stop')}
 // Create new instance of socket.io
 export const io = new Server(server, {
 	cors: {
-		origin: process.env.NODE_ENV === 'production' ? 'https://your-app.fly.dev' : 'http://localhost:3000',
+		origin: process.env.NODE_ENV === 'production' ? 'https://praypal.fly.dev' : 'http://localhost:3000',
 		methods: ['GET', 'POST'],
 		credentials: true,
 	},
